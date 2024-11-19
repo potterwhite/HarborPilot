@@ -1,0 +1,35 @@
+# version: '3.8'  # Specify docker-compose file version
+
+services:  # Define services section
+  dev:  # Development environment service
+    build:  # Build configuration
+      context: .  # Build context is current directory
+      dockerfile: docker/Dockerfile  # Path to Dockerfile
+    image: ${PROJECT_NAME:-embedded-dev}:${TAG:-latest}  # Image name with fallback values
+    container_name: ${PROJECT_NAME:-embedded-dev}  # Container name with fallback value
+    volumes:  # Volume mappings
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw  # X11 socket for GUI
+      - ~/.vscode:/root/.vscode  # VSCode configs (optional)
+      # Project directory mappings
+      - ./src:/work/src:rw  # Source code directory with read-write access
+      - ./build:/work/build:rw  # Build directory with read-write access
+      - ./configs:/work/configs:ro  # Config directory with read-only access
+      # SSH configuration mapping (optional)
+      - ${SSH_MOUNT:-/dev/null}:/root/.ssh:ro  # SSH key mapping with fallback to /dev/null
+    environment:  # Environment variables
+      - DISPLAY=${DISPLAY}  # X11 display for GUI applications
+      - DEV_USER=baytto  # Current user name
+      - DEV_UID=1000  # Current user ID
+    env_file:  # Environment file configuration
+      - .env.dev  # Development environment variables file
+    working_dir: /work  # Set working directory inside container
+    network_mode: "diy_network"  # Use custom network
+    privileged: true  # Run container with elevated privileges
+    devices:  # Device mappings
+      - "/dev/ttyUSB0:/dev/ttyUSB0"  # Map USB serial port
+      - "/dev/ttyACM0:/dev/ttyACM0"  # Map USB ACM device
+    tty: true  # Allocate a pseudo-TTY
+
+networks:  # Network configuration
+  diy_network:  # Custom network name
+    driver: bridged  # Use bridged driver for network configuration
