@@ -5,4 +5,4 @@ set -e
 source .env
 
 # Build image
-docker compose build
+docker compose --progress plain build

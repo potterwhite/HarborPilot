@@ -5,6 +5,12 @@ services:  # Define services section
     build:  # Build configuration
       context: .  # Build context is current directory
       dockerfile: docker/Dockerfile  # Path to Dockerfile
+    logging: #the logging configuration
+      driver: "json-file" #the type of log file
+      options: #the options of the log file
+        max-size: "100m" #the size of the log file
+        max-file: "3" #the number of log files
+        compress: "true" #compress the log file
     image: ${PROJECT_NAME:-embedded-dev}:${TAG:-latest}  # Image name with fallback values
     container_name: ${PROJECT_NAME:-embedded-dev}  # Container name with fallback value
     volumes:  # Volume mappings
@@ -21,9 +27,10 @@ services:  # Define services section
       - DEV_USER=baytto  # Current user name
       - DEV_UID=1000  # Current user ID
     env_file:  # Environment file configuration
-      - .env.dev  # Development environment variables file
+      - .env  # Development environment variables file
     working_dir: /work  # Set working directory inside container
-    network_mode: "diy_network"  # Use custom network
+    networks:
+      - diy_network  # Use custom network
     privileged: true  # Run container with elevated privileges
     devices:  # Device mappings
       - "/dev/ttyUSB0:/dev/ttyUSB0"  # Map USB serial port
@@ -32,4 +39,4 @@ services:  # Define services section
 
 networks:  # Network configuration
   diy_network:  # Custom network name
-    driver: bridged  # Use bridged driver for network configuration
+    driver: bridge  # Use bridged driver for network configuration

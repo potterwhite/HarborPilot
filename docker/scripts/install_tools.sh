@@ -4,51 +4,34 @@ set -e
 # Backup original sources.list
 cp /etc/apt/sources.list /etc/apt/sources.list.backup
 
-# Configure apt to use aliyun mirror
+# Configure apt to use aliyun mirror for Ubuntu 22.04 (jammy)
 cat > /etc/apt/sources.list << EOF
-deb http://mirrors.aliyun.com/ubuntu/ focal main restricted universe multiverse
-deb http://mirrors.aliyun.com/ubuntu/ focal-security main restricted universe multiverse
-deb http://mirrors.aliyun.com/ubuntu/ focal-updates main restricted universe multiverse
-deb http://mirrors.aliyun.com/ubuntu/ focal-backports main restricted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ jammy main restricted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ jammy-security main restricted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ jammy-updates main restricted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ jammy-backports main restricted universe multiverse
 EOF
-
-# Verify sources.list was written correctly
-if [ ! -s /etc/apt/sources.list ]; then
-    echo "Error: Failed to write sources.list"
-    mv /etc/apt/sources.list.backup /etc/apt/sources.list
-    exit 1
-fi
 
 # Update system with retry mechanism
 for i in {1..3}; do
-    if apt-get update && apt-get upgrade -y; then
+    if apt-get update; then
         break
     fi
     echo "Retry $i: Update failed, retrying in 5 seconds..."
     sleep 5
 done
 
-# Install X11 and GUI dependencies
-apt-get install -y \
-    libx11-6 \
-    libxext6 \
-    libxrender1 \
-    libxtst6 \
-    libxi6 \
-    libxrandr2 \
-    libxcursor1 \
-    libxss1 \
-    libasound2 \
-    libgtk2.0-0 \
-    libgtk-3-0
+# Install essential packages first
+apt-get install -y --no-install-recommends \
+    ca-certificates \
+    build-essential \
+    wget \
+    curl
 
 # Install development tools
-apt-get install -y \
-    build-essential \
+apt-get install -y --no-install-recommends \
     git \
     vim \
-    wget \
-    curl \
     python3 \
     python3-pip \
     cmake \
@@ -58,21 +41,17 @@ apt-get install -y \
     locales \
     tzdata \
     sudo \
-    openssh-client \
+    openssh-client
+
+# Install additional development tools
+apt-get install -y --no-install-recommends \
     libncurses5-dev \
     flex \
     bison \
     gperf \
     device-tree-compiler \
     libssl-dev \
-    u-boot-tools \
-    code
-
-# # Install ARM cross-compilation toolchain
-# apt-get install -y \
-#     gcc-arm-none-eabi \
-#     gcc-aarch64-linux-gnu \
-#     g++-aarch64-linux-gnu
+    u-boot-tools
 
 # Clean APT cache
 apt-get clean
