@@ -1,0 +1,26 @@
+################################################################################
+# File: docker/stage_1_base/configs/apt_sources.list
+#
+# Description: Ubuntu APT sources configuration for the development environment
+#
+# Author: [Your Name]
+# Created: 2024-03-21
+# Last Modified: 2024-03-21
+#
+# Copyright (c) 2024 [Your Company/Name]
+# License: MIT
+################################################################################
+
+# Use Ubuntu mirror from China
+deb https://mirrors.aliyun.com/ubuntu/ jammy main restricted universe multiverse
+deb-src https://mirrors.aliyun.com/ubuntu/ jammy main restricted universe multiverse
+
+deb https://mirrors.aliyun.com/ubuntu/ jammy-updates main restricted universe multiverse
+deb-src https://mirrors.aliyun.com/ubuntu/ jammy-updates main restricted universe multiverse
+
+deb https://mirrors.aliyun.com/ubuntu/ jammy-security main restricted universe multiverse
+deb-src https://mirrors.aliyun.com/ubuntu/ jammy-security main restricted universe multiverse
+
+deb https://mirrors.aliyun.com/ubuntu/ jammy-backports main restricted universe multiverse
+deb-src https://mirrors.aliyun.com/ubuntu/ jammy-backports main restricted universe multiverse
+
