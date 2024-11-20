@@ -1,0 +1,32 @@
+# Version control related
+.git/
+.gitignore
+.gitkeep
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# Unnecessary directories
+volumes/src/*
+volumes/build/*
+volumes/configs/*
+!volumes/sdk/${SDK_PKG_NAME}  # Keep SDK package
+
+# Editor configurations
+.vscode/
+.idea/
+
+# Other unnecessary files
+*.md
+*.txt
+
+# Development and documentation
+docs/
+tests/
+examples/
+
+# Backup files
+*~
+*.bak
+*.swp

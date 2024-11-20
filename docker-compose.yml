@@ -5,6 +5,15 @@ services:  # Define services section
     build:  # Build configuration
       context: .  # Build context is current directory
       dockerfile: docker/Dockerfile  # Path to Dockerfile
+      args:
+        # Variable passing chain:
+        # 1. Variables are defined in .env file
+        # 2. docker-compose.yml reads from .env and passes to Dockerfile via args
+        # 3. Dockerfile receives them using ARG directive
+        # 4. Finally set as ENV in Dockerfile for runtime usage
+        SDK_INSTALL_DIR: ${SDK_INSTALL_DIR}  # Pass SDK installation directory to Dockerfile
+        SDK_PKG_NAME: ${SDK_PKG_NAME}
+        CONTAINER_VOLUME_ROOT: ${CONTAINER_VOLUME_ROOT}
     logging: #the logging configuration
       driver: "json-file" #the type of log file
       options: #the options of the log file
@@ -17,9 +26,10 @@ services:  # Define services section
       - /tmp/.X11-unix:/tmp/.X11-unix:rw  # X11 socket for GUI
       - ~/.vscode:/root/.vscode  # VSCode configs (optional)
       # Project directory mappings
-      - ./src:/work/src:rw  # Source code directory with read-write access
-      - ./build:/work/build:rw  # Build directory with read-write access
-      - ./configs:/work/configs:ro  # Config directory with read-only access
+      - ./volumes/src:${CONTAINER_VOLUME_ROOT}/src:rw  # Source code directory with read-write access
+      - ./volumes/build:${CONTAINER_VOLUME_ROOT}/build:rw  # Build directory with read-write access
+      - ./volumes/configs:${CONTAINER_VOLUME_ROOT}/configs:ro  # Config directory with read-only access
+      - ./volumes/sdk:${CONTAINER_VOLUME_ROOT}/sdk:ro  # SDK directory mapping
       # SSH configuration mapping (optional)
       - ${SSH_MOUNT:-/dev/null}:/root/.ssh:ro  # SSH key mapping with fallback to /dev/null
     environment:  # Environment variables

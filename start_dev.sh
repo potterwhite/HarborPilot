@@ -26,7 +26,7 @@ fi
 # Print usage instructions
 echo -e "\n=== Development Environment Ready ==="
 echo "To enter the container:"
-echo "  docker exec -it dev bash"
+echo "  docker exec -it \${PROJECT_NAME:-embedded-dev} bash"
 echo "For GUI support (optional):"
 echo "  1. Install VcXsrv (Windows) or XQuartz (macOS)"
 echo "  2. Start X server"

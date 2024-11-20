@@ -1,108 +1,111 @@
 # Docker Development Environment Template
 
-A template for creating consistent development environments using Docker.
+A template for creating consistent development environments using Docker, specifically designed for embedded development.
 
 ## Project Structure
 
 ```plaintext
 DockerDevEnvTemplate/
 ├── docker/
-│ ├── Dockerfile # Container image definition
-│ └── scripts/
-│ ├── install_tools.sh # Install development tools
-│ ├── entrypoint.sh # Container entry point script
-│ └── setup_gui.sh # GUI support setup
-├── configs/
-│ └── bashrc # Custom bash configuration
+│   ├── configs/
+│   │   └── bashrc                 # Custom bash configuration
+│   ├── scripts/
+│   │   ├── entrypoint.sh         # Container entry point script
+│   │   ├── install_tools.sh      # Install development tools and SDK
+│   │   └── setup_gui.sh          # GUI support setup
+│   └── Dockerfile                # Container image definition
+├── volumes/
+│   ├── src/                      # Source code directory (mounted)
+│   ├── build/                    # Build output directory (mounted)
+│   ├── configs/                  # Configuration files (mounted)
+│   └── sdk/                      # SDK packages (mounted)
 ├── scripts/
-│ ├── build.sh # Build docker image
-│ └── run.sh # Run docker container
-├── .env # Environment variables
-├── docker-compose.yml # Docker compose configuration
-└── start_dev.sh # Development environment startup script
+│   ├── build.sh                  # Build docker image
+│   └── run.sh                    # Run docker container
+├── .env                          # Environment variables
+├── .dockerignore                 # Docker build ignore rules
+├── docker-compose.yml            # Docker compose configuration
+└── start_dev.sh                  # Development environment startup script
+```
+
+## Environment Variables
+
+All configurations are centralized in `.env`:
+
+```bash
+# Project configuration
+PROJECT_NAME=rk3588s-n8          # Project/container name
+TAG=1.0                          # Image tag
+DOCKER_BUILDKIT=1                # Enable BuildKit
+
+# Working directory configuration
+CONTAINER_VOLUME_ROOT=/host_disk          # Container working directory
+
+# SDK configuration
+SDK_PKG_NAME=rk3588s-linux_20240913.tar.xz  # SDK package name
+SDK_INSTALL_DIR=/opt/rk3588s     # SDK installation directory
 ```
 
 ## Quick Start
 
 1. Clone this repository
-2. Run the startup script:
+2. Place your SDK package in `volumes/sdk/`
+3. Run the startup script:
    ```bash
    ./start_dev.sh
    ```
 
-## Creating a New Project
+## Variable Passing Chain
 
-When using this template for a new project, modify these files:
-
-1. `.env`:
-   ```bash
-   # Change project specific variables
-   PROJECT_NAME=your-project-name
-   TAG=latest
-   ```
-
-2. `docker-compose.yml`:
-   ```yaml
-   # Modify volume mappings for your project
-   volumes:
-     - ./your-source:/work/your-source:rw
-     - ./your-config:/work/your-config:ro
-   ```
-
-3. `docker/Dockerfile`:
-   ```dockerfile
-   # Add your project specific dependencies
-   RUN apt-get install -y your-packages
-
-   # Add your project specific setup steps
-   COPY your-config /work/your-config
-   ```
-
-4. `docker/scripts/install_tools.sh`:
-   ```bash
-   # Add or remove development tools based on your needs
-   apt-get install -y \
-       your-tool-1 \
-       your-tool-2
-   ```
+The environment variables are passed through multiple stages:
+1. `.env` defines the initial values
+2. `docker-compose.yml` reads from `.env` and passes to Dockerfile via build args
+3. Dockerfile receives them using ARG directive
+4. Finally set as ENV in Dockerfile for runtime usage
 
 ## Features
 
-- Consistent development environment across team members
-- GUI application support (optional)
-- Customizable tool installation
-- Volume mapping for source code and configurations
-- Support for USB device mapping
+- Centralized configuration in `.env`
+- Consistent development environment
+- Automated SDK installation during build
+- Volume mapping for persistent data
+- GUI application support
+- USB device mapping
 
-## Optional Features
+## Volume Structure
 
-### GUI Support
-For GUI applications (like VSCode):
-1. Windows: Install VcXsrv
-2. macOS: Install XQuartz
-3. Start X server before running GUI applications
-
-### USB Device Support
-Default mappings in `docker-compose.yml`:
-
-```yaml
-devices:
-  - "/dev/ttyUSB0:/dev/ttyUSB0"
-  - "/dev/ttyACM0:/dev/ttyACM0"
-```
-Modify according to your device needs.
+The `volumes` directory contains:
+- `src/`: Source code (read-write)
+- `build/`: Build outputs (read-write)
+- `configs/`: Configuration files (read-only)
+- `sdk/`: SDK packages (read-only)
 
 ## Common Issues
 
-1. Permission denied for USB devices:
+1. Build context too large:
+   - Check `.dockerignore` configuration
+   - Ensure only necessary files are included
+
+2. SDK installation fails:
+   - Verify SDK package exists in `volumes/sdk/`
+   - Check package name matches `SDK_PKG_NAME` in `.env`
+
+3. Permission denied for USB devices:
    ```bash
    # Add your user to the dialout group (Linux)
    sudo usermod -a -G dialout $USER
    ```
 
-2. X11 display issues:
-   - Windows: Make sure VcXsrv is running
-   - macOS: Make sure XQuartz is running
+4. X11 display issues:
+   - Windows: Ensure VcXsrv is running
+   - macOS: Ensure XQuartz is running
+
+## Customization
+
+1. Modify `.env` for project-specific settings
+2. Update `install_tools.sh` for additional development tools
+3. Adjust volume mappings in `docker-compose.yml`
+4. Customize `bashrc` for shell environment
 
 ## Contributing
 

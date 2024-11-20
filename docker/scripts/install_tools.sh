@@ -23,15 +23,11 @@ done
 
 # Install essential packages first
 apt-get install -y --no-install-recommends \
-    ca-certificates \
     build-essential \
-    wget \
-    curl
-
-# Install development tools
-apt-get install -y --no-install-recommends \
     git \
     vim \
+    wget \
+    curl \
     python3 \
     python3-pip \
     cmake \
@@ -43,7 +39,7 @@ apt-get install -y --no-install-recommends \
     sudo \
     openssh-client
 
-# Install additional development tools
+# Install development tools
 apt-get install -y --no-install-recommends \
     libncurses5-dev \
     flex \
@@ -52,6 +48,24 @@ apt-get install -y --no-install-recommends \
     device-tree-compiler \
     libssl-dev \
     u-boot-tools
+
+# Install SDK from mounted volume
+SDK_DIR="${SDK_INSTALL_DIR}"
+SDK_PKG="${CONTAINER_VOLUME_ROOT}/sdk/${SDK_PKG_NAME}"
+
+echo "Installing SDK to ${SDK_DIR}..."
+if [ -f "${SDK_PKG}" ]; then
+    mkdir -p ${SDK_DIR}
+    if tar xf ${SDK_PKG} -C ${SDK_DIR}; then
+        echo "SDK installation completed"
+    else
+        echo "Error: Failed to extract SDK"
+        exit 1
+    fi
+else
+    echo "Error: SDK package not found at ${SDK_PKG}"
+    exit 1
+fi
 
 # Clean APT cache
 apt-get clean
