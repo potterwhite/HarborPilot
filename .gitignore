@@ -8,3 +8,6 @@
 !**/offline_packages/**/
 # ignore .gitkeep file in offline_packages
 !**/offline_packages/**/.gitkeep
+
+# Ignore generated config files
+docker/stage_3_sdk/configs/sdk_config.conf
