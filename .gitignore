@@ -1,0 +1,10 @@
+# Ignore all files in any directory named offline_packages
+
+# ignore all files in offline_packages
+**/offline_packages/**/*
+# ignore offline_packages directory
+!**/offline_packages/
+# ignore offline_packages subdirectories
+!**/offline_packages/**/
+# ignore .gitkeep file in offline_packages
+!**/offline_packages/**/.gitkeep

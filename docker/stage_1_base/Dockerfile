@@ -14,6 +14,8 @@
 
 FROM ubuntu:22.04
 
+SHELL ["/bin/bash", "-c"]
+
 # Build arguments
 ARG DEBIAN_FRONTEND=noninteractive
 ARG TZ=UTC
@@ -24,9 +26,9 @@ ARG USER_GID=1000
 # Copy scripts
 COPY scripts/setup_base.sh /tmp/
 
-# First install certificates (首先安装证书)
+# First install certificates and basic tools (首先安装证书和基本工具)
 RUN apt-get update && \
-    apt-get install -y ca-certificates && \
+    apt-get install -y ca-certificates bash && \
     update-ca-certificates
 
 # Then setup sources and continue (然后设置源并继续)
