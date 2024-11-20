@@ -1,13 +1,17 @@
-# Ignore all files in any directory named offline_packages
-
-# ignore all files in offline_packages
+# Ignore everything in offline_packages except scripts and .gitkeep
 **/offline_packages/**/*
-# ignore offline_packages directory
+# do not ignore offline_packages directory
 !**/offline_packages/
-# ignore offline_packages subdirectories
+# do not ignore offline_packages subdirectories
 !**/offline_packages/**/
-# ignore .gitkeep file in offline_packages
+# do not ignore .sh files in offline_packages
+!**/offline_packages/**/*.sh
+# do not ignore .gitkeep file in offline_packages
 !**/offline_packages/**/.gitkeep
 
 # Ignore generated config files
 docker/stage_3_sdk/configs/sdk_config.conf
+docker/stage_4_config/configs/env_config.conf
+
+# Ignore build log files in all directories
+**/build_log.txt

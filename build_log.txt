@@ -1,162 +1,0 @@
-#0 building with "default" instance using docker driver
-
-#1 [internal] load build definition from Dockerfile
-#1 transferring dockerfile: 1.15kB done
-#1 DONE 0.0s
-
-#2 [internal] load metadata for docker.io/library/embedded-dev:stage2
-#2 DONE 0.0s
-
-#3 [internal] load .dockerignore
-#3 transferring context: 2B done
-#3 DONE 0.0s
-
-#4 [1/6] FROM docker.io/library/embedded-dev:stage2
-#4 CACHED
-
-#5 [internal] load build context
-#5 ...
-
-#6 [2/6] RUN mkdir -p /opt/sdk
-#6 DONE 0.3s
-
-#5 [internal] load build context
-#5 transferring context: 2.56GB 5.0s
-#5 transferring context: 4.49GB 10.0s
-#5 transferring context: 6.04GB 15.1s
-#5 transferring context: 6.80GB 20.1s
-#5 transferring context: 7.51GB 25.1s
-#5 transferring context: 8.35GB 30.2s
-#5 transferring context: 9.09GB 35.2s
-#5 transferring context: 9.43GB 40.7s
-#5 transferring context: 9.74GB 45.9s
-#5 transferring context: 10.00GB 51.2s
-#5 transferring context: 10.31GB 56.2s
-#5 transferring context: 10.55GB 61.3s
-#5 transferring context: 10.90GB 66.4s
-#5 transferring context: 11.32GB 71.4s
-#5 transferring context: 11.80GB 76.5s
-#5 transferring context: 12.26GB 81.7s
-#5 transferring context: 12.49GB 84.5s done
-#5 DONE 88.4s
-
-#7 [3/6] COPY offline_packages/ /tmp/offline_packages/
-#7 DONE 137.7s
-
-#8 [4/6] COPY scripts/install_sdk.sh /tmp/
-#8 DONE 0.2s
-
-#9 [5/6] COPY configs/sdk_config.conf /tmp/
-#9 DONE 0.2s
-
-#10 [6/6] RUN ls -lha /tmp/offline_packages/ &&     chmod +x /tmp/install_sdk.sh &&     SDK_PACKAGE=rk3588s-linux_20240913.tar.xz /tmp/install_sdk.sh &&     rm -rf /tmp/install_sdk.sh /tmp/sdk_config.conf
-#10 0.346 total 12G
-#10 0.346 drwxr-xr-x 2 root root 4.0K Nov 20 07:23 .
-#10 0.346 drwxrwxrwt 1 root root 4.0K Nov 20 09:17 ..
-#10 0.346 -rw-rw-r-- 1 root root    0 Nov 20 07:19 .gitkeep
-#10 0.346 -rwxrwxrwx 1 root root  12G Nov 18 08:05 rk3588s-linux_20240913.tar.xz
-#10 0.619 Get:1 https://mirrors.aliyun.com/ubuntu jammy InRelease [270 kB]
-#10 0.679 Get:2 https://mirrors.aliyun.com/ubuntu jammy-updates InRelease [128 kB]
-#10 0.700 Get:3 https://mirrors.aliyun.com/ubuntu jammy-security InRelease [129 kB]
-#10 0.721 Get:4 https://mirrors.aliyun.com/ubuntu jammy-backports InRelease [127 kB]
-#10 0.852 Get:5 https://mirrors.aliyun.com/ubuntu jammy/universe Sources [22.0 MB]
-#10 3.648 Get:6 https://mirrors.aliyun.com/ubuntu jammy/multiverse Sources [361 kB]
-#10 3.793 Get:7 https://mirrors.aliyun.com/ubuntu jammy/restricted Sources [28.2 kB]
-#10 3.868 Get:8 https://mirrors.aliyun.com/ubuntu jammy/main Sources [1668 kB]
-#10 4.144 Get:9 https://mirrors.aliyun.com/ubuntu jammy/restricted amd64 Packages [164 kB]
-#10 4.260 Get:10 https://mirrors.aliyun.com/ubuntu jammy/main amd64 Packages [1792 kB]
-#10 4.537 Get:11 https://mirrors.aliyun.com/ubuntu jammy/multiverse amd64 Packages [266 kB]
-#10 4.652 Get:12 https://mirrors.aliyun.com/ubuntu jammy/universe amd64 Packages [17.5 MB]
-#10 6.993 Get:13 https://mirrors.aliyun.com/ubuntu jammy-updates/main Sources [659 kB]
-#10 7.143 Get:14 https://mirrors.aliyun.com/ubuntu jammy-updates/multiverse Sources [23.2 kB]
-#10 7.228 Get:15 https://mirrors.aliyun.com/ubuntu jammy-updates/restricted Sources [88.7 kB]
-#10 7.307 Get:16 https://mirrors.aliyun.com/ubuntu jammy-updates/universe Sources [544 kB]
-#10 7.450 Get:17 https://mirrors.aliyun.com/ubuntu jammy-updates/restricted amd64 Packages [3408 kB]
-#10 7.930 Get:18 https://mirrors.aliyun.com/ubuntu jammy-updates/universe amd64 Packages [1512 kB]
-#10 8.192 Get:19 https://mirrors.aliyun.com/ubuntu jammy-updates/main amd64 Packages [2732 kB]
-#10 8.815 Get:20 https://mirrors.aliyun.com/ubuntu jammy-updates/multiverse amd64 Packages [52.2 kB]
-#10 8.925 Get:21 https://mirrors.aliyun.com/ubuntu jammy-security/universe Sources [355 kB]
-#10 9.111 Get:22 https://mirrors.aliyun.com/ubuntu jammy-security/main Sources [384 kB]
-#10 9.223 Get:23 https://mirrors.aliyun.com/ubuntu jammy-security/restricted Sources [84.3 kB]
-#10 9.426 Get:24 https://mirrors.aliyun.com/ubuntu jammy-security/multiverse Sources [13.0 kB]
-#10 9.621 Get:25 https://mirrors.aliyun.com/ubuntu jammy-security/restricted amd64 Packages [3298 kB]
-#10 10.44 Get:26 https://mirrors.aliyun.com/ubuntu jammy-security/universe amd64 Packages [1223 kB]
-#10 10.67 Get:27 https://mirrors.aliyun.com/ubuntu jammy-security/multiverse amd64 Packages [45.2 kB]
-#10 10.70 Get:28 https://mirrors.aliyun.com/ubuntu jammy-security/main amd64 Packages [2439 kB]
-#10 11.09 Get:29 https://mirrors.aliyun.com/ubuntu jammy-backports/main Sources [9406 B]
-#10 11.17 Get:30 https://mirrors.aliyun.com/ubuntu jammy-backports/universe Sources [11.8 kB]
-#10 11.24 Get:31 https://mirrors.aliyun.com/ubuntu jammy-backports/main amd64 Packages [81.4 kB]
-#10 11.42 Get:32 https://mirrors.aliyun.com/ubuntu jammy-backports/universe amd64 Packages [33.7 kB]
-#10 11.47 Fetched 61.4 MB in 11s (5555 kB/s)
-#10 11.47 Reading package lists...
-#10 12.15 Reading package lists...
-#10 12.84 Building dependency tree...
-#10 12.99 Reading state information...
-#10 13.21 lib32gcc-s1 is already the newest version (12.3.0-1ubuntu1~22.04).
-#10 13.21 lib32gcc-s1 set to manually installed.
-#10 13.21 lib32stdc++6 is already the newest version (12.3.0-1ubuntu1~22.04).
-#10 13.21 lib32stdc++6 set to manually installed.
-#10 13.21 libc6-i386 is already the newest version (2.35-0ubuntu3.8).
-#10 13.21 libc6-i386 set to manually installed.
-#10 13.21 The following NEW packages will be installed:
-#10 13.21   lib32z1 libncurses5 libncursesw5 libtinfo5
-#10 13.43 0 upgraded, 4 newly installed, 0 to remove and 0 not upgraded.
-#10 13.43 Need to get 401 kB of archives.
-#10 13.43 After this operation, 1447 kB of additional disk space will be used.
-#10 13.43 Get:1 https://mirrors.aliyun.com/ubuntu jammy-updates/main amd64 lib32z1 amd64 1:1.2.11.dfsg-2ubuntu9.2 [59.8 kB]
-#10 13.45 Get:2 https://mirrors.aliyun.com/ubuntu jammy-updates/universe amd64 libtinfo5 amd64 6.3-2ubuntu0.1 [100 kB]
-#10 13.46 Get:3 https://mirrors.aliyun.com/ubuntu jammy-updates/universe amd64 libncurses5 amd64 6.3-2ubuntu0.1 [107 kB]
-#10 13.49 Get:4 https://mirrors.aliyun.com/ubuntu jammy-updates/universe amd64 libncursesw5 amd64 6.3-2ubuntu0.1 [134 kB]
-#10 13.63 debconf: delaying package configuration, since apt-utils is not installed
-#10 13.67 Fetched 401 kB in 0s (1416 kB/s)
-#10 13.72 Selecting previously unselected package lib32z1.
-#10 13.72 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 32526 files and directories currently installed.)
-#10 13.78 Preparing to unpack .../lib32z1_1%3a1.2.11.dfsg-2ubuntu9.2_amd64.deb ...
-#10 13.81 Unpacking lib32z1 (1:1.2.11.dfsg-2ubuntu9.2) ...
-#10 13.90 Selecting previously unselected package libtinfo5:amd64.
-#10 13.90 Preparing to unpack .../libtinfo5_6.3-2ubuntu0.1_amd64.deb ...
-#10 13.92 Unpacking libtinfo5:amd64 (6.3-2ubuntu0.1) ...
-#10 14.02 Selecting previously unselected package libncurses5:amd64.
-#10 14.02 Preparing to unpack .../libncurses5_6.3-2ubuntu0.1_amd64.deb ...
-#10 14.03 Unpacking libncurses5:amd64 (6.3-2ubuntu0.1) ...
-#10 14.14 Selecting previously unselected package libncursesw5:amd64.
-#10 14.15 Preparing to unpack .../libncursesw5_6.3-2ubuntu0.1_amd64.deb ...
-#10 14.16 Unpacking libncursesw5:amd64 (6.3-2ubuntu0.1) ...
-#10 14.25 Setting up lib32z1 (1:1.2.11.dfsg-2ubuntu9.2) ...
-#10 14.29 Setting up libtinfo5:amd64 (6.3-2ubuntu0.1) ...
-#10 14.33 Setting up libncurses5:amd64 (6.3-2ubuntu0.1) ...
-#10 14.38 Setting up libncursesw5:amd64 (6.3-2ubuntu0.1) ...
-#10 14.42 Processing triggers for libc-bin (2.35-0ubuntu3.8) ...
-#10 14.54 Installing SDK from offline package...
-#10 122.2 .
-#10 122.2 ..
-#10 122.2 .repo
-#10 122.2 Makefile
-#10 122.2 README.md
-#10 122.2 app
-#10 122.2 bin
-#10 122.2 build.sh
-#10 122.2 buildroot
-#10 122.2 debian
-#10 122.2 device
-#10 122.2 docs
-#10 122.2 external
-#10 122.2 include
-#10 122.2 kernel
-#10 122.2 lib
-#10 122.2 prebuilts
-#10 122.2 rkbin
-#10 122.2 rkflash.sh
-#10 122.2 rockdev
-#10 122.2 tools
-#10 122.2 u-boot
-#10 122.2 ubuntu
-#10 122.2 SDK installation completed successfully
-#10 DONE 132.7s
-
-#11 exporting to image
-#11 exporting layers
-#11 exporting layers 44.9s done
-#11 writing image sha256:59c39fbe723ecb13c2b50c52c6d4b247aad575b5efb7caaf7c73398dbb0cc62f done
-#11 naming to docker.io/library/embedded-dev:stage3 done
-#11 DONE 45.0s
