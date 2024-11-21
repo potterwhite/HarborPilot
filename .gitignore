@@ -1,15 +1,23 @@
-# Ignore all files in volumes directories but keep the directories
-volumes/src/*
-volumes/build/*
-volumes/configs/*
-volumes/sdk/*
+# Ignore everything in offline_packages except scripts and .gitkeep
+**/offline_packages/**/*
+# do not ignore offline_packages directory
+!**/offline_packages/
+# do not ignore offline_packages subdirectories
+!**/offline_packages/**/
+# do not ignore .sh files in offline_packages
+!**/offline_packages/**/*.sh
+# do not ignore .gitkeep file in offline_packages
+!**/offline_packages/**/.gitkeep
 
-# Keep .gitkeep files to preserve directory structure
-!volumes/src/.gitkeep
-!volumes/build/.gitkeep
-!volumes/configs/.gitkeep
-!volumes/sdk/.gitkeep
+# Ignore generated config files
+docker/stage_3_sdk/configs/sdk_config.conf
+docker/stage_4_config/configs/env_config.conf
+docker/stage_5_final/configs/entrypoint.conf
+docker/stage_5_final/configs/workspace.conf
 
-# Common files to ignore
-.DS_Store
-*.log
+# Ignore build log files in all directories
+**/build_log.txt
+
+
+
+
