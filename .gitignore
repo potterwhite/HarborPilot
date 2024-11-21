@@ -12,6 +12,12 @@
 # Ignore generated config files
 docker/stage_3_sdk/configs/sdk_config.conf
 docker/stage_4_config/configs/env_config.conf
+docker/stage_5_final/configs/entrypoint.conf
+docker/stage_5_final/configs/workspace.conf
 
 # Ignore build log files in all directories
 **/build_log.txt
+
+
+
+
