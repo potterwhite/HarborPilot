@@ -56,23 +56,22 @@ container_running() {
 # Function to generate docker-compose configuration
 generate_compose_config() {
     cat << EOF > docker-compose.yaml
-
 services:
   dev-env:
     image: ${IMAGE_NAME}:${LATEST_IMAGE_TAG}
     container_name: ${CONTAINER_NAME}
     hostname: ${CONTAINER_NAME}
     user: "${DEV_USERNAME}"
-    # restart: unless-stopped
-    restart: no
+    restart: unless-stopped
     privileged: true
+    tty: true
+    stdin_open: true
 
     volumes:
       - ./volumes:${VOLUMES_ROOT}
 
     ports:
       - "${SSH_PORT}:22"
-        #   - "${DEBUG_PORT}:3000"
       - "${GDB_PORT}:2345"
 
     environment:
@@ -85,7 +84,7 @@ services:
       - "/dev/ttyUSB0:/dev/ttyUSB0"
       - "/dev/bus/usb:/dev/bus/usb"
 
-    working_dir: /home/${DEV_USERNAME}/workspace
+    working_dir: ${WORKSPACE_ROOT}
 
     networks:
       - dev-net
@@ -96,10 +95,6 @@ networks:
 EOF
 }
 
-# Function to create workspace directories
-create_workspace() {
-    mkdir -p workspace/{src,build,logs,temp}
-}
 
 # Function to start development environment
 start_dev_env() {
@@ -114,7 +109,6 @@ start_dev_env() {
 
     if ! container_exists; then
         print_msg "Creating new development environment..."
-        create_workspace
         generate_compose_config
         docker compose up -d
     else

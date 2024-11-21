@@ -16,18 +16,18 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/../../project_handover/.env"
+BUILD_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${BUILD_SCRIPT_DIR}/../../project_handover/.env"
 
 echo "Building base stage..."
 docker build \
     --progress=plain \
     --no-cache \
     --build-arg DEBIAN_FRONTEND="${DEBIAN_FRONTEND}" \
-    --build-arg USERNAME="${DEV_USERNAME}" \
-    --build-arg USER_UID="${DEV_UID}" \
-    --build-arg USER_GID="${DEV_GID}" \
-    --build-arg TZ="${TIMEZONE}" \
+    --build-arg DEV_USERNAME="${DEV_USERNAME}" \
+    --build-arg DEV_UID="${DEV_UID}" \
+    --build-arg DEV_GID="${DEV_GID}" \
+    --build-arg TIMEZONE="${TIMEZONE}" \
     -t "${IMAGE_NAME}:stage1" \
-    -f "${SCRIPT_DIR}/Dockerfile" \
-    "${SCRIPT_DIR}" 2>&1 | tee build_log.txt
+    -f "${BUILD_SCRIPT_DIR}/Dockerfile" \
+    "${BUILD_SCRIPT_DIR}" 2>&1 | tee build_log.txt

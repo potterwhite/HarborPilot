@@ -30,7 +30,6 @@ apt-get install -y \
     python3 \
     python3-pip \
     openssh-server \
-    rsyslog \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /var/run/sshd
@@ -44,11 +43,11 @@ locale-gen en_US.UTF-8
 update-locale LANG=en_US.UTF-8
 
 # Create non-root user
-groupadd --gid $USER_GID $USERNAME
-useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
-echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME
-chmod 0440 /etc/sudoers.d/$USERNAME
+groupadd --gid $DEV_GID $DEV_USERNAME
+useradd --uid $DEV_UID --gid $DEV_GID -m $DEV_USERNAME
+echo $DEV_USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$DEV_USERNAME
+chmod 0440 /etc/sudoers.d/$DEV_USERNAME
 
 # Set timezone
-ln -fs /usr/share/zoneinfo/$TZ /etc/localtime
+ln -fs /usr/share/zoneinfo/$TIMEZONE /etc/localtime
 dpkg-reconfigure -f noninteractive tzdata

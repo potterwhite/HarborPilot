@@ -23,11 +23,7 @@ source /etc/entrypoint.conf
 # Function: Initialize services
 init_services() {
     if [ "${ENABLE_SSH}" = true ]; then
-        service ssh start
-    fi
-
-    if [ "${ENABLE_SYSLOG}" = true ]; then
-        service rsyslog start
+        sudo service ssh start || echo "Failed to start SSH service"
     fi
 }
 
