@@ -60,7 +60,7 @@ setup_dev_environment() {
 
     # Setup VSCode integration
     if [ "${ENABLE_VSC_INTEGRATION}" = true ]; then
-        mkdir -p /workspace/.vscode
+        mkdir -p "${WORKSPACE_ROOT}/.vscode"
     fi
 
     # Configure remote debugging
@@ -68,15 +68,15 @@ setup_dev_environment() {
         echo "Configuring remote debugging on port ${GDB_PORT}"
     fi
 
-    echo "Workspace setup completed successfully."
+    # echo "Workspace setup completed successfully."
 }
 
 # Main execution
 main() {
-    echo "Starting workspace setup..."
+    echo -e "\nStarting workspace setup..."
     init_workspace
     setup_dev_environment
-    echo "Workspace setup completed successfully."
+    echo -e "Workspace setup completed successfully.\n"
 }
 
 main "$@"

@@ -22,7 +22,7 @@ ROOT_DIR="$(cd "${BUILD_SCRIPT_DIR}/../../" && pwd)"
 source "${ROOT_DIR}/.env"
 
 # Configuration
-DOCKER_IMAGE_NAME="embedded-dev"
+DOCKER_IMAGE_NAME="${IMAGE_NAME}"
 DOCKER_IMAGE_TAG="stage5"
 
 # Function: Replace template variables using sed
@@ -53,45 +53,61 @@ replace_template_vars() {
     eval "sed ${sed_commands} \"${template_file}\" > \"${output_file}\""
 }
 
-# Function: Generate configuration files from templates
+# 定义配置文件生成函数 (Define function to generate configuration files)
 generate_configs() {
+    # 打印开始生成配置文件的提示信息 (Print start message)
     echo "=== Generating configuration files from templates ==="
 
-    # Debug: Print all relevant environment variables
+    # 打印环境变量调试信息 (Print debug information for environment variables)
     echo "=== Environment Variables ==="
-    env | grep -E "^(ENABLE_|DEFAULT_|USER_|GROUP_|SSH_|GDB_|CORE_|MAX_)" || true
+    # 使用grep筛选特定前缀的环境变量，|| true 确保即使没有匹配也不会报错
+    # (Filter environment variables with specific prefixes, || true ensures no error if no matches)
+    env | grep -E "^(ENABLE_|DEFAULT_|USER_|GROUP_|SSH_|GDB_|CORE_|MAX_|VOLUMES_|IMAGE_)" || true
 
-    # Function to process a template file
+    # 定义模板处理函数 (Define template processing function)
     process_template() {
-        local template="$1"
-        local output="$2"
+        # 声明局部变量，接收模板文件路径和输出文件路径
+        # (Declare local variables for template and output file paths)
+        local template="$1"    # 模板文件路径 (Template file path)
+        local output="$2"      # 输出文件路径 (Output file path)
 
+        # 打印处理信息 (Print processing information)
         echo "Processing template: $template"
         echo "Output file: $output"
 
-        # Clear output file first
+        # 清空（或创建）输出文件 (Clear or create output file)
         > "$output"
 
-        # Read template file line by line
-        while IFS= read -r line; do
-            # Extract variable name between ${ and }
+        # 逐行读取模板文件 (Read template file line by line)
+        # IFS= 保留行首行尾空格 (Preserve leading/trailing spaces)
+        # read -r 不解释反斜杠 (Don't interpret backslashes)
+        # || [ -n "$line" ] 确保处理最后一行 (Ensure last line is processed)
+        while IFS= read -r line || [ -n "$line" ]; do
+            # 使用正则表达式查找 ${xxx} 格式的变量
+            # (Use regex to find variables in ${xxx} format)
             if [[ $line =~ \$\{([^}]*)\} ]]; then
+                # 提取变量名 (Extract variable name)
                 var_name="${BASH_REMATCH[1]}"
+                # 获取变量值 (Get variable value)
                 var_value="${!var_name}"
-                # Debug: Print variable replacement
+                # 打印替换信息 (Print replacement information)
                 echo "Replacing ${var_name} with value: ${var_value:-<empty>}"
-                # Replace in the line
+                # 在行中替换变量 (Replace variable in line)
+                # ${var_value:-} 如果变量未设置则使用空字符串
+                # (Use empty string if variable is not set)
                 line=${line//\$\{$var_name\}/${var_value:-}}
             fi
+            # 将处理后的行写入输出文件 (Write processed line to output file)
             echo "$line" >> "$output"
-        done < "$template"
+        done < "$template"   # 从模板文件重定向输入 (Redirect input from template file)
     }
 
-    # Process both config files
+    # 处理 entrypoint 配置文件模板 (Process entrypoint configuration template)
     process_template \
         "${BUILD_SCRIPT_DIR}/configs/entrypoint.conf.template" \
         "${BUILD_SCRIPT_DIR}/configs/entrypoint.conf"
 
+    # 处理 workspace 配置文件模板 (Process workspace configuration template)
     process_template \
         "${BUILD_SCRIPT_DIR}/configs/workspace.conf.template" \
         "${BUILD_SCRIPT_DIR}/configs/workspace.conf"
@@ -99,9 +115,7 @@ generate_configs() {
 
 # Function: Cleanup temporary files
 cleanup() {
-    echo "Cleaning up temporary files..."
-    # rm -f "${BUILD_SCRIPT_DIR}/configs/workspace.conf"
-    # rm -f "${BUILD_SCRIPT_DIR}/configs/entrypoint.conf"
+    echo "Cleaning up temporary files...Doing Nothing Now!"
 }
 
 # Function: Build Docker image
@@ -128,6 +142,7 @@ build_image() {
         --build-arg DEV_UID="${DEV_UID}" \
         --build-arg DEV_GID="${DEV_GID}" \
         --build-arg DEV_GROUP="${DEV_GROUP}" \
+        --build-arg VOLUMES_ROOT="${VOLUMES_ROOT}" \
         --build-arg WORKSPACE_ROOT="${WORKSPACE_ROOT}" \
         --build-arg WORKSPACE_SOURCE_DIR="${WORKSPACE_SOURCE_DIR}" \
         --build-arg WORKSPACE_BUILD_DIR="${WORKSPACE_BUILD_DIR}" \
@@ -159,8 +174,8 @@ build_image() {
 
 # Main execution
 main() {
-    echo -e "build_script_dir: ${BUILD_SCRIPT_DIR}\n"
-    echo -e "root_dir: ${ROOT_DIR}\n"
+    # echo -e "build_script_dir: ${BUILD_SCRIPT_DIR}\n"
+    # echo -e "root_dir: ${ROOT_DIR}\n"
 
     # Generate configs from templates
     generate_configs

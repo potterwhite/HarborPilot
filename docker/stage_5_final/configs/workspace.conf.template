@@ -44,3 +44,8 @@ LOG_LEVEL="${WORKSPACE_LOG_LEVEL}"
 ENABLE_VSC_INTEGRATION=${WORKSPACE_ENABLE_VSC_INTEGRATION}
 ENABLE_REMOTE_DEBUG=${WORKSPACE_ENABLE_REMOTE_DEBUG}
 DEBUG_PORT=${WORKSPACE_DEBUG_PORT}
+
+# =============================================================================
+# Volumes Configuration
+# =============================================================================
+VOLUMES_ROOT="${VOLUMES_ROOT}"

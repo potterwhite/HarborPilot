@@ -41,3 +41,8 @@ CORE_PATTERN="${CORE_PATTERN}"
 MAX_FILE_DESCRIPTORS="${MAX_FILE_DESCRIPTORS}"
 MAX_PROCESSES="${MAX_PROCESSES}"
 MEMORY_LIMIT="${MEMORY_LIMIT}"
+
+# =============================================================================
+# Image Configuration
+# =============================================================================
+IMAGE_NAME="${IMAGE_NAME}"

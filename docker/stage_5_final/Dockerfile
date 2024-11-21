@@ -28,6 +28,9 @@ ARG DEV_UID
 ARG DEV_GID
 ARG DEV_GROUP
 
+# Volumes configuration arguments
+ARG VOLUMES_ROOT
+
 # Workspace configuration arguments
 ARG WORKSPACE_ROOT
 ARG WORKSPACE_SOURCE_DIR
@@ -89,11 +92,8 @@ RUN set -ex && \
     /usr/local/bin/setup_workspace.sh && \
     /usr/local/bin/setup_permissions.sh
 
-# Create workspace volume mount points
-VOLUME ["/workspace"]
-
 # Set working directory
-WORKDIR /workspace
+WORKDIR ${WORKSPACE_ROOT}
 
 # Set entrypoint
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
@@ -104,6 +104,7 @@ ENV DEV_USERNAME=${DEV_USERNAME} \
     DEV_UID=${DEV_UID} \
     DEV_GID=${DEV_GID} \
     DEV_GROUP=${DEV_GROUP} \
+    VOLUMES_ROOT=${VOLUMES_ROOT} \
     WORKSPACE_ROOT=${WORKSPACE_ROOT} \
     WORKSPACE_SOURCE_DIR=${WORKSPACE_SOURCE_DIR} \
     WORKSPACE_BUILD_DIR=${WORKSPACE_BUILD_DIR} \

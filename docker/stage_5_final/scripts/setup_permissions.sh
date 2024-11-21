@@ -44,6 +44,8 @@ setup_permissions() {
         # Move to entrypoint.sh
         # echo "${CORE_PATTERN}" > /proc/sys/kernel/core_pattern
     fi
+
+    echo -e "Permissions setup completed successfully.\n"
 }
 
 # Main execution
