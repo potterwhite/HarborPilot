@@ -16,9 +16,13 @@
 FROM embedded-dev:stage1
 
 # Build arguments
-ARG DEBIAN_FRONTEND=noninteractive
-ARG INSTALL_CUDA=false
-ARG INSTALL_OPENCV=false
+ARG DEBIAN_FRONTEND
+ARG INSTALL_CUDA
+ARG INSTALL_OPENCV
+
+ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
+ENV INSTALL_CUDA=${INSTALL_CUDA}
+ENV INSTALL_OPENCV=${INSTALL_OPENCV}    
 
 # Copy scripts and configs
 COPY scripts/install_dev_tools.sh /tmp/

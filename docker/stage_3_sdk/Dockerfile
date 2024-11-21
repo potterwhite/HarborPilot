@@ -18,7 +18,7 @@ FROM embedded-dev:stage2
 ARG SDK_VERSION
 ARG SDK_INSTALL_PATH
 ARG SDK_PACKAGE
-ARG DEBIAN_FRONTEND=noninteractive
+ARG DEBIAN_FRONTEND
 
 # Create SDK installation directory
 RUN mkdir -p ${SDK_INSTALL_PATH}
@@ -35,5 +35,9 @@ RUN ls -lha /tmp/offline_packages/ && \
     rm -rf /tmp/install_sdk.sh /tmp/sdk_config.conf
 
 # Set SDK environment variables
+ENV SDK_VERSION=${SDK_VERSION}
+ENV SDK_INSTALL_PATH=${SDK_INSTALL_PATH}
+ENV SDK_PACKAGE=${SDK_PACKAGE}
+ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
 ENV SDK_ROOT=${SDK_INSTALL_PATH}
 ENV PATH=${SDK_INSTALL_PATH}/bin:$PATH

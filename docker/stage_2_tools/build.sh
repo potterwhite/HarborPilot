@@ -16,12 +16,13 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/../../.env"
+source "${SCRIPT_DIR}/../../project_handover/.env"
 
 echo "Building development tools stage..."
 docker build \
     --progress=plain \
     --no-cache \
+    --build-arg DEBIAN_FRONTEND="${DEBIAN_FRONTEND}" \
     --build-arg INSTALL_CUDA="${INSTALL_CUDA}" \
     --build-arg INSTALL_OPENCV="${INSTALL_OPENCV}" \
     -t "${IMAGE_NAME}:stage2" \

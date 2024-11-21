@@ -17,12 +17,13 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/../../.env"
+source "${SCRIPT_DIR}/../../project_handover/.env"
 
 echo "Building base stage..."
 docker build \
     --progress=plain \
     --no-cache \
+    --build-arg DEBIAN_FRONTEND="${DEBIAN_FRONTEND}" \
     --build-arg USERNAME="${DEV_USERNAME}" \
     --build-arg USER_UID="${DEV_UID}" \
     --build-arg USER_GID="${DEV_GID}" \

@@ -13,7 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../../" && pwd)"
 
 # Load .env file
-source "${ROOT_DIR}/.env"
+source "${ROOT_DIR}/project_handover/.env"
 
 # Set default values
 SDK_PACKAGE="${SDK_PACKAGE:-embedded-sdk-1.0.tar.gz}"
