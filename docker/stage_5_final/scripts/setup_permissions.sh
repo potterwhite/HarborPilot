@@ -18,10 +18,10 @@ source /etc/entrypoint.conf
 setup_permissions() {
     echo "Starting permissions setup..."
 
-    # Setup user and group
-    echo "Setting up user and group..."
-    groupadd -g "${GROUP_ID}" "${DEFAULT_GROUP}" || true
-    useradd -u "${USER_ID}" -g "${GROUP_ID}" -m "${DEFAULT_USER}" || true
+    # # Setup user and group
+    # echo "Setting up user and group..."
+    # groupadd -g "${GROUP_ID}" "${DEFAULT_GROUP}" || true
+    # useradd -u "${USER_ID}" -g "${GROUP_ID}" -m "${DEFAULT_USER}" || true
 
     # Configure resource limits
     echo "Configuring resource limits..."
