@@ -1,22 +1,18 @@
-
 #!/bin/bash
 
 ################################################################################
 # File: start_dev_env.sh
-# Description: One-click development environment management script
+# Description: Development environment management script
 ################################################################################
 
-# Configuration
-IMAGE_NAME="embedded-dev"
-IMAGE_TAG="stage5"
-CONTAINER_NAME="embedded-dev"
-DEV_USERNAME="developer"
-
-# Default configuration (can be overridden by environment variables)
-: "${WORKSPACE_ROOT:=/development}"
-: "${SSH_PORT:=22}"
-: "${GDB_PORT:=2345}"
-: "${DEBUG_PORT:=3000}"
+# Get script directory and load environment variables
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "${SCRIPT_DIR}/.env" ]; then
+    source "${SCRIPT_DIR}/.env"
+else
+    echo "Error: .env file not found"
+    exit 1
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -27,6 +23,24 @@ NC='\033[0m'
 # Function to print messages
 print_msg() {
     echo -e "${2:-$GREEN}$1${NC}"
+}
+
+# Function to show help
+show_help() {
+    cat << EOF
+Usage: $0 [COMMAND]
+
+Commands:
+    start     Start development environment
+    stop      Stop development environment
+    restart   Restart development environment
+    recreate  Remove and recreate development environment
+    remove    Remove development environment
+    -h, --help    Show this help message
+
+Example:
+    $0 start     # Start the development environment
+EOF
 }
 
 # Function to check if container exists
@@ -42,35 +56,30 @@ container_running() {
 # Function to generate docker-compose configuration
 generate_compose_config() {
     cat << EOF > docker-compose.yaml
-version: '3.8'
 
 services:
   dev-env:
-    image: ${IMAGE_NAME}:${IMAGE_TAG}
+    image: ${IMAGE_NAME}:${LATEST_IMAGE_TAG}
     container_name: ${CONTAINER_NAME}
     hostname: ${CONTAINER_NAME}
     user: "${DEV_USERNAME}"
-    restart: unless-stopped
+    # restart: unless-stopped
+    restart: no
     privileged: true
 
     volumes:
-      - ./workspace/src:/home/${DEV_USERNAME}/workspace/src
-      - ./workspace/build:/home/${DEV_USERNAME}/workspace/build
-      - ./workspace/logs:/home/${DEV_USERNAME}/workspace/logs
-      - ./workspace/temp:/home/${DEV_USERNAME}/workspace/temp
-      - /dev:/dev
-      - ~/.ssh:/home/${DEV_USERNAME}/.ssh:ro
+      - ./volumes:${VOLUMES_ROOT}
 
     ports:
       - "${SSH_PORT}:22"
-      - "${DEBUG_PORT}:3000"
+        #   - "${DEBUG_PORT}:3000"
       - "${GDB_PORT}:2345"
 
     environment:
-      - TZ=UTC
-      - DISPLAY=\${DISPLAY}
-      - WORKSPACE_ENABLE_REMOTE_DEBUG=true
-      - WORKSPACE_LOG_LEVEL=INFO
+      - TZ=${TIMEZONE}
+      - DISPLAY=${DISPLAY}
+      - WORKSPACE_ENABLE_REMOTE_DEBUG=${WORKSPACE_ENABLE_REMOTE_DEBUG}
+      - WORKSPACE_LOG_LEVEL=${WORKSPACE_LOG_LEVEL}
 
     devices:
       - "/dev/ttyUSB0:/dev/ttyUSB0"
@@ -145,7 +154,7 @@ remove_dev_env() {
 
 # Main script logic
 case "$1" in
-    "start"|"")
+    "start")
         start_dev_env
         ;;
     "stop")
@@ -162,8 +171,12 @@ case "$1" in
     "remove")
         remove_dev_env
         ;;
+    "-h"|"--help"|"")
+        show_help
+        ;;
     *)
-        print_msg "Usage: $0 [start|stop|restart|recreate|remove]" "${YELLOW}"
+        print_msg "Unknown command: $1" "${RED}"
+        show_help
         exit 1
         ;;
 esac

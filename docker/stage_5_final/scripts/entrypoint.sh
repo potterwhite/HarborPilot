@@ -1,3 +1,5 @@
+#!/bin/bash
+
 ################################################################################
 # File: docker/stage_5_final/scripts/entrypoint.sh
 #
@@ -12,7 +14,6 @@
 # License: MIT
 ################################################################################
 
-#!/bin/bash
 set -e
 
 # Source configuration files
