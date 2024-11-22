@@ -43,11 +43,20 @@ apt-get install -y \
     vim \
     pigz \
     locate \
+    whiptail \
+    bc \
+    time \
+    cpio \
+    unzip \
+    rsync \
+    apt-utils \
     && mkdir -p /var/run/sshd
 
 # Create non-root user
 groupadd --gid $DEV_GID $DEV_USERNAME
 useradd --uid $DEV_UID --gid $DEV_GID -m $DEV_USERNAME
+echo "$DEV_USERNAME:$DEV_USER_PASSWORD" | chpasswd
+echo "root:$DEV_USER_ROOT_PASSWORD" | chpasswd
 echo $DEV_USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$DEV_USERNAME
 chmod 0440 /etc/sudoers.d/$DEV_USERNAME
 

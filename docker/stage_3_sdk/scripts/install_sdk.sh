@@ -56,11 +56,5 @@ echo "export LD_LIBRARY_PATH=\${SDK_ROOT}/lib:\$LD_LIBRARY_PATH" >> /etc/profile
 echo -e "\nls -lha ${SDK_INSTALL_PATH}/"
 ls -ha ${SDK_INSTALL_PATH}/
 
-echo -e "\nrm -rf /tmp/*"
-rm -rf /tmp/*
-# if [ ! -f "${SDK_INSTALL_PATH}/bin/gcc" ]; then
-#     echo "Error: SDK installation verification failed"
-#     exit 1
-# fi
 
 echo "SDK installation completed successfully"

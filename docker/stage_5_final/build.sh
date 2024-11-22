@@ -177,7 +177,7 @@ build_image() {
         --build-arg MEMORY_LIMIT="${MEMORY_LIMIT}" \
         -t "${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" \
         -f "${BUILD_SCRIPT_DIR}/Dockerfile" \
-        "${BUILD_SCRIPT_DIR}" 2>&1 | tee build_log.txt
+        "${BUILD_SCRIPT_DIR}" 2>&1 | tee "${BUILD_SCRIPT_DIR}/build_log.txt"
 }
 
 # Main execution

@@ -51,4 +51,4 @@ docker build \
     --build-arg SDK_INSTALL_PATH="${SDK_INSTALL_PATH}" \
     -t "${IMAGE_NAME}:stage4" \
     -f "${BUILD_SCRIPT_DIR}/Dockerfile" \
-    "${BUILD_SCRIPT_DIR}" 2>&1 | tee build_log.txt
+    "${BUILD_SCRIPT_DIR}" 2>&1 | tee "${BUILD_SCRIPT_DIR}/build_log.txt"

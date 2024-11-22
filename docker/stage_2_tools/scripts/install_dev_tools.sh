@@ -51,10 +51,25 @@ apt-get install -y \
 # Category 4: Version Control and Development Utilities
 apt-get install -y \
     git \
+    python2.7 \
     python3 \
     python3-pip
 
-# Install nvm and Node.js
+# Category 5: Kernel Development Tools
+apt-get install -y \
+    device-tree-compiler \
+    liblz4-tool \
+    liblz4-dev \
+    libssl-dev \
+    expect \
+    libncurses5-dev \
+    bison \
+    flex \
+    texinfo \
+    exuberant-ctags \
+    cscope
+
+# Category 6: Node.js and JavaScript Development
 install_node() {
     echo "Installing nvm and Node.js..."
     # Install nvm

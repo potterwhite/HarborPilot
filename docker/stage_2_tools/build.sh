@@ -34,4 +34,4 @@ docker build \
     --build-arg INSTALL_OPENCV="${INSTALL_OPENCV}" \
     -t "${IMAGE_NAME}:stage2" \
     -f "${BUILD_SCRIPT_DIR}/Dockerfile" \
-    "${BUILD_SCRIPT_DIR}" 2>&1 | tee build_log.txt
+    "${BUILD_SCRIPT_DIR}" 2>&1 | tee "${BUILD_SCRIPT_DIR}/build_log.txt"

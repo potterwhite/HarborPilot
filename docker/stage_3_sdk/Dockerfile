@@ -24,15 +24,19 @@ ARG DEBIAN_FRONTEND
 RUN mkdir -p ${SDK_INSTALL_PATH}
 
 # Copy SDK installation files and scripts
-COPY offline_packages/ /tmp/offline_packages/
-COPY scripts/install_sdk.sh /tmp/
+COPY offline_packages/${SDK_PACKAGE} /tmp/offline_packages/
 COPY configs/sdk_config.conf /tmp/
+COPY scripts/install_sdk.sh /tmp/
+COPY scripts/compile_sdk.sh /tmp/
 
 # Install SDK
 RUN ls -lha /tmp/offline_packages/ && \
     chmod +x /tmp/install_sdk.sh && \
     SDK_PACKAGE=${SDK_PACKAGE} /tmp/install_sdk.sh && \
-    rm -rf /tmp/install_sdk.sh /tmp/sdk_config.conf
+    chmod +x /tmp/compile_sdk.sh && \
+    # /tmp/compile_sdk.sh && \
+    rm -rf /tmp/install_sdk.sh /tmp/sdk_config.conf \
+            /tmp/compile_sdk.sh /tmp/offline_packages
 
 # Set SDK environment variables
 ENV SDK_VERSION=${SDK_VERSION}
