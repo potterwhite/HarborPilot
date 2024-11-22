@@ -15,16 +15,23 @@
 #!/bin/bash
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/../../project_handover/.env"
+BUILD_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${BUILD_SCRIPT_DIR}/../../project_handover/.env"
 
 echo "Building development tools stage..."
 docker build \
     --progress=plain \
     --no-cache \
+    --network=host \
+    --build-arg http_proxy="${http_proxy}"  \
+    --build-arg https_proxy="${https_proxy}" \
+    --build-arg no_proxy="${no_proxy}" \
+    --build-arg HTTP_PROXY="${http_proxy}" \
+    --build-arg HTTPS_PROXY="${https_proxy}" \
+    --build-arg NO_PROXY="${no_proxy}" \
     --build-arg DEBIAN_FRONTEND="${DEBIAN_FRONTEND}" \
     --build-arg INSTALL_CUDA="${INSTALL_CUDA}" \
     --build-arg INSTALL_OPENCV="${INSTALL_OPENCV}" \
     -t "${IMAGE_NAME}:stage2" \
-    -f "${SCRIPT_DIR}/Dockerfile" \
-    "${SCRIPT_DIR}" 2>&1 | tee build_log.txt
+    -f "${BUILD_SCRIPT_DIR}/Dockerfile" \
+    "${BUILD_SCRIPT_DIR}" 2>&1 | tee build_log.txt

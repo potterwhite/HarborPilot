@@ -21,8 +21,15 @@ source "${BUILD_SCRIPT_DIR}/../../project_handover/.env"
 
 echo "Building base stage..."
 docker build \
-    --progress=plain \
+--progress=plain \
     --no-cache \
+    --network=host \
+    --build-arg http_proxy="${http_proxy}"  \
+    --build-arg https_proxy="${https_proxy}" \
+    --build-arg no_proxy="${no_proxy}" \
+    --build-arg HTTP_PROXY="${http_proxy}" \
+    --build-arg HTTPS_PROXY="${https_proxy}" \
+    --build-arg NO_PROXY="${no_proxy}" \
     --build-arg DEBIAN_FRONTEND="${DEBIAN_FRONTEND}" \
     --build-arg DEV_USERNAME="${DEV_USERNAME}" \
     --build-arg DEV_UID="${DEV_UID}" \

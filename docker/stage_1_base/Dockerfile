@@ -29,13 +29,6 @@ ENV DEV_USERNAME=${DEV_USERNAME}
 ENV DEV_UID=${DEV_UID}
 ENV DEV_GID=${DEV_GID}
 
-
-# ARG DEBIAN_FRONTEND=noninteractive
-# ARG TZ=UTC
-# ARG USERNAME=developer
-# ARG USER_UID=1000
-# ARG USER_GID=1000
-
 # Copy scripts
 COPY scripts/setup_base.sh /tmp/
 

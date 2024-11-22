@@ -36,6 +36,11 @@ else
     exit 1
 fi
 
+# Set correct ownership for SDK directories
+# Note: DEV_USERNAME and DEV_GROUP should be defined in sdk_config.conf
+echo "Setting correct ownership for SDK directories..."
+chown -R ${DEV_USERNAME}:${DEV_GROUP} ${SDK_INSTALL_PATH}
+
 # Set up SDK environment
 echo "export SDK_ROOT=${SDK_INSTALL_PATH}" >> /etc/profile.d/sdk_env.sh
 echo "export PATH=\${SDK_ROOT}/bin:\$PATH" >> /etc/profile.d/sdk_env.sh

@@ -36,8 +36,15 @@ fi
 
 echo "Building SDK installation stage..."
 docker build \
-    --progress=plain \
+--progress=plain \
     --no-cache \
+    --network=host \
+    --build-arg http_proxy="${http_proxy}"  \
+    --build-arg https_proxy="${https_proxy}" \
+    --build-arg no_proxy="${no_proxy}" \
+    --build-arg HTTP_PROXY="${http_proxy}" \
+    --build-arg HTTPS_PROXY="${https_proxy}" \
+    --build-arg NO_PROXY="${no_proxy}" \
     --build-arg SDK_VERSION="${SDK_VERSION}" \
     --build-arg SDK_INSTALL_PATH="${SDK_INSTALL_PATH}" \
     --build-arg SDK_PACKAGE="${SDK_PACKAGE}" \

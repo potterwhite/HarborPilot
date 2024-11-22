@@ -36,7 +36,15 @@ sed -e "s|{{USERNAME}}|${DEV_USERNAME}|g" \
 # Build Docker image
 echo "Building environment configuration stage..."
 docker build \
-    --progress=plain \
+--progress=plain \
+    --no-cache \
+    --network=host \
+    --build-arg http_proxy="${http_proxy}"  \
+    --build-arg https_proxy="${https_proxy}" \
+    --build-arg no_proxy="${no_proxy}" \
+    --build-arg HTTP_PROXY="${http_proxy}" \
+    --build-arg HTTPS_PROXY="${https_proxy}" \
+    --build-arg NO_PROXY="${no_proxy}" \
     --build-arg USERNAME="${DEV_USERNAME}" \
     --build-arg USER_UID="${DEV_UID}" \
     --build-arg USER_GID="${DEV_GID}" \
