@@ -99,14 +99,74 @@ EOF
 # Function to start development environment
 start_dev_env() {
     if container_running; then
-        print_msg "Container is already running!"
-        print_msg "You can:"
-        print_msg "1. Enter the container:   docker exec -it -u ${DEV_USERNAME} ${CONTAINER_NAME} bash" "${YELLOW}"
-        print_msg "2. Restart container:     $0 restart" "${YELLOW}"
-        print_msg "3. Remove and recreate:   $0 recreate" "${YELLOW}"
+        while true; do
+            print_msg "Container is already running!"
+            print_msg "Please choose an option (press Ctrl+C to cancel):" "${YELLOW}"
+            print_msg "1. Enter the container" "${YELLOW}"
+            print_msg "2. Restart container" "${YELLOW}"
+            print_msg "3. Remove and recreate" "${YELLOW}"
+            print_msg "(You can always enter container manually using: docker exec -it -u ${DEV_USERNAME} ${CONTAINER_NAME} bash)" "${GREEN}"
+
+            # Wait for user input
+            read -p "Enter your choice (1-3): " choice || exit 1  # Handle Ctrl+D (EOF)
+
+            case $choice in
+                1)
+                    docker exec -it -u ${DEV_USERNAME} ${CONTAINER_NAME} bash
+                    break
+                    ;;
+                2)
+                    stop_dev_env
+                    _start_container_without_prompt
+                    print_msg "Enter container? [Y/n]: " "${YELLOW}"
+                    read -r answer
+                    if [[ ! "$answer" =~ ^[Nn]$ ]]; then
+                        docker exec -it -u ${DEV_USERNAME} ${CONTAINER_NAME} bash
+                    else
+                        print_msg "You can always enter container manually using: " "${GREEN}"
+                        print_msg "\t\tdocker exec -it -u ${DEV_USERNAME} ${CONTAINER_NAME} bash" "${YELLOW}"
+                        print_msg "\nSee you next time!" "${GREEN}"
+                    fi
+                    break
+                    ;;
+                3)
+                    remove_dev_env
+                    _start_container_without_prompt
+                    print_msg "Enter container? [Y/n]: " "${YELLOW}"
+                    read -r answer
+                    if [[ ! "$answer" =~ ^[Nn]$ ]]; then
+                        docker exec -it -u ${DEV_USERNAME} ${CONTAINER_NAME} bash
+                    else
+                        print_msg "You can always enter container manually using: " "${GREEN}"
+                        print_msg "\t\tdocker exec -it -u ${DEV_USERNAME} ${CONTAINER_NAME} bash" "${YELLOW}"
+                        print_msg "\nSee you next time!" "${GREEN}"
+                    fi
+                    break
+                    ;;
+                *)
+                    print_msg "Invalid choice! Please try again..." "${RED}"
+                    sleep 1
+                    clear
+                    ;;
+            esac
+        done
         return 0
     fi
 
+    _start_container_without_prompt
+    print_msg "Enter container? [Y/n]: " "${YELLOW}"
+    read -r answer
+    if [[ ! "$answer" =~ ^[Nn]$ ]]; then
+        docker exec -it -u ${DEV_USERNAME} ${CONTAINER_NAME} bash
+    else
+        print_msg "You can always enter container manually using: " "${GREEN}"
+        print_msg "\t\tdocker exec -it -u ${DEV_USERNAME} ${CONTAINER_NAME} bash" "${YELLOW}"
+        print_msg "\nSee you next time!" "${GREEN}"
+    fi
+}
+
+# Helper function to start container without prompt
+_start_container_without_prompt() {
     if ! container_exists; then
         print_msg "Creating new development environment..."
         generate_compose_config
@@ -116,13 +176,11 @@ start_dev_env() {
         docker start ${CONTAINER_NAME}
     fi
 
-    if [ $? -eq 0 ]; then
-        print_msg "Development environment is ready!"
-        print_msg "To enter the container: docker exec -it -u ${DEV_USERNAME} ${CONTAINER_NAME} bash" "${YELLOW}"
-    else
+    if [ $? -ne 0 ]; then
         print_msg "Failed to start development environment" "${RED}"
         return 1
     fi
+    print_msg "Development environment is ready!"
 }
 
 # Function to stop development environment
