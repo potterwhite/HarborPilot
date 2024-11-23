@@ -50,6 +50,7 @@ apt-get install -y \
     unzip \
     rsync \
     apt-utils \
+    bsdextrautils \
     && mkdir -p /var/run/sshd
 
 # Create non-root user
