@@ -19,7 +19,7 @@ export USER_GID={{USER_GID}}
 
 # SDK configuration
 export SDK_ROOT={{SDK_INSTALL_PATH}}
-export PATH={{SDK_INSTALL_PATH}}/bin:$PATH
+# export PATH={{SDK_INSTALL_PATH}}/bin:$PATH
 export LD_LIBRARY_PATH={{SDK_INSTALL_PATH}}/lib:$LD_LIBRARY_PATH
 
 # Development environment configuration

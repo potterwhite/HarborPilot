@@ -136,8 +136,7 @@ CMD ["/bin/bash"]
 # 1. Ensure bash is installed and set as default shell
 ################################################################################
 
-RUN apt-get update && apt-get install -y bash \
-    && chsh -s /bin/bash ${DEV_USERNAME}
+RUN chsh -s /bin/bash ${DEV_USERNAME}
 
 # Set default shell for build commands
 SHELL ["/bin/bash", "-c"]
