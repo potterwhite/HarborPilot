@@ -20,6 +20,7 @@ set -e
 source /etc/workspace.conf
 source /etc/entrypoint.conf
 
+
 # Function: Initialize services
 init_services() {
     if [ "${ENABLE_SSH}" = true ]; then

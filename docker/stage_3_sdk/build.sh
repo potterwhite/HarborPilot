@@ -48,6 +48,7 @@ docker build \
     --build-arg SDK_VERSION="${SDK_VERSION}" \
     --build-arg SDK_INSTALL_PATH="${SDK_INSTALL_PATH}" \
     --build-arg SDK_PACKAGE="${SDK_PACKAGE}" \
+    --build-arg IMAGE_NAME="${IMAGE_NAME}" \
     -t "${IMAGE_NAME}:stage3" \
     -f "${BUILD_SCRIPT_DIR}/Dockerfile" \
     "${BUILD_SCRIPT_DIR}" 2>&1 | tee "${BUILD_SCRIPT_DIR}/build_log.txt"

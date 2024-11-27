@@ -64,7 +64,7 @@ mv "/tmp/${GCC_DIR}" "${GCC_INSTALL_PATH}/"
 # Add to PATH using /etc/environment (最可靠的方式)
 CURRENT_PATH=$(grep '^PATH=' /etc/environment | cut -d'"' -f2)
 # echo "PATH=${GCC_INSTALL_PATH}/${GCC_DIR}/bin:\$PATH" >> /etc/environment
-echo "PATH=\"${GCC_INSTALL_PATH}/${GCC_DIR}/bin:${CURRENT_PATH}\"" > /etc/environment
+echo "PATH=\"${CURRENT_PATH}:${GCC_INSTALL_PATH}/${GCC_DIR}/bin\"" > /etc/environment
 
 # 立即更新当前会话的PATH
 export PATH="${GCC_INSTALL_PATH}/${GCC_DIR}/bin:$PATH"

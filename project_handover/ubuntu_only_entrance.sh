@@ -9,6 +9,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -f "${SCRIPT_DIR}/.env" ]; then
     source "${SCRIPT_DIR}/.env"
+    cat "${SCRIPT_DIR}/.env"
 else
     echo "Error: .env file not found"
     exit 1
@@ -55,7 +56,7 @@ container_running() {
 
 # Function to generate docker-compose configuration
 generate_compose_config() {
-    cat << EOF > docker-compose.yaml
+    cat << EOF > "${SCRIPT_DIR}/docker-compose.yaml"
 services:
   dev-env:
     image: ${IMAGE_NAME}:${LATEST_IMAGE_TAG}
@@ -63,12 +64,13 @@ services:
     hostname: ${CONTAINER_NAME}
     user: "${DEV_USERNAME}"
     restart: unless-stopped
-    privileged: true
+    # privileged: true
+    privileged: false
     tty: true
     stdin_open: true
 
     volumes:
-      - ./volumes:${VOLUMES_ROOT}
+      - "${SCRIPT_DIR}/volumes:${VOLUMES_ROOT}"
 
     ports:
       - "${SSH_PORT}:22"
@@ -81,8 +83,7 @@ services:
       - WORKSPACE_LOG_LEVEL=${WORKSPACE_LOG_LEVEL}
 
     devices:
-      - "/dev/ttyUSB0:/dev/ttyUSB0"
-      - "/dev/bus/usb:/dev/bus/usb"
+      - "/dev:/dev"
 
     working_dir: ${WORKSPACE_ROOT}
 
@@ -94,7 +95,6 @@ networks:
     driver: bridge
 EOF
 }
-
 
 # Function to start development environment
 start_dev_env() {
@@ -170,7 +170,7 @@ _start_container_without_prompt() {
     if ! container_exists; then
         print_msg "Creating new development environment..."
         generate_compose_config
-        docker compose up -d
+        (cd "${SCRIPT_DIR}" && docker compose up -d)
     else
         print_msg "Starting existing container..."
         docker start ${CONTAINER_NAME}
@@ -197,8 +197,8 @@ stop_dev_env() {
 remove_dev_env() {
     if container_exists; then
         print_msg "Removing development environment..."
-        docker compose down
-        rm -f docker-compose.yaml
+        (cd "${SCRIPT_DIR}" && docker compose down)
+        rm -f "${SCRIPT_DIR}/docker-compose.yaml"
     else
         print_msg "Container does not exist" "${YELLOW}"
     fi

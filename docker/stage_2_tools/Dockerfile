@@ -12,17 +12,21 @@
 # License: MIT
 ################################################################################
 
+
+ARG IMAGE_NAME=embedded-dev
+# ARG IMAGE_NAME=${IMAGE_NAME}
+# ENV IMAGE_NAME=${IMAGE_NAME}
 # Use stage 1 as base
-FROM embedded-dev:stage1
+FROM ${IMAGE_NAME}:stage1
 
 # Build arguments
-ARG DEBIAN_FRONTEND
-ARG INSTALL_CUDA
-ARG INSTALL_OPENCV
+ARG DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
+ARG INSTALL_CUDA=${INSTALL_CUDA}
+ARG INSTALL_OPENCV=${INSTALL_OPENCV}
 
-ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
-ENV INSTALL_CUDA=${INSTALL_CUDA}
-ENV INSTALL_OPENCV=${INSTALL_OPENCV}    
+# ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
+# ENV INSTALL_CUDA=${INSTALL_CUDA}
+# ENV INSTALL_OPENCV=${INSTALL_OPENCV}
 
 # Copy scripts and configs
 COPY scripts/install_dev_tools.sh /tmp/

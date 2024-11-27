@@ -19,6 +19,7 @@ BUILD_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${BUILD_SCRIPT_DIR}/../../project_handover/.env"
 
 echo "Building development tools stage..."
+echo "##### IMAGE_NAME: ${IMAGE_NAME}"
 docker build \
     --progress=plain \
     --no-cache \
@@ -32,6 +33,7 @@ docker build \
     --build-arg DEBIAN_FRONTEND="${DEBIAN_FRONTEND}" \
     --build-arg INSTALL_CUDA="${INSTALL_CUDA}" \
     --build-arg INSTALL_OPENCV="${INSTALL_OPENCV}" \
+    --build-arg IMAGE_NAME="${IMAGE_NAME}" \
     -t "${IMAGE_NAME}:stage2" \
     -f "${BUILD_SCRIPT_DIR}/Dockerfile" \
     "${BUILD_SCRIPT_DIR}" 2>&1 | tee "${BUILD_SCRIPT_DIR}/build_log.txt"

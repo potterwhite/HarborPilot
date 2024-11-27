@@ -41,7 +41,8 @@ apt-get install -y \
     clang-format \
     clang-tidy \
     lldb \
-    cppcheck
+    cppcheck \
+    minicom
 
 # Category 3: Documentation and Visualization Tools
 apt-get install -y \

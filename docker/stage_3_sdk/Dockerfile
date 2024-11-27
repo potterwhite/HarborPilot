@@ -12,7 +12,8 @@
 # License: MIT
 ################################################################################
 
-FROM embedded-dev:stage2
+ARG IMAGE_NAME=embedded-dev
+FROM ${IMAGE_NAME}:stage2
 
 # Build arguments
 ARG SDK_VERSION
@@ -39,9 +40,9 @@ RUN ls -lha /tmp/offline_packages/ && \
             /tmp/compile_sdk.sh /tmp/offline_packages
 
 # Set SDK environment variables
-ENV SDK_VERSION=${SDK_VERSION}
-ENV SDK_INSTALL_PATH=${SDK_INSTALL_PATH}
-ENV SDK_PACKAGE=${SDK_PACKAGE}
-ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
-ENV SDK_ROOT=${SDK_INSTALL_PATH}
+# ENV SDK_VERSION=${SDK_VERSION}
+# ENV SDK_INSTALL_PATH=${SDK_INSTALL_PATH}
+# ENV SDK_PACKAGE=${SDK_PACKAGE}
+# ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
+# ENV SDK_ROOT=${SDK_INSTALL_PATH}
 # ENV PATH=${SDK_INSTALL_PATH}/bin:$PATH

@@ -46,6 +46,12 @@ echo "export SDK_ROOT=${SDK_INSTALL_PATH}" >> /etc/profile.d/sdk_env.sh
 echo "export PATH=\${SDK_ROOT}/bin:\$PATH" >> /etc/profile.d/sdk_env.sh
 echo "export LD_LIBRARY_PATH=\${SDK_ROOT}/lib:\$LD_LIBRARY_PATH" >> /etc/profile.d/sdk_env.sh
 
+# Add qmake path to PATH using /etc/environment (最可靠的方式)
+CURRENT_PATH=$(grep '^PATH=' /etc/environment | cut -d'"' -f2)
+echo "PATH=\"${CURRENT_PATH}:${SDK_INSTALL_PATH}/buildroot/output/rockchip_rk3588/host/bin\"" > /etc/environment
+
+# /development/sdk/buildroot/output/rockchip_rk3588/host/bin
+
 # Configure SDK components
 # if [ -f "${SDK_INSTALL_PATH}/setup.sh" ]; then
 #     chmod +x "${SDK_INSTALL_PATH}/setup.sh"

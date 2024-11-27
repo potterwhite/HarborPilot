@@ -12,7 +12,8 @@
 # License: ${PROJECT_LICENSE}
 ################################################################################
 
-FROM embedded-dev:stage4
+ARG IMAGE_NAME=embedded-dev
+FROM ${IMAGE_NAME}:stage4
 
 # Build arguments
 ARG BUILD_DATE
@@ -92,13 +93,6 @@ RUN set -ex && \
     /usr/local/bin/setup_workspace.sh && \
     /usr/local/bin/setup_permissions.sh
 
-# Set working directory
-WORKDIR ${WORKSPACE_ROOT}
-
-# Set entrypoint
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-CMD ["/bin/bash"]
-
 # Convert ARGs to ENVs for runtime
 ENV DEV_USERNAME=${DEV_USERNAME} \
     DEV_UID=${DEV_UID} \
@@ -129,3 +123,21 @@ ENV DEV_USERNAME=${DEV_USERNAME} \
     MAX_FILE_DESCRIPTORS=${MAX_FILE_DESCRIPTORS} \
     MAX_PROCESSES=${MAX_PROCESSES} \
     MEMORY_LIMIT=${MEMORY_LIMIT}
+
+# Set working directory
+WORKDIR ${WORKSPACE_ROOT}
+
+# Set entrypoint
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["/bin/bash"]
+
+
+################################################################################
+# 1. Ensure bash is installed and set as default shell
+################################################################################
+
+RUN apt-get update && apt-get install -y bash \
+    && chsh -s /bin/bash ${DEV_USERNAME}
+
+# Set default shell for build commands
+SHELL ["/bin/bash", "-c"]

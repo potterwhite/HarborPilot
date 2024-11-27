@@ -49,6 +49,7 @@ docker build \
     --build-arg USER_UID="${DEV_UID}" \
     --build-arg USER_GID="${DEV_GID}" \
     --build-arg SDK_INSTALL_PATH="${SDK_INSTALL_PATH}" \
+    --build-arg IMAGE_NAME="${IMAGE_NAME}" \
     -t "${IMAGE_NAME}:stage4" \
     -f "${BUILD_SCRIPT_DIR}/Dockerfile" \
     "${BUILD_SCRIPT_DIR}" 2>&1 | tee "${BUILD_SCRIPT_DIR}/build_log.txt"

@@ -1,4 +1,5 @@
-FROM embedded-dev:stage3
+ARG IMAGE_NAME=embedded-dev
+FROM ${IMAGE_NAME}:stage3
 
 # Copy configuration scripts and templates
 COPY scripts/configure_env.sh /tmp/
