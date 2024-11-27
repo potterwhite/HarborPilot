@@ -64,8 +64,7 @@ services:
     hostname: ${CONTAINER_NAME}
     user: "${DEV_USERNAME}"
     restart: unless-stopped
-    # privileged: true
-    privileged: false
+    privileged: true
     tty: true
     stdin_open: true
 
@@ -81,13 +80,6 @@ services:
       - DISPLAY=${DISPLAY}
       - WORKSPACE_ENABLE_REMOTE_DEBUG=${WORKSPACE_ENABLE_REMOTE_DEBUG}
       - WORKSPACE_LOG_LEVEL=${WORKSPACE_LOG_LEVEL}
-
-    device_cgroup_rules:
-      - "c 188:* r"    # USB serial devices (ttyUSB*)
-      - "c 166:* r"    # USB serial devices (ttyACM*)
-      - "c 5:* r"      # TTY devices
-      - "c 4:* r"      # TTY devices (tty*)
-      - "c 204:* r"    # TTY devices (ttyAMA*, etc)
 
     working_dir: ${WORKSPACE_ROOT}
 
