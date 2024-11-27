@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# File name: analyze_sdk.sh
+# File name: analyze_dir_structure.sh
 # Purpose: Quick analysis of large SDK directory
-# Usage: ./analyze_sdk.sh <sdk_path> [max_depth]
+# Usage: ./analyze_dir_structure.sh <sdk_path> [max_depth]
 
 # Check parameters
 if [ $# -lt 1 ]; then

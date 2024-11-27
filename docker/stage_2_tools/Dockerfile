@@ -33,6 +33,7 @@ COPY scripts/install_dev_tools.sh /tmp/
 COPY scripts/install_cuda.sh /tmp/
 COPY scripts/install_opencv.sh /tmp/
 COPY configs/tool_versions.conf /tmp/
+COPY scripts/gitlfs_tracker.sh /usr/local/bin/
 
 # Copy offline packages if they exist
 COPY offline_packages /tmp/offline_packages/
@@ -49,6 +50,7 @@ RUN rm -rf /tmp/offline_packages
 RUN chmod +x /tmp/install_dev_tools.sh && \
     chmod +x /tmp/install_cuda.sh && \
     chmod +x /tmp/install_opencv.sh && \
+    chmod +x /usr/local/bin/gitlfs_tracker.sh && \
     /tmp/install_dev_tools.sh && \
     if [ "${INSTALL_CUDA}" = "true" ]; then /tmp/install_cuda.sh; fi && \
     if [ "${INSTALL_OPENCV}" = "true" ]; then /tmp/install_opencv.sh; fi && \

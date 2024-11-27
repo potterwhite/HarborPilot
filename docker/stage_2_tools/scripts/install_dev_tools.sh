@@ -158,6 +158,7 @@ fourth_install_doc_tools() {
 fifth_install_vcs_tools() {
     apt-get install -y \
         git \
+        git-lfs \
         python2.7 \
         python3 \
         python3-pip
