@@ -9,7 +9,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -f "${SCRIPT_DIR}/.env" ]; then
     source "${SCRIPT_DIR}/.env"
-    cat "${SCRIPT_DIR}/.env"
+    # cat "${SCRIPT_DIR}/.env"
 else
     echo "Error: .env file not found"
     exit 1
@@ -82,8 +82,12 @@ services:
       - WORKSPACE_ENABLE_REMOTE_DEBUG=${WORKSPACE_ENABLE_REMOTE_DEBUG}
       - WORKSPACE_LOG_LEVEL=${WORKSPACE_LOG_LEVEL}
 
-    devices:
-      - "/dev:/dev"
+    device_cgroup_rules:
+      - "c 188:* r"    # USB serial devices (ttyUSB*)
+      - "c 166:* r"    # USB serial devices (ttyACM*)
+      - "c 5:* r"      # TTY devices
+      - "c 4:* r"      # TTY devices (tty*)
+      - "c 204:* r"    # TTY devices (ttyAMA*, etc)
 
     working_dir: ${WORKSPACE_ROOT}
 
