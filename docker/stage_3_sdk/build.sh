@@ -16,22 +16,31 @@ ROOT_DIR="$(cd "${BUILD_SCRIPT_DIR}/../../" && pwd)"
 source "${ROOT_DIR}/project_handover/.env"
 
 # Set default values
-# SDK_PACKAGE="${SDK_PACKAGE:-embedded-sdk-1.0.tar.gz}"
 SDK_INSTALL_PATH="${SDK_INSTALL_PATH:-/opt/sdk}"
-# SDK_VERSION="${SDK_VERSION:-1.0}"
 
-# Generate sdk_config.conf from template
-echo "Generating sdk_config.conf from template..."
-sed -e "s|@SDK_INSTALL_PATH@|${SDK_INSTALL_PATH}|g" \
-    -e "s|@SDK_GIT_REPO@|${SDK_GIT_REPO}|g" \
-    "${BUILD_SCRIPT_DIR}/configs/sdk_config.conf.template" > "${BUILD_SCRIPT_DIR}/configs/sdk_config.conf"
+# Process all templates (处理所有模板文件)
+echo "Processing template files..."
+for template in "${BUILD_SCRIPT_DIR}"/configs/*.template "${BUILD_SCRIPT_DIR}"/configs/*.sh_template; do
+    # Get output filename (获取输出文件名)
+    case "$template" in
+        *.sh_template)
+            filename=$(basename "$template" .sh_template).sh
+            ;;
+        *.template)
+            filename=$(basename "$template" .template)
+            ;;
+    esac
 
-# # Verify SDK package exists
-# if [ ! -f "${BUILD_SCRIPT_DIR}/offline_packages/${SDK_PACKAGE}" ]; then
-#     echo "Error: SDK package not found: ${SDK_PACKAGE}"
-#     echo "Please place the SDK package in docker/stage_3_sdk/offline_packages/"
-#     exit 1
-# fi
+    echo "Processing $filename..."
+    sed -e "s|[@\$]{SDK_INSTALL_PATH}|${SDK_INSTALL_PATH}|g" \
+        -e "s|[@\$]{SDK_GIT_REPO}|${SDK_GIT_REPO}|g" \
+        -e "s|\${SDK_GIT_KEY_FILE}|${SDK_GIT_KEY_FILE}|g" \
+        -e "s|\${SDK_GIT_HOST}|${SDK_GIT_HOST}|g" \
+        "$template" > "${BUILD_SCRIPT_DIR}/configs/$filename"
+
+    # Make shell scripts executable (使shell脚本可执行)
+    [[ "$filename" == *.sh ]] && chmod +x "${BUILD_SCRIPT_DIR}/configs/$filename"
+done
 
 echo "Building SDK installation stage..."
 docker build \
@@ -52,5 +61,5 @@ docker build \
     -f "${BUILD_SCRIPT_DIR}/Dockerfile" \
     "${BUILD_SCRIPT_DIR}" 2>&1 | tee "${BUILD_SCRIPT_DIR}/build_log.txt"
 
-# Optionally, clean up the generated config
-# rm "${BUILD_SCRIPT_DIR}/configs/sdk_config.conf"
+# Clean up processed files (清理生成的文件)
+# rm -f "${BUILD_SCRIPT_DIR}"/configs/*.{sh,conf}

@@ -22,7 +22,6 @@ SSH_CONFIG="$SSH_DIR/config"
 main() {
     echo "=== Starting SSH Key Verification ==="
 
-    1_check_git_user || exit 1        # 先检查用户信息
     1_verify_ssh_directory || exit 1
     2_check_and_initialize_key || exit 1
     3_update_ssh_config || exit 1
