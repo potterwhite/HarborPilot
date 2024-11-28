@@ -1,0 +1,200 @@
+#!/bin/bash
+################################################################################
+# Script Name: verify_ssh_key.sh
+# Description: Verify and initialize SSH keys for SDK repository access
+# Author: @MrJamesLZA
+# Date: 2024-11-28
+# Usage: source verify_ssh_key.sh
+# Returns: 0 on success, 1 on failure
+################################################################################
+
+################################################################################
+# Constants
+################################################################################
+SSH_KEY_NAME="${SDK_SSH_KEY_NAME:-SDK_Default_ED25519}"
+SSH_DIR="$HOME/.ssh"
+SSH_KEY_PATH="$SSH_DIR/$SSH_KEY_NAME"
+SSH_CONFIG="$SSH_DIR/config"
+
+################################################################################
+# Main function to orchestrate SSH key verification process
+################################################################################
+main() {
+    echo "=== Starting SSH Key Verification ==="
+
+    1_verify_ssh_directory || exit 1
+    2_check_and_initialize_key || exit 1
+    3_update_ssh_config || exit 1
+    4_test_connection || exit 1
+
+    echo "=== SSH Key Verification Completed Successfully ==="
+}
+
+################################################################################
+# 1. Verify SSH directory exists with correct permissions
+# Returns:
+#   0 on success, 1 on failure
+################################################################################
+1_verify_ssh_directory() {
+    echo "Verifying SSH directory..."
+    mkdir -p "$SSH_DIR"
+    chmod 700 "$SSH_DIR"
+    return 0
+}
+
+################################################################################
+# 2. Check if SSH key exists and is valid, initialize if needed
+# Returns:
+#   0 on success, 1 on failure
+################################################################################
+2_check_and_initialize_key() {
+    echo "Checking SSH key..."
+
+    # Check if key files exist
+    if [ ! -f "${SSH_KEY_PATH}" ] || [ ! -f "${SSH_KEY_PATH}.pub" ]; then
+        echo "SSH key not found. Initializing new key..."
+        _initialize_new_key
+        return $?
+    fi
+
+    # Verify permissions
+    if [ "$(stat -c %a ${SSH_KEY_PATH})" != "600" ]; then
+        echo "Fixing private key permissions..."
+        chmod 600 "${SSH_KEY_PATH}"
+    fi
+
+    if [ "$(stat -c %a ${SSH_KEY_PATH}.pub)" != "644" ]; then
+        echo "Fixing public key permissions..."
+        chmod 644 "${SSH_KEY_PATH}.pub"
+    fi
+
+    # Validate key format
+    if ! ssh-keygen -l -f "${SSH_KEY_PATH}" >/dev/null 2>&1; then
+        echo "Invalid key format. Initializing new key..."
+        _initialize_new_key    # 直接调用函数
+        return $?             # 返回函数的退出状态
+    fi
+
+    return 0
+}
+
+################################################################################
+# Helper function to initialize new SSH key
+# Returns:
+#   0 on success, 1 on failure
+################################################################################
+_initialize_new_key() {
+    echo "Please paste your SSH private key (End with Ctrl+D):"
+    # Read private key content
+    private_key=$(cat) || return 1
+
+    echo "Please paste your SSH public key:"
+    read -r public_key || return 1
+
+    # Validate and clean up private key
+    if [ -z "$private_key" ]; then
+        echo "Error: Private key cannot be empty"
+        return 1
+    fi
+
+    # Validate and clean up public key
+    if [ -z "$public_key" ]; then
+        echo "Error: Public key cannot be empty"
+        return 1
+    fi
+
+    # Clean up public key (only remove leading/trailing spaces)
+    public_key=$(echo "$public_key" | sed 's/^\s*//;s/\s*$//')
+
+    # Define supported SSH key types
+    local KEY_TYPES_BASIC="ssh-rsa|ssh-ed25519|ssh-dss"
+    local KEY_TYPES_ECDSA="ecdsa-sha2-nistp256|ecdsa-sha2-nistp384|ecdsa-sha2-nistp521"
+    local KEY_TYPES_RSA_SHA2="rsa-sha2-256|rsa-sha2-512"
+    local KEY_TYPES_SECURITY_KEY="sk-ecdsa-sha2-nistp256@openssh.com|sk-ssh-ed25519@openssh.com"
+
+    # Combine all supported types
+    local SUPPORTED_KEY_TYPES="${KEY_TYPES_BASIC}|${KEY_TYPES_ECDSA}|${KEY_TYPES_RSA_SHA2}|${KEY_TYPES_SECURITY_KEY}"
+
+    # Validate public key format with common SSH key types
+    if ! echo "$public_key" | grep -qE "^(${SUPPORTED_KEY_TYPES})"; then
+        echo "Warning: Unrecognized SSH key type."
+        echo "Detected format: $(echo "$public_key" | awk '{print $1}')"
+        echo "Do you want to proceed anyway? (y/N)"
+        read -r answer
+        if [[ ! "$answer" =~ ^[Yy]$ ]]; then
+            echo "Operation cancelled by user"
+            return 1
+        fi
+        echo "Proceeding with provided key..."
+    fi
+
+    # Create .ssh directory if it doesn't exist
+    mkdir -p "$SSH_DIR"
+    chmod 700 "$SSH_DIR"
+
+    # Save private key
+    echo "$private_key" > "${SSH_KEY_PATH}"
+    chmod 600 "${SSH_KEY_PATH}"
+
+    # Save public key
+    echo "$public_key" > "${SSH_KEY_PATH}.pub"
+    chmod 644 "${SSH_KEY_PATH}.pub"
+
+    echo "SSH keys have been saved successfully"
+    return 0
+}
+
+################################################################################
+# 3. Update SSH config with server details
+# Returns:
+#   0 on success, 1 on failure
+################################################################################
+3_update_ssh_config() {
+    echo "Updating SSH configuration..."
+
+    # Extract server IP from git repo URL
+    local server_ip=$(_extract_server_ip)
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
+    # Create/update config file
+    touch "$SSH_CONFIG"
+    chmod 600 "$SSH_CONFIG"
+
+    if grep -q "Host $server_ip" "$SSH_CONFIG"; then
+        sed -i "/Host $server_ip/,/IdentityFile/c\Host $server_ip\n    IdentityFile $SSH_KEY_PATH" "$SSH_CONFIG"
+    else
+        echo -e "\nHost $server_ip\n    IdentityFile $SSH_KEY_PATH" >> "$SSH_CONFIG"
+    fi
+
+    echo "SSH config updated for host $server_ip"
+    return 0
+}
+
+################################################################################
+# Helper function to extract server IP from git repo URL
+# Returns:
+#   Server IP on success, exits with 1 on failure
+################################################################################
+_extract_server_ip() {
+    local ip=$(echo "${SDK_GIT_REPO}" | grep -oP '(?<=@)[^:]+')
+    if [ -z "$ip" ]; then
+        echo "Error: Could not extract server IP from ${SDK_GIT_REPO}" >&2
+        return 1
+    fi
+    echo "$ip"
+}
+
+################################################################################
+# 4. Test SSH connection to server (Optional)
+# Returns:
+#   0 on success, 1 on failure
+################################################################################
+4_test_connection() {
+    echo "SSH key setup completed"
+    return 0
+}
+
+# Execute main function
+main

@@ -1,0 +1,206 @@
+#!/bin/bash
+################################################################################
+# Script Name: pull_sdk.sh
+# Description: Pull SDK from git repository with safety checks
+# Author: @MrJamesLZA
+# Date: 2024-11-28
+# Usage: ./pull_sdk.sh [-h|--help] [branch_name]
+# Note: This script is generated from template with environment variables
+################################################################################
+
+set -e
+
+################################################################################
+# Print help message
+################################################################################
+print_help() {
+    cat << EOF
+Usage: $(basename "$0") [-h|--help] [branch_name]
+
+Pull SDK changes from remote git repository.
+
+Arguments:
+    branch_name     Target branch name to pull (default: main)
+
+Options:
+    -h, --help     Show this help message
+
+Examples:
+    $(basename "$0")             # Pull from main branch
+    $(basename "$0") develop     # Pull from develop branch
+    $(basename "$0") feature/xyz # Pull from feature branch
+EOF
+    exit 0
+}
+
+################################################################################
+# Main function to orchestrate the SDK pulling process
+################################################################################
+main() {
+    # Parse command line arguments
+    local branch="main"  # default branch
+
+    # Check for help flag
+    if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+        print_help
+    fi
+
+    # Parse branch name if provided
+    if [ -n "$1" ] && [[ ! "$1" =~ ^- ]]; then
+        branch="$1"
+    fi
+
+    echo "=== Starting SDK Pull Process ==="
+    echo "Target branch: $branch"
+
+    1_check_environment_variables || exit 1
+    1_5_verify_ssh_access || exit 1
+    1_8_check_git_user || exit 1
+    2_validate_repository || exit 1
+    3_pull_changes "$branch" || exit 1
+
+    echo "=== SDK Pull Process Completed Successfully ==="
+}
+
+################################################################################
+# 1. Validate all required environment variables are set
+# Returns:
+#   0 if all variables are set, 1 otherwise
+################################################################################
+1_check_environment_variables() {
+    local required_vars=("${SDK_INSTALL_PATH}" "${SDK_GIT_REPO}")
+
+    for var in "${required_vars[@]}"; do
+        if [ -z "${var}" ]; then
+            echo "Error: Required environment variables are not set"
+            echo "Please ensure SDK_INSTALL_PATH and SDK_GIT_REPO are defined"
+            return 1
+        fi
+    done
+    return 0
+}
+
+################################################################################
+# 1.5. Verify SSH access using verify_ssh_key.sh
+# Returns:
+#   0 if SSH access is verified, 1 otherwise
+################################################################################
+1_5_verify_ssh_access() {
+    echo "Verifying SSH access..."
+    if ! /usr/local/bin/verify_ssh_key.sh; then
+        echo "Error: SSH key verification failed"
+        return 1
+    fi
+    return 0
+}
+
+################################################################################
+# 2. Validate repository exists and has correct remote
+# Returns:
+#   0 if repository is valid, 1 otherwise
+################################################################################
+2_validate_repository() {
+    cd "${SDK_INSTALL_PATH}"
+
+    if [ ! -d ".git" ]; then
+        echo "Error: Not a git repository. Please initialize first"
+        return 1
+    fi
+
+    local current_remote=$(git remote get-url origin 2>/dev/null || echo "")
+    if [ "$current_remote" != "${SDK_GIT_REPO}" ]; then
+        echo "Error: Repository remote URL mismatch"
+        echo "Current: $current_remote"
+        echo "Expected: ${SDK_GIT_REPO}"
+        return 1
+    fi
+
+    return 0
+}
+
+################################################################################
+# 3. Pull latest changes from remote repository
+# Returns:
+#   0 on success, 1 on failure
+################################################################################
+3_pull_changes() {
+    local branch="$1"
+    echo "Pulling latest changes from remote repository..."
+
+    # Check if branch exists remotely
+    if ! git ls-remote --heads origin "$branch" | grep -q "$branch"; then
+        echo "Warning: Branch '$branch' doesn't exist in remote repository"
+        return 1
+    fi
+
+    # Check if branch exists locally
+    if ! git rev-parse --verify "$branch" >/dev/null 2>&1; then
+        echo "Branch '$branch' doesn't exist locally."
+        read -p "Do you want to create it? (y/N) " answer
+        if [[ ! "$answer" =~ ^[Yy]$ ]]; then
+            echo "Operation cancelled by user"
+            return 1
+        fi
+        echo "Creating and switching to branch '$branch'..."
+        git checkout -b "$branch" "origin/$branch"
+    else
+        echo "Switching to branch '$branch'..."
+        git checkout "$branch"
+    fi
+
+    if ! git pull origin "$branch"; then
+        echo "Error: Failed to pull changes"
+        echo "Tip: You might have local changes that conflict with remote"
+        return 1
+    fi
+
+    return 0
+}
+
+################################################################################
+# 1.8. Check and configure Git user information if needed
+# Returns:
+#   0 on success, 1 on failure
+################################################################################
+1_8_check_git_user() {
+    echo "Checking Git user configuration..."
+
+    # Check global git config first
+    local git_name=$(git config --global user.name)
+    local git_email=$(git config --global user.email)
+
+    # If not set globally, check repository config
+    if [ -z "$git_name" ] || [ -z "$git_email" ]; then
+        cd "${SDK_INSTALL_PATH}"
+        git_name=$(git config user.name)
+        git_email=$(git config user.email)
+    fi
+
+    # If still not set, prompt user for input
+    if [ -z "$git_name" ]; then
+        echo "Git user name is not configured."
+        read -p "Please enter your name: " input_name
+        if [ -z "$input_name" ]; then
+            echo "Error: Name cannot be empty"
+            return 1
+        fi
+        git config --global user.name "$input_name"
+        echo "Git user name set to: $input_name"
+    fi
+
+    if [ -z "$git_email" ]; then
+        echo "Git user email is not configured."
+        read -p "Please enter your email: " input_email
+        if [ -z "$input_email" ] || ! echo "$input_email" | grep -qE '^[^@]+@[^@]+\.[^@]+$'; then
+            echo "Error: Invalid email format"
+            return 1
+        fi
+        git config --global user.email "$input_email"
+        echo "Git user email set to: $input_email"
+    fi
+
+    return 0
+}
+
+# Execute main function with all arguments
+main "$@"

@@ -16,23 +16,22 @@ ROOT_DIR="$(cd "${BUILD_SCRIPT_DIR}/../../" && pwd)"
 source "${ROOT_DIR}/project_handover/.env"
 
 # Set default values
-SDK_PACKAGE="${SDK_PACKAGE:-embedded-sdk-1.0.tar.gz}"
+# SDK_PACKAGE="${SDK_PACKAGE:-embedded-sdk-1.0.tar.gz}"
 SDK_INSTALL_PATH="${SDK_INSTALL_PATH:-/opt/sdk}"
-SDK_VERSION="${SDK_VERSION:-1.0}"
+# SDK_VERSION="${SDK_VERSION:-1.0}"
 
 # Generate sdk_config.conf from template
 echo "Generating sdk_config.conf from template..."
-sed -e "s|@SDK_PACKAGE@|${SDK_PACKAGE}|g" \
-    -e "s|@SDK_INSTALL_PATH@|${SDK_INSTALL_PATH}|g" \
-    -e "s|@SDK_VERSION@|${SDK_VERSION}|g" \
+sed -e "s|@SDK_INSTALL_PATH@|${SDK_INSTALL_PATH}|g" \
+    -e "s|@SDK_GIT_REPO@|${SDK_GIT_REPO}|g" \
     "${BUILD_SCRIPT_DIR}/configs/sdk_config.conf.template" > "${BUILD_SCRIPT_DIR}/configs/sdk_config.conf"
 
-# Verify SDK package exists
-if [ ! -f "${BUILD_SCRIPT_DIR}/offline_packages/${SDK_PACKAGE}" ]; then
-    echo "Error: SDK package not found: ${SDK_PACKAGE}"
-    echo "Please place the SDK package in docker/stage_3_sdk/offline_packages/"
-    exit 1
-fi
+# # Verify SDK package exists
+# if [ ! -f "${BUILD_SCRIPT_DIR}/offline_packages/${SDK_PACKAGE}" ]; then
+#     echo "Error: SDK package not found: ${SDK_PACKAGE}"
+#     echo "Please place the SDK package in docker/stage_3_sdk/offline_packages/"
+#     exit 1
+# fi
 
 echo "Building SDK installation stage..."
 docker build \
@@ -45,9 +44,9 @@ docker build \
     --build-arg HTTP_PROXY="${http_proxy}" \
     --build-arg HTTPS_PROXY="${https_proxy}" \
     --build-arg NO_PROXY="${no_proxy}" \
-    --build-arg SDK_VERSION="${SDK_VERSION}" \
     --build-arg SDK_INSTALL_PATH="${SDK_INSTALL_PATH}" \
-    --build-arg SDK_PACKAGE="${SDK_PACKAGE}" \
+    --build-arg SDK_GIT_REPO="${SDK_GIT_REPO}" \
+    --build-arg SDK_SSH_KEY_NAME="${SDK_SSH_KEY_NAME}" \
     --build-arg IMAGE_NAME="${IMAGE_NAME}" \
     -t "${IMAGE_NAME}:stage3" \
     -f "${BUILD_SCRIPT_DIR}/Dockerfile" \

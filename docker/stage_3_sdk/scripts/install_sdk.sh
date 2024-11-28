@@ -1,66 +1,63 @@
+#!/bin/bash
 ################################################################################
-# File: docker/stage_3_sdk/scripts/install_sdk.sh
-#
-# Description: SDK installation script
-#              Handles SDK extraction, installation and configuration
-#
-# Author: [Your Name]
-# Created: 2024-11-21
-# Last Modified: 2024-11-21
-#
-# Copyright (c) 2024 [Your Company/Name]
-# License: MIT
+# Script Name: install_sdk.sh
+# Description: Initialize SDK directory and Git repository
+# Author: @MrJamesLZA
+# Date: 2024-11-28
 ################################################################################
 
-#!/bin/bash
 set -e
 
-# Source SDK configuration
-source /tmp/sdk_config.conf
-
-# Create SDK directories
-mkdir -p ${SDK_INSTALL_PATH}/{bin,lib,include,tools}
-
-# Install SDK dependencies
-apt-get update && apt-get install -y \
-    ${SDK_DEPENDENCIES} \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Extract and install SDK
-if [ -f "/tmp/offline_packages/${SDK_PACKAGE}" ]; then
-    echo "Installing SDK from offline package..."
-    tar axf "/tmp/offline_packages/${SDK_PACKAGE}" -C "${SDK_INSTALL_PATH}" --strip-components=1
-else
-    echo "Error: SDK package not found in offline packages directory"
+# Check required variables
+if [ -z "${SDK_INSTALL_PATH}" ] || [ -z "${SDK_GIT_REPO}" ]; then
+    echo "Error: Required environment variables are not set"
+    echo "Please ensure SDK_INSTALL_PATH and SDK_GIT_REPO are defined"
     exit 1
 fi
 
-# Set correct ownership for SDK directories
-# Note: DEV_USERNAME and DEV_GROUP should be defined in sdk_config.conf
-echo "Setting correct ownership for SDK directories..."
-chown -R ${DEV_USERNAME}:${DEV_GROUP} ${SDK_INSTALL_PATH}
+echo "Creating SDK directory structure..."
+mkdir -p ${SDK_INSTALL_PATH}
 
-# Set up SDK environment
-echo "export SDK_ROOT=${SDK_INSTALL_PATH}" >> /etc/profile.d/sdk_env.sh
-echo "export PATH=\${SDK_ROOT}/bin:\$PATH" >> /etc/profile.d/sdk_env.sh
-echo "export LD_LIBRARY_PATH=\${SDK_ROOT}/lib:\$LD_LIBRARY_PATH" >> /etc/profile.d/sdk_env.sh
+echo "Setting initial ownership..."
+chown -R developer:developer ${SDK_INSTALL_PATH}
 
-# Add qmake path to PATH using /etc/environment (最可靠的方式)
-CURRENT_PATH=$(grep '^PATH=' /etc/environment | cut -d'"' -f2)
-echo "PATH=\"${CURRENT_PATH}:${SDK_INSTALL_PATH}/buildroot/output/rockchip_rk3588/host/bin\"" > /etc/environment
+echo "Setting up Git repository..."
+cd ${SDK_INSTALL_PATH}
 
-# /development/sdk/buildroot/output/rockchip_rk3588/host/bin
+# Switch to developer user for Git operations
+echo "Switching to developer user for Git operations..."
+su - developer -c "
+    cd ${SDK_INSTALL_PATH} && \
+    git config --global init.defaultBranch main && \
+    git config --global --add safe.directory ${SDK_INSTALL_PATH} && \
+    git lfs install && \
+    git init
+    if [ \$? -eq 0 ]; then
+        echo 'Git repository initialized successfully'
+        git remote add origin ${SDK_GIT_REPO}
+        echo 'Git remote added: ${SDK_GIT_REPO}'
+    else
+        echo 'Failed to initialize Git repository'
+        exit 1
+    fi
+"
 
-# Configure SDK components
-# if [ -f "${SDK_INSTALL_PATH}/setup.sh" ]; then
-#     chmod +x "${SDK_INSTALL_PATH}/setup.sh"
-#     "${SDK_INSTALL_PATH}/setup.sh"
-# fi
+echo "Verifying installation..."
+echo "SDK directory contents:"
+ls -la ${SDK_INSTALL_PATH}
 
-# Verify installation
-echo -e "\nls -lha ${SDK_INSTALL_PATH}/"
-ls -ha ${SDK_INSTALL_PATH}/
-
+# Check remote repository only if .git directory exists
+if [ -d "${SDK_INSTALL_PATH}/.git" ]; then
+    echo "Git remote configuration:"
+    cd ${SDK_INSTALL_PATH} && \
+    git config --global --add safe.directory ${SDK_INSTALL_PATH} && \
+    git remote -v
+else
+    echo "Warning: Git repository not properly initialized"
+    exit 1
+fi
 
 echo "SDK installation completed successfully"
+exit 0
+
+
