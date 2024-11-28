@@ -31,6 +31,7 @@ docker build \
     --build-arg HTTPS_PROXY="${https_proxy}" \
     --build-arg NO_PROXY="${no_proxy}" \
     --build-arg DEBIAN_FRONTEND="${DEBIAN_FRONTEND}" \
+    --build-arg DEV_USERNAME="${DEV_USERNAME}" \
     --build-arg INSTALL_CUDA="${INSTALL_CUDA}" \
     --build-arg INSTALL_OPENCV="${INSTALL_OPENCV}" \
     --build-arg IMAGE_NAME="${IMAGE_NAME}" \

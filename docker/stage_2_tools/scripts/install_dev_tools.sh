@@ -161,7 +161,21 @@ fifth_install_vcs_tools() {
         git-lfs \
         python2.7 \
         python3 \
-        python3-pip
+        python3-pip \
+        bash-completion
+
+    # Configure git completion for both root and dev user
+    for user_home in "/root" "/home/${DEV_USERNAME}"; do
+        tee -a "${user_home}/.bashrc" > /dev/null << EOF
+# Enable git completion
+source /usr/share/bash-completion/completions/git
+
+# Enable bash completion
+if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
+    . /etc/bash_completion
+fi
+EOF
+    done
 }
 
 ###############################################################################
