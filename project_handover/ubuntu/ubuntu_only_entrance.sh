@@ -69,7 +69,7 @@ services:
     stdin_open: true
 
     volumes:
-      - "${SCRIPT_DIR}/volumes:${VOLUMES_ROOT}"
+      - "${SCRIPT_DIR}/../volumes:${VOLUMES_ROOT}"
 
     ports:
       - "${SSH_PORT}:22"

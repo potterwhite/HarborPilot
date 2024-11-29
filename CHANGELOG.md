@@ -6,6 +6,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [0.5.1] - 2024-11-29
+### Added
+- Windows only entrance script
+- Ubuntu only entrance script
+### Improved
+- build scripts build-dev-env.sh
+
 ## [0.5.0] - 2024-11-21
 
 ### Added
@@ -37,4 +45,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Secure environment variable handling
 - Minimized container attack surface
 
-[0.5.0]: https://github.com/username/project/releases/tag/v0.5.0
+[0.5.0]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.0
+
+[0.5.1]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.1
