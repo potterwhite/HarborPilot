@@ -196,12 +196,60 @@ function Fourth-StopContainer {
     Fourth-RemoveContainer
 #>
 function Fourth-RemoveContainer {
-    if (Fourth-ContainerExists) {
-        Write-Host "[INFO] Removing container..." -ForegroundColor Yellow
-        Push-Location (Split-Path -Parent $PSScriptRoot)
-        docker compose down
-        Pop-Location
-        Remove-Item (Join-Path (Split-Path -Parent $PSScriptRoot) "docker-compose.yaml") -ErrorAction SilentlyContinue
+    try {
+        $containerName = Get-GlobalVar -Key "CONTAINER_NAME"
+        if (-not $containerName) {
+            Write-Host "[ERROR] Container name not configured" -ForegroundColor Red
+            return $false
+        }
+
+        Write-Host "[INFO] Removing development environment..." -ForegroundColor Yellow
+
+        # 检查容器是否存在
+        $containerExists = docker ps -a --format '{{.Names}}' | Select-String -Pattern "^${containerName}$"
+
+        if ($containerExists) {
+            $parentDir = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+            Push-Location $parentDir
+
+            # 1. 先停止容器
+            Write-Host "[INFO] Stopping container..." -ForegroundColor Yellow
+            docker stop $containerName
+
+            # 2. 使用 docker compose down 删除容器和网络
+            Write-Host "[INFO] Removing container and networks..." -ForegroundColor Yellow
+            docker compose down
+
+            # 3. 强制删除容器（以防万一）
+            Write-Host "[INFO] Force removing container if still exists..." -ForegroundColor Yellow
+            docker rm -f $containerName 2>$null
+
+            # 4. 删除相关文件
+            Write-Host "[INFO] Cleaning up files..." -ForegroundColor Yellow
+
+            # 删除 docker-compose.yaml
+            $composeFile = Join-Path $parentDir "docker-compose.yaml"
+            if (Test-Path $composeFile) {
+                Remove-Item $composeFile -Force
+                Write-Host "[INFO] Removed docker-compose.yaml" -ForegroundColor Yellow
+            }
+
+            # 5. 清理未使用的卷（可选）
+            Write-Host "[INFO] Cleaning up unused volumes..." -ForegroundColor Yellow
+            docker volume prune -f
+
+            Pop-Location
+
+            Write-Host "[SUCCESS] Development environment removed completely" -ForegroundColor Green
+            return $true
+        } else {
+            Write-Host "[INFO] Container does not exist" -ForegroundColor Yellow
+            return $true
+        }
+    }
+    catch {
+        Write-Host "[ERROR] Failed to remove container: $_" -ForegroundColor Red
+        return $false
     }
 }
 
@@ -343,42 +391,76 @@ function Fourth-ConfigureInsecureRegistry {
 
 function Fourth-CreateComposeFile {
     try {
-        $parentDir = Split-Path -Parent $PSScriptRoot
+        $parentDir = Split-Path -Parent $PSScriptRoot  # 退一级到项目根目录
+        $grandparentDir = Split-Path -Parent ($parentDir)  # 退两级到项目根目录
         $composeFile = Join-Path $parentDir "docker-compose.yaml"
 
         # 从环境变量获取配置
         $imageName = Get-GlobalVar -Key "IMAGE_NAME"
         $registryUrl = Get-GlobalVar -Key "REGISTRY_URL"
         $containerName = Get-GlobalVar -Key "CONTAINER_NAME"
-        $tag = "latest"
+        $devUsername = Get-GlobalVar -Key "DEV_USERNAME"
+        $workspaceRoot = Get-GlobalVar -Key "WORKSPACE_ROOT"
+        $volumesRoot = Get-GlobalVar -Key "VOLUMES_ROOT"
+        $timezone = Get-GlobalVar -Key "TIMEZONE"
+        $workspaceEnableRemoteDebug = Get-GlobalVar -Key "WORKSPACE_ENABLE_REMOTE_DEBUG"
+        $workspaceLogLevel = Get-GlobalVar -Key "WORKSPACE_LOG_LEVEL"
+        $sshPort = Get-GlobalVar -Key "SSH_PORT"
+        $gdbPort = Get-GlobalVar -Key "GDB_PORT"
+
+        if (-not $workspaceRoot) {
+            Write-Host "[ERROR] WORKSPACE_ROOT not configured in environment" -ForegroundColor Red
+            return $false
+        }
 
         # 构建完整的镜像名称
         $fullImageName = $imageName
         if ($registryUrl) {
             $fullImageName = "${registryUrl}/${imageName}"
         }
-        $fullImageName = "${fullImageName}:${tag}"
+        $fullImageName = "${fullImageName}:latest"
+
+        # 转换路径分隔符
+        $volumePath = ($grandparentDir + "/volumes").Replace('\', '/')
 
         # 创建 docker-compose.yaml 内容
-        $composeContent = @"
+        $composeContent = @'
 services:
-  dev:
-    image: $fullImageName
-    container_name: $containerName
+  dev-env:
+    image: {0}
+    container_name: {1}
+    hostname: {1}
+    user: "{2}"
+    restart: unless-stopped
     privileged: true
-    network_mode: "host"
-    environment:
-      - DISPLAY=host.docker.internal:0.0
-    volumes:
-      - /tmp/.X11-unix:/tmp/.X11-unix
-      - ${parentDir}:/workspace
-    working_dir: /workspace
     tty: true
     stdin_open: true
-"@
+
+    volumes:
+      - "{3}:{4}"
+
+    ports:
+      - "{5}:22"
+      - "{6}:2345"
+
+    environment:
+      - TIMEZONE={7}
+      - WORKSPACE_ENABLE_REMOTE_DEBUG={8}
+      - WORKSPACE_LOG_LEVEL={9}
+
+    working_dir: {10}
+
+    networks:
+      - dev-net
+
+networks:
+  dev-net:
+    driver: bridge
+'@ -f $fullImageName, $containerName, $devUsername, $volumePath, $volumesRoot,
+        $sshPort, $gdbPort, $timezone, $workspaceEnableRemoteDebug, $workspaceLogLevel, $workspaceRoot
 
         # 写入文件
-        $composeContent | Set-Content $composeFile -Force
+        $composeContent | Set-Content $composeFile -Force -Encoding UTF8
         Write-Host "[INFO] Created docker-compose.yaml" -ForegroundColor Yellow
         return $true
     }

@@ -1,14 +1,31 @@
-services:
-  dev:
+﻿services:
+  dev-env:
     image: 192.168.3.178:5000/n8-dev-env:latest
     container_name: n8
+    hostname: n8
+    user: "developer"
+    restart: unless-stopped
     privileged: true
-    network_mode: "host"
-    environment:
-      - DISPLAY=host.docker.internal:0.0
-    volumes:
-      - /tmp/.X11-unix:/tmp/.X11-unix
-      - D:\02.Code\Docker\DockerDevEnvTemplate\project_handover\windows:/workspace
-    working_dir: /workspace
     tty: true
     stdin_open: true
+
+    volumes:
+      - "D:/02.Code/Docker/DockerDevEnvTemplate/project_handover/volumes:${WORKSPACE_ROOT}/docker_volumes"
+
+    ports:
+      - "2109:22"
+      - "2345:2345"
+
+    environment:
+      - TIMEZONE=Asia/Shanghai
+      - WORKSPACE_ENABLE_REMOTE_DEBUG=true
+      - WORKSPACE_LOG_LEVEL=INFO
+
+    working_dir: /development
+
+    networks:
+      - dev-net
+
+networks:
+  dev-net:
+    driver: bridge

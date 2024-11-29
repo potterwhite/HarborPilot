@@ -1,4 +1,6 @@
 @echo off
+setlocal enabledelayedexpansion
+
 :: 设置标题
 title Docker Development Environment Manager
 
@@ -20,8 +22,5 @@ if '%errorlevel%' NEQ '0' (
     pushd "%CD%"
     CD /D "%~dp0"
 
-:: Main script starts here
-echo Starting environment setup...
-
-:: 启动 PowerShell 交互式菜单
-powershell -NoExit -Command "Write-Host 'Docker Development Environment Manager' -ForegroundColor Cyan; Import-Module '%~dp0\modules\First_Core.psm1'; Show-MainMenu"
+:: 启动 PowerShell 并保持窗口
+powershell -NoExit -Command "Write-Host 'Starting environment setup...' -ForegroundColor Cyan; Import-Module '%~dp0modules\First_Core.psm1'; Show-MainMenu"

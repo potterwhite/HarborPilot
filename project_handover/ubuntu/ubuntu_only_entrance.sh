@@ -59,7 +59,7 @@ generate_compose_config() {
     cat << EOF > "${SCRIPT_DIR}/docker-compose.yaml"
 services:
   dev-env:
-    image: ${IMAGE_NAME}:${LATEST_IMAGE_TAG}
+    image: ${IMAGE_NAME}:latest
     container_name: ${CONTAINER_NAME}
     hostname: ${CONTAINER_NAME}
     user: "${DEV_USERNAME}"
