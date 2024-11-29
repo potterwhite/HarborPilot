@@ -8,7 +8,7 @@
 project_handover/
 ├── ReadMe.md          # 本使用指南
 └── ubuntu_only_entrance.sh # 仅ubuntu系统使用的入口脚本
-└── windows_only_entrance.bat # 仅windows系统使用的入口脚本
+└── windows_only_entrance.ps1 # 仅windows系统使用的入口脚本
 └── .env 配置文件，包含docker image和container的重要环境变量，供参考
 ```
 
