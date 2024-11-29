@@ -1,0 +1,14 @@
+services:
+  dev:
+    image: 192.168.3.178:5000/n8-dev-env:latest
+    container_name: n8
+    privileged: true
+    network_mode: "host"
+    environment:
+      - DISPLAY=host.docker.internal:0.0
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - D:\02.Code\Docker\DockerDevEnvTemplate\project_handover\windows:/workspace
+    working_dir: /workspace
+    tty: true
+    stdin_open: true
