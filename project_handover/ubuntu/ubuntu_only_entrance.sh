@@ -7,9 +7,10 @@
 
 # Get script directory and load environment variables
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [ -f "${SCRIPT_DIR}/.env" ]; then
-    source "${SCRIPT_DIR}/.env"
-    # cat "${SCRIPT_DIR}/.env"
+PARENT_DIR="$(dirname "${SCRIPT_DIR}")"
+if [ -f "${PARENT_DIR}/.env" ]; then
+    source "${PARENT_DIR}/.env"
+    # cat "${PARENT_DIR}/.env"
 else
     echo "Error: .env file not found"
     exit 1
@@ -59,7 +60,7 @@ generate_compose_config() {
     cat << EOF > "${SCRIPT_DIR}/docker-compose.yaml"
 services:
   dev-env:
-    image: ${IMAGE_NAME}:latest
+    image: ${REGISTRY_URL}/${IMAGE_NAME}:latest
     container_name: ${CONTAINER_NAME}
     hostname: ${CONTAINER_NAME}
     user: "${DEV_USERNAME}"
