@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.5.3] - 2024-12-03
 ### Fixed
 - some bugs in project_handover/ubuntu/
+- fixed "unable to rm" problem when executing pull_sdk.sh
+- change owner of ${WORKSPACE_ROOT} to ${DEV_USERNAME}
 
 ## [0.5.1] - 2024-11-29
 ### Added

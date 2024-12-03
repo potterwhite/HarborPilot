@@ -41,6 +41,9 @@ create_directory() {
 init_workspace() {
     echo "Initializing workspace structure..."
 
+    # Setup user and group
+    chown -R "${DEFAULT_USER}:${DEFAULT_GROUP}" "${WORKSPACE_ROOT}"
+
     # Create main directories
     create_directory "${SOURCE_DIR}" "${DEFAULT_USER}" "755"
     create_directory "${BUILD_DIR}" "${DEFAULT_USER}" "755"

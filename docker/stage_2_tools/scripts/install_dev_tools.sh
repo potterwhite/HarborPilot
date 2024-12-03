@@ -164,6 +164,8 @@ fifth_install_vcs_tools() {
         python3-pip \
         bash-completion
 
+    ln -s /usr/bin/python2.7 /usr/bin/python2
+
     # Configure git completion for both root and dev user
     for user_home in "/root" "/home/${DEV_USERNAME}"; do
         tee -a "${user_home}/.bashrc" > /dev/null << EOF

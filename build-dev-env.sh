@@ -12,6 +12,9 @@ set -e
 # Main function to orchestrate the entire build process
 ################################################################################
 main() {
+    SECONDS=0
+    echo "Build process started at: $(date)"
+
     echo "Loading environment variables from project_handover/.env"
     source project_handover/.env
 
@@ -26,7 +29,9 @@ main() {
     4_tag_and_push_images || exit 1
     5_cleanup_images || exit 1
 
+    local duration=$SECONDS
     echo -e "\n=== Build Process Completed Successfully ==="
+    echo "Total execution time: $((duration/3600))h $((duration%3600/60))m $((duration%60))s"
 }
 
 ################################################################################
