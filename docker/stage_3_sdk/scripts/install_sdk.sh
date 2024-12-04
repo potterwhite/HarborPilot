@@ -42,6 +42,15 @@ su - developer -c "
     fi
 "
 
+
+# # Add to PATH using /etc/environment
+# echo "Adding Linux Upgrade Tool to PATH..."
+# CURRENT_PATH=$(grep '^PATH=' /etc/environment | cut -d'"' -f2)
+# # echo "PATH=${GCC_INSTALL_PATH}/${GCC_DIR}/bin:\$PATH" >> /etc/environment
+# echo "PATH=\"${CURRENT_PATH}:${SDK_INSTALL_PATH}/tools/linux/Linux_Upgrade_Tool/Linux_Upgrade_Tool\"" > /etc/environment
+ln -s ${SDK_INSTALL_PATH}/tools/linux/Linux_Upgrade_Tool/Linux_Upgrade_Tool/upgrade_tool /usr/local/bin/upgrade_tool
+
+# Verify installation
 echo "Verifying installation..."
 echo "SDK directory contents:"
 ls -la ${SDK_INSTALL_PATH}

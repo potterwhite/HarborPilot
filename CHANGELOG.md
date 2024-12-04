@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.5.4] - 2024-12-04
 ### Added
 - /usr/bin/python symlink for python2.7
+- /dev:/dev volume mount
+- "upgrade_tool" symlink for Linux Upgrade Tool
 
 ### Changed
 - gitlfs_tracker.sh notify message at the end
