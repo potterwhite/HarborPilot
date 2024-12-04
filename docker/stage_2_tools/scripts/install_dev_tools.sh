@@ -164,6 +164,8 @@ fifth_install_vcs_tools() {
         python3-pip \
         bash-completion
 
+    # Create symlinks for python and python2
+    ln -s /usr/bin/python2.7 /usr/bin/python
     ln -s /usr/bin/python2.7 /usr/bin/python2
 
     # Configure git completion for both root and dev user

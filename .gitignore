@@ -22,6 +22,9 @@
 # do not ignore .gitkeep file in offline_packages
 !**/offline_packages/**/.gitkeep
 
+# do not ignore .gitkeep file in all directories
+!**/.gitkeep
+
 # Ignore generated config files
 docker/stage_3_sdk/configs/sdk_config.conf
 docker/stage_3_sdk/configs/pull_sdk.sh
@@ -42,5 +45,7 @@ project_handover/docker-compose.yaml
 project_handover/windows/docker-compose.yaml
 project_handover/ubuntu/docker-compose.yaml
 
-
+# Ignore all files in volumes directory except WelcomeToVolumesRoot
+project_handover/volumes/*
+!project_handover/volumes/WelcomeToVolumesRoot
 

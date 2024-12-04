@@ -69,7 +69,7 @@ git lfs track
 
 # Prompt for next steps
 echo -e "\nTo apply changes to repository:"
-echo "1. git add .gitattributes"
-echo "2. git commit -m 'update: git lfs tracking patterns'"
+echo "1. git add ."
+echo "2. git commit -a"
 echo "3. git lfs migrate import --everything --above=${SIZE_THRESHOLD}"
 echo "4. git push origin --force"

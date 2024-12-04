@@ -55,6 +55,6 @@ project_handover/
 - 邮箱 (Email): `[baytoo_e_corp@hotmail.com]`
 
 ## 版本信息 (Version Information)
-- 版本号 (Version): `[v0.6.0]`
-- 最后更新 (Last Updated): `[2024-11-30]`
+- 版本号 (Version): `[v0.5.4]`
+- 最后更新 (Last Updated): `[2024-12-04]`
 

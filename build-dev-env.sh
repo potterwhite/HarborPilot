@@ -2,8 +2,11 @@
 ################################################################################
 # Script Name: temp_test.sh
 # Description: Build multi-stage Docker image and push to registry
+# Usage: ./build-dev-env.sh
+#
 # Author: @MrJamesLZA
-# Date: 2024-11-28
+# created date: 2024-11-28
+# last modified: 2024-12-03
 ################################################################################
 
 set -e
@@ -19,14 +22,20 @@ main() {
     source project_handover/.env
 
     # Build is optional, other steps are mandatory
-    if 1_prompt_for_build; then
+    if prompt_with_timeout "Do you want to build all five stages of Docker images?" 10; then
         2_build_images || exit 1
     else
         echo "Build stages skipped."
     fi
 
     3_prepare_version_info || exit 1
-    4_tag_and_push_images || exit 1
+
+    if prompt_with_timeout "Do you want to push images to the registry?" 10; then
+        4_tag_and_push_images || exit 1
+    else
+        echo "Push stages skipped."
+    fi
+
     5_cleanup_images || exit 1
 
     local duration=$SECONDS
@@ -35,32 +44,36 @@ main() {
 }
 
 ################################################################################
-# 1. Prompt user for build confirmation with countdown
+# Unified prompt function with timeout and Ctrl+C/Esc handling
+# Arguments:
+#   $1 - Prompt message
+#   $2 - Timeout in seconds
 # Returns:
-#   0 if build should proceed, 1 if build should be skipped
+#   0 if user confirms, 1 if user denies or timeout occurs
 ################################################################################
-1_prompt_for_build() {
-    echo -e "\nDo you want to build all five stages of Docker images?"
-    echo "Default: Yes (Press 'n' to skip, any other key to continue)"
+prompt_with_timeout() {
+    local message="$1"
+    local timeout="$2"
 
-    for i in 3 2 1; do
+    echo -e "\n${message}"
+    echo "Default: Yes (Press 'n' to skip, any other key to continue, Ctrl+C or Esc to cancel)"
+
+    trap 'echo -e "\nSkipping..."; return 1' SIGINT
+
+    for ((i=timeout; i>0; i--)); do
         echo -ne "\rStarting in $i seconds... "
-        for ((j=0; j<10; j++)); do
-            read -t 0.1 -n 1 input
-            if [ $? -eq 0 ]; then
-                echo -e "\n"
-                if [[ "${input,,}" == "n" ]]; then
-                    echo "Skipping build stages..."
-                    return 1
-                else
-                    echo "Proceeding with build..."
-                    return 0
-                fi
+        read -t 1 -n 1 input
+        if [ $? -eq 0 ]; then
+            echo -e "\n"
+            if [[ "${input,,}" == "n" || "${input}" == $'\e' ]]; then
+                return 1
+            else
+                return 0
             fi
-        done
+        fi
     done
 
-    echo -e "\nProceeding with default build..."
+    echo -e "\nProceeding with default action..."
     return 0
 }
 

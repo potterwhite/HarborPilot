@@ -6,6 +6,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [0.5.4] - 2024-12-04
+### Added
+- /usr/bin/python symlink for python2.7
+
+### Changed
+- gitlfs_tracker.sh notify message at the end
+
 ## [0.5.3] - 2024-12-03
 ### Fixed
 - some bugs in project_handover/ubuntu/
@@ -55,3 +63,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.5.1]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.1
 
 [0.5.3]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.3
+
+[0.5.4]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.4

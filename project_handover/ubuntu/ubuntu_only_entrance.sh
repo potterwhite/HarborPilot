@@ -70,6 +70,7 @@ services:
     stdin_open: true
 
     volumes:
+      - /dev:/dev
       - "${SCRIPT_DIR}/../volumes:${VOLUMES_ROOT}"
 
     ports:
