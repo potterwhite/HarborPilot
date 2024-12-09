@@ -61,7 +61,7 @@ GCC_DIR=$(echo "${GCC_OFFLINE_PACKAGE}" | sed 's/\.tar\.[^.]*$//')
 # Move to install path
 mv "/tmp/${GCC_DIR}" "${GCC_INSTALL_PATH}/"
 
-# Add to PATH using /etc/environment (最可靠的方式)
+# Add to PATH using /etc/environment (most reliable way)
 CURRENT_PATH=$(grep '^PATH=' /etc/environment | cut -d'"' -f2)
 # echo "PATH=${GCC_INSTALL_PATH}/${GCC_DIR}/bin:\$PATH" >> /etc/environment
 echo "PATH=\"${CURRENT_PATH}:${GCC_INSTALL_PATH}/${GCC_DIR}/bin\"" > /etc/environment

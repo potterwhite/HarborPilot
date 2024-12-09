@@ -42,13 +42,11 @@ su - developer -c "
     fi
 "
 
-
-# # Add to PATH using /etc/environment
-# echo "Adding Linux Upgrade Tool to PATH..."
-# CURRENT_PATH=$(grep '^PATH=' /etc/environment | cut -d'"' -f2)
-# # echo "PATH=${GCC_INSTALL_PATH}/${GCC_DIR}/bin:\$PATH" >> /etc/environment
-# echo "PATH=\"${CURRENT_PATH}:${SDK_INSTALL_PATH}/tools/linux/Linux_Upgrade_Tool/Linux_Upgrade_Tool\"" > /etc/environment
+# Add upgrade_tool to standard path so that it can be used directly
 ln -s ${SDK_INSTALL_PATH}/tools/linux/Linux_Upgrade_Tool/Linux_Upgrade_Tool/upgrade_tool /usr/local/bin/upgrade_tool
+
+# Add qmake to PATH so that it can be used directly
+ln -s ${SDK_INSTALL_PATH}/buildroot/output/rockchip_rk3588/host/bin/qmake /usr/local/bin/qmake
 
 # Verify installation
 echo "Verifying installation..."

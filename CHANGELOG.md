@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.5.5] - 2024-12-09
+### Added
+- symbolic link "/usr/local/bin/qmake" to "/development/sdk/buildroot/output/rockchip_rk3588/host/bin/qmake"
+
 ## [0.5.4] - 2024-12-04
 ### Added
 - /usr/bin/python symlink for python2.7
@@ -67,3 +71,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.5.3]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.3
 
 [0.5.4]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.4
+
+[0.5.5]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.5
