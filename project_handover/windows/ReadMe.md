@@ -13,7 +13,7 @@ project_handover/
 
 ## 2.0 访问服务器资源 (Server Access)
 - 2.1 服务器地址 (Server Address): 公司内部机房
-- 2.2 访问方式 (Access Method): `192.168.3.178`
+- 2.2 访问方式 (Access Method): `192.168.3.67`
 
 ## 3.0 快速开始 (Quick Start)
 
@@ -55,6 +55,6 @@ project_handover/
 - 邮箱 (Email): `[baytoo_e_corp@hotmail.com]`
 
 ## 版本信息 (Version Information)
-- 版本号 (Version): `[v0.5.5]`
-- 最后更新 (Last Updated): `[2024-12-09]`
+- 版本号 (Version): `[v0.5.6]`
+- 最后更新 (Last Updated): `[2024-12-12]`
 

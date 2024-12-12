@@ -21,6 +21,7 @@ ARG SDK_INSTALL_PATH
 ARG SDK_GIT_REPO
 ARG SDK_GIT_KEY_FILE
 ARG SDK_GIT_HOST
+ARG PROJECT_VERSION
 
 # Configuration and installation scripts
 COPY configs/sdk_config.conf /tmp/
@@ -39,7 +40,9 @@ RUN cat /usr/local/bin/verify_ssh_key.sh && \
     echo "--------------------------------" && \
     cat /usr/local/bin/pull_sdk.sh && \
     echo "--------------------------------" && \
-    cat /usr/local/bin/push_sdk.sh
+    cat /usr/local/bin/push_sdk.sh && \
+    echo "--------------------------------" && \
+    cat /usr/local/bin/version_of_dev_env.sh
 
 # Install SDK
 RUN /tmp/install_sdk.sh

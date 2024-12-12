@@ -14,13 +14,13 @@ project_handover/
 ## 2.0 快速开始 (Quick Start)
 
 ### 2.1 下载docker镜像
-- 2.1.1 [Host下]联络管理员获得为您预备的docker internal hub的帐号密码（以下载docker镜像）
+- 2.1.1 [Host下]联络管理员获得为您预备的Harbor系统的帐号密码（以下载docker镜像）
 
 - 2.1.2 [Host下]
     ```bash
-    docker login 192.168.3.178:5000
+    docker login 192.168.3.67:9000
     ```
-    登陆期间会提示输入账户，请输入3.1.1得到的帐号和密码
+    登陆期间会提示输入账户，请输入2.1.1得到的帐号和密码
 
 - 2.1.3 [Host下]创建&进入您的容器Container
     ```bash
@@ -31,6 +31,10 @@ project_handover/
 
 - 2.2.1 [Host下]联络管理员获得sdk 在内部服务器上的具有对git仓库访问权限的帐号和密码
 - 2.2.2 [Host下]您需要使用步骤2.2.1得到的账户和密码登陆内部gitlab服务器（参步骤2.2），上传您的ssh key（gitlab已完全禁止密码方式操作git仓库）
+```bash
+    http://192.168.3.67
+```
+
 - 2.2.3 [`Container下`]拉取sdk的代码
     ```bash
     pull_sdk.sh
@@ -48,7 +52,7 @@ project_handover/
 
 ## 4.0 访问服务器资源 (Server Access)
 - 4.1 服务器地址 (Server Address): 公司内部机房
-- 4.2 访问方式 (Access Method): `192.168.3.178`
+- 4.2 访问方式 (Access Method): `192.168.3.67`
 
 
 ## 5.0 注意事项 (Important Notes)
@@ -58,6 +62,6 @@ project_handover/
 - 邮箱 (Email): `[baytoo_e_corp@hotmail.com]`
 
 ## 7.0 版本信息 (Version Information)
-- 版本号 (Version): `[v0.5.5]`
-- 最后更新 (Last Updated): `[2024-12-09]`
+- 版本号 (Version): `[v0.5.6]`
+- 最后更新 (Last Updated): `[2024-12-12]`
 

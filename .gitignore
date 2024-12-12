@@ -30,6 +30,7 @@ docker/stage_3_sdk/configs/sdk_config.conf
 docker/stage_3_sdk/configs/pull_sdk.sh
 docker/stage_3_sdk/configs/push_sdk.sh
 docker/stage_3_sdk/configs/verify_ssh_key.sh
+docker/stage_3_sdk/configs/version_of_dev_env.sh
 
 docker/stage_4_config/configs/env_config.conf
 docker/stage_5_final/configs/entrypoint.conf

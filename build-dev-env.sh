@@ -170,20 +170,18 @@ _push_and_verify_image() {
     echo "Pushing ${tag} tag to registry..."
     echo "Executing: docker push ${REGISTRY_URL}/${IMAGE_NAME}:${tag}"
 
-    # Capture the push output
-    local push_output
-    push_output=$(docker push ${REGISTRY_URL}/${IMAGE_NAME}:${tag})
-    local push_status=$?
+    # 直接执行 docker push，不捕获输出
+    if ! docker push ${REGISTRY_URL}/${IMAGE_NAME}:${tag}; then
+        echo "✗ Error: Failed to push ${tag} tag"
+        return 1
+    fi
 
-    echo "${push_output}"
-
-    # Verify by checking for digest in push output
-    if [ $push_status -eq 0 ] && echo "${push_output}" | grep -q "digest: sha256:"; then
-        local digest=$(echo "${push_output}" | grep "digest: sha256:" | tail -n1 | awk '{print $3}')
-        echo "✓ ${tag} tag verified successfully (digest: ${digest})"
+    # 验证镜像是否已推送
+    if docker manifest inspect ${REGISTRY_URL}/${IMAGE_NAME}:${tag} >/dev/null 2>&1; then
+        echo "✓ ${tag} tag pushed successfully"
         return 0
     else
-        echo "✗ Error: Failed to push or verify ${tag} tag"
+        echo "✗ Error: Failed to verify ${tag} tag"
         return 1
     fi
 }

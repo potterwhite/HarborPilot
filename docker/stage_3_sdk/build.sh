@@ -36,6 +36,7 @@ for template in "${BUILD_SCRIPT_DIR}"/configs/*.template "${BUILD_SCRIPT_DIR}"/c
         -e "s|[@\$]{SDK_GIT_REPO}|${SDK_GIT_REPO}|g" \
         -e "s|\${SDK_GIT_KEY_FILE}|${SDK_GIT_KEY_FILE}|g" \
         -e "s|\${SDK_GIT_HOST}|${SDK_GIT_HOST}|g" \
+        -e "s|\${PROJECT_VERSION}|${PROJECT_VERSION}|g" \
         "$template" > "${BUILD_SCRIPT_DIR}/configs/$filename"
 
     # Make shell scripts executable (使shell脚本可执行)
@@ -57,6 +58,7 @@ docker build \
     --build-arg SDK_GIT_REPO="${SDK_GIT_REPO}" \
     --build-arg SDK_SSH_KEY_NAME="${SDK_SSH_KEY_NAME}" \
     --build-arg IMAGE_NAME="${IMAGE_NAME}" \
+    --build-arg PROJECT_VERSION="${PROJECT_VERSION}" \
     -t "${IMAGE_NAME}:stage3" \
     -f "${BUILD_SCRIPT_DIR}/Dockerfile" \
     "${BUILD_SCRIPT_DIR}" 2>&1 | tee "${BUILD_SCRIPT_DIR}/build_log.txt"
