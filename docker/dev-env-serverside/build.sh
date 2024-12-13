@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -e
 
 BUILD_SCRIPT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 cd ${BUILD_SCRIPT_DIR}

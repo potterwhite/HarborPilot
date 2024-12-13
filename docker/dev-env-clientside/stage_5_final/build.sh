@@ -17,7 +17,7 @@
 set -e
 
 BUILD_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "${BUILD_SCRIPT_DIR}/../../" && pwd)"
+ROOT_DIR="$(cd "${BUILD_SCRIPT_DIR}/../../../" && pwd)"
 
 # Load .env file
 source "${ROOT_DIR}/project_handover/.env"

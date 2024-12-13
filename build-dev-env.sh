@@ -103,6 +103,10 @@ prompt_with_timeout() {
         fi
     done
 
+    echo "Start Building ServerSide Dev Env"
+    docker/dev-env-serverside/build.sh
+    echo "Done with ServerSide Dev Env Building."
+
     return 0
 }
 
@@ -123,7 +127,72 @@ prompt_with_timeout() {
         return 1
     fi
     echo "Final image ID: ${FINAL_IMAGE_ID}"
+
+    # 添加服务端镜像ID获取
+    if [[ "${ENABLE_SERVERSIDE}" == "true" ]]; then
+        echo "Getting serverside image ID for ${SERVERSIDE_IMAGE_NAME}:${PROJECT_VERSION}"
+        FINAL_SERVERSIDE_IMAGE_ID=$(docker images ${SERVERSIDE_IMAGE_NAME}:${PROJECT_VERSION} -q)
+        if [ -z "$FINAL_SERVERSIDE_IMAGE_ID" ]; then
+            echo "Warning: No existing serverside image found with ID, this is normal for first push"
+            FINAL_SERVERSIDE_IMAGE_ID="not_found"  # 设置一个默认值，避免后续清理时出错
+        else
+            echo "Final serverside image ID: ${FINAL_SERVERSIDE_IMAGE_ID}"
+        fi
+    fi
+
     return 0
+}
+
+################################################################################
+# Helper function to tag a single image
+# Arguments:
+#   $1 - Image name
+#   $2 - Source tag
+#   $3 - Target tag
+# Returns:
+#   0 on success, 1 on failure
+################################################################################
+_tag_single_image() {
+    local image_name="$1"
+    local source_tag="$2"
+    local target_tag="$3"
+    local full_source="${image_name}:${source_tag}"
+    local full_target="${REGISTRY_URL}/${image_name}:${target_tag}"
+
+    echo "Executing: docker tag ${full_source} ${full_target}"
+    if ! docker tag "${full_source}" "${full_target}"; then
+        echo "✗ Error: Failed to tag ${image_name} with ${target_tag}"
+        return 1
+    fi
+    return 0
+}
+
+################################################################################
+# Helper function to tag images
+# Arguments:
+#   $1 - Tag name
+# Returns:
+#   0 on success, 1 on failure
+################################################################################
+_tag_image() {
+    local tag="$1"
+    local result=0
+
+    # Tag client image
+    if ! _tag_single_image "${IMAGE_NAME}" "${LATEST_IMAGE_TAG}" "${tag}"; then
+        echo "✗ Error: Failed to tag client image"
+        result=1
+    fi
+
+    # Tag server image if enabled
+    if [[ "${ENABLE_SERVERSIDE}" == "true" ]]; then
+        if ! _tag_single_image "${SERVERSIDE_IMAGE_NAME}" "${PROJECT_VERSION}" "${tag}"; then
+            echo "✗ Error: Failed to tag server image"
+            result=1
+        fi
+    fi
+
+    return ${result}
 }
 
 ################################################################################
@@ -132,30 +201,36 @@ prompt_with_timeout() {
 #   0 on success, 1 on failure
 ################################################################################
 4_tag_and_push_images() {
-    echo -e "\n=== 3. Tagging and Pushing Images ==="
+    echo -e "\n=== 4. Tagging and Pushing Images ==="
+    local result=0
 
     # Tag images
-    _tag_image "${PROJECT_VERSION}" || return 1
-    _tag_image "latest" || return 1
+    echo "Tagging images..."
+    if ! _tag_image "${PROJECT_VERSION}"; then
+        echo "✗ Error: Failed to tag images with version ${PROJECT_VERSION}"
+        result=1
+    fi
 
-    # Push images
-    _push_and_verify_image "${PROJECT_VERSION}" || return 1
-    _push_and_verify_image "latest" || return 1
+    if ! _tag_image "latest"; then
+        echo "✗ Error: Failed to tag images as latest"
+        result=1
+    fi
 
-    return 0
-}
+    # Push images only if tagging was successful
+    if [ ${result} -eq 0 ]; then
+        echo "Pushing images..."
+        if ! _push_and_verify_image "${PROJECT_VERSION}"; then
+            echo "✗ Error: Failed to push version ${PROJECT_VERSION}"
+            result=1
+        fi
 
-################################################################################
-# Helper function to tag a single image
-# Arguments:
-#   $1 - Tag name
-# Returns:
-#   0 on success, 1 on failure
-################################################################################
-_tag_image() {
-    local tag="$1"
-    echo "Executing: docker tag ${IMAGE_NAME}:${LATEST_IMAGE_TAG} ${REGISTRY_URL}/${IMAGE_NAME}:${tag}"
-    docker tag ${IMAGE_NAME}:${LATEST_IMAGE_TAG} ${REGISTRY_URL}/${IMAGE_NAME}:${tag} || return 1
+        if ! _push_and_verify_image "latest"; then
+            echo "✗ Error: Failed to push latest version"
+            result=1
+        fi
+    fi
+
+    return ${result}
 }
 
 ################################################################################
@@ -165,25 +240,47 @@ _tag_image() {
 # Returns:
 #   0 on success, 1 on failure
 ################################################################################
-_push_and_verify_image() {
-    local tag="$1"
-    echo "Pushing ${tag} tag to registry..."
-    echo "Executing: docker push ${REGISTRY_URL}/${IMAGE_NAME}:${tag}"
+_push_and_verify_single_image() {
+    local image_name="$1"
+    local tag="$2"
+    local full_image_name="${REGISTRY_URL}/${image_name}:${tag}"
 
-    # 直接执行 docker push，不捕获输出
-    if ! docker push ${REGISTRY_URL}/${IMAGE_NAME}:${tag}; then
-        echo "✗ Error: Failed to push ${tag} tag"
+    echo "Pushing ${image_name}:${tag} to registry..."
+    echo "Executing: docker push ${full_image_name}"
+
+    if ! docker push "${full_image_name}"; then
+        echo "✗ Error: Failed to push ${image_name}:${tag}"
         return 1
     fi
 
-    # 验证镜像是否已推送
-    if docker manifest inspect ${REGISTRY_URL}/${IMAGE_NAME}:${tag} >/dev/null 2>&1; then
-        echo "✓ ${tag} tag pushed successfully"
+    if docker manifest inspect "${full_image_name}" >/dev/null 2>&1; then
+        echo "✓ ${image_name}:${tag} pushed successfully"
         return 0
     else
-        echo "✗ Error: Failed to verify ${tag} tag"
+        echo "✗ Error: Failed to verify ${image_name}:${tag}"
         return 1
     fi
+}
+
+_push_and_verify_image() {
+    local tag="$1"
+    local result=0
+
+    # 推送客户端镜像
+    if ! _push_and_verify_single_image "${IMAGE_NAME}" "${tag}"; then
+        echo "✗ Error: Failed to push/verify client image"
+        result=1
+    fi
+
+    # 如果启用了服务端，推送服务端镜像
+    if [[ "${ENABLE_SERVERSIDE}" == "true" ]]; then
+        if ! _push_and_verify_single_image "${SERVERSIDE_IMAGE_NAME}" "${tag}"; then
+            echo "✗ Error: Failed to push/verify server image"
+            result=1
+        fi
+    fi
+
+    return ${result}
 }
 
 ################################################################################
@@ -193,9 +290,10 @@ _push_and_verify_image() {
 ################################################################################
 5_cleanup_images() {
     echo -e "\n=== 4. Cleaning Up Intermediate Images ==="
+    
+    # 清理客户端镜像
     echo "Finding and removing intermediate images for ${IMAGE_NAME}"
     echo "Keeping final image ID: ${FINAL_IMAGE_ID}"
-
     docker images | grep "${IMAGE_NAME}" | grep -v "${REGISTRY_URL}" | \
     awk '{print $3}' | while read -r id; do
         if [ "$id" != "$FINAL_IMAGE_ID" ]; then
@@ -203,6 +301,19 @@ _push_and_verify_image() {
             docker rmi -f "$id" || true
         fi
     done
+
+    # 清理服务端镜像
+    if [[ "${ENABLE_SERVERSIDE}" == "true" ]]; then
+        echo "Finding and removing intermediate images for ${SERVERSIDE_IMAGE_NAME}"
+        echo "Keeping final serverside image ID: ${FINAL_SERVERSIDE_IMAGE_ID}"
+        docker images | grep "${SERVERSIDE_IMAGE_NAME}" | grep -v "${REGISTRY_URL}" | \
+        awk '{print $3}' | while read -r id; do
+            if [ "$id" != "$FINAL_SERVERSIDE_IMAGE_ID" ]; then
+                echo "Removing serverside image ID: $id"
+                docker rmi -f "$id" || true
+            fi
+        done
+    fi
 
     return 0
 }

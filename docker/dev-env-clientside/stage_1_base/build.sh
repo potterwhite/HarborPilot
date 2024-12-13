@@ -17,7 +17,7 @@
 set -e
 
 BUILD_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${BUILD_SCRIPT_DIR}/../../project_handover/.env"
+source "${BUILD_SCRIPT_DIR}/../../../project_handover/.env"
 
 echo "Building base stage..."
 docker build \

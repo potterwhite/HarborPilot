@@ -16,7 +16,7 @@
 set -e
 
 BUILD_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${BUILD_SCRIPT_DIR}/../../project_handover/.env"
+source "${BUILD_SCRIPT_DIR}/../../../project_handover/.env"
 
 # Check required variables
 for var in DEV_USERNAME DEV_UID DEV_GID SDK_INSTALL_PATH IMAGE_NAME; do
