@@ -50,3 +50,7 @@ project_handover/ubuntu/docker-compose.yaml
 project_handover/volumes/*
 !project_handover/volumes/WelcomeToVolumesRoot
 
+
+docker/dev-env-serverside/**
+!docker/dev-env-serverside/build.sh
+

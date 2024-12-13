@@ -1,3 +1,4 @@
+#!/bin/bash
 ################################################################################
 # File: docker/stage_2_tools/offline_packages/gcc/install_gcc.sh
 #
@@ -26,7 +27,6 @@
 # License: MIT
 ################################################################################
 
-#!/bin/bash
 set -e
 
 # Source configurations
