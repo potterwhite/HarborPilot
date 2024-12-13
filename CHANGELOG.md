@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.7] - 2024-12-14
+### Changed
+- reorganize the structure of project
+
+### Added
+- dev-env-serverside(distcc)
+
 ## [0.5.6] - 2024-12-12
 ### Changed
 - Utilize Harbor for docker image management instead of docker registry
@@ -79,3 +86,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.5.5]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.5
 
 [0.5.6]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.6
+
+[0.5.7]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.6

@@ -97,7 +97,7 @@ prompt_with_timeout() {
         local name="${stage%%:*}"
         local script="${stage#*:}"
         echo "Building stage: $name"
-        if ! docker/$script/build.sh; then
+        if ! docker/dev-env-clientside/$script/build.sh; then
             echo "Error: Failed to build $name"
             return 1
         fi

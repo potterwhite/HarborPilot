@@ -1,0 +1,5 @@
+# Change apt source to China mirrors
+
+RUN echo "Change apt source to China mirrors" && \
+    sed -i 's|http://archive.ubuntu.com/ubuntu/|http://mirrors.aliyun.com/ubuntu/|g' /etc/apt/sources.list && \
+    echo -e "Done\n"

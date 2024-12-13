@@ -6,13 +6,21 @@
 ################################################################################
 
 # Get script directory and load environment variables
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_SOURCE="${BASH_SOURCE[0]}"
+SCRIPT_PATH="$(readlink -f ${SCRIPT_SOURCE})"
+SCRIPT_DIR="$(dirname "${SCRIPT_PATH}")"
 PARENT_DIR="$(dirname "${SCRIPT_DIR}")"
+
+#enter script dir
+cd ${SCRIPT_DIR}
+
 if [ -f "${PARENT_DIR}/.env" ]; then
     source "${PARENT_DIR}/.env"
     # cat "${PARENT_DIR}/.env"
 else
     echo "Error: .env file not found"
+    echo -e "\${PARENT_DIR}=${PARENT_DIR}\n"
+    echo -e "\${SCRIPT_DIR}=${SCRIPT_DIR}\n"
     exit 1
 fi
 
@@ -85,6 +93,22 @@ services:
 
     working_dir: ${WORKSPACE_ROOT}
 
+    networks:
+      - dev-net
+
+###############################################################
+#    distcc server side                                       #
+###############################################################
+distcc-${PROJECT_NAME}:
+    image: ${REGISTRY_URL}/distcc:3.4
+    container_name: distcc-${PROJECT_NAME}
+    restart: unless-stopped
+    volumes:
+      - /opt/toolchains:/opt/toolchains:ro
+    environment:
+      - TOOLCHAIN_PATH=/opt/toolchains/${TOOLCHAIN_VERSION}/bin
+    ports:
+      - "${DISTCC_PORT:-3632}:3632"
     networks:
       - dev-net
 

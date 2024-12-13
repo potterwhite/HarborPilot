@@ -1,0 +1,16 @@
+# Install base packages
+
+RUN echo "Install base packages" && \
+    apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    python${PYTHON_VERSION} \
+    python3-pip \
+    python${PYTHON_VERSION}-dev \
+    build-essential \
+    cmake \
+    pkg-config \
+    git \
+    wget \
+    unzip \
+    vim \
+    && rm -rf /var/lib/apt/lists/* && \
+    echo -e "Done\n"
