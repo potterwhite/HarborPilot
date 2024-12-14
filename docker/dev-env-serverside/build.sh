@@ -98,7 +98,7 @@ build_distcc_image() {
         --progress=plain \
         --no-cache \
         --network=host \
-        -t "${REGISTRY_URL}/${SERVERSIDE_IMAGE_NAME}:${PROJECT_VERSION}" \
+        -t "${SERVERSIDE_IMAGE_NAME}:${PROJECT_VERSION}" \
         -f "${BUILD_SCRIPT_DIR}/${TEMP_DOCKERFILE_NAME}" \
         ${BUILD_SCRIPT_DIR}
 }

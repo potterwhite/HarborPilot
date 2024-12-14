@@ -16,27 +16,23 @@ set -e
 ################################################################################
 main() {
     SECONDS=0
-    echo "Build process started at: $(date)"
+    echo "Build process started at: "
+    echo "###################################"
+    echo "#   $(LC_ALL=C date +%a\ %b%d.%Y\ %H:%M:%S)"
+    echo "###################################"
 
     echo "Loading environment variables from project_handover/.env"
     source project_handover/.env
 
-    # Build is optional, other steps are mandatory
-    if prompt_with_timeout "Do you want to build all five stages of Docker images?" 10; then
-        2_build_images || exit 1
-    else
-        echo "Build stages skipped."
-    fi
+    2_build_images || exit 1
 
     3_prepare_version_info || exit 1
 
-    if prompt_with_timeout "Do you want to push images to the registry?" 10; then
-        4_tag_and_push_images || exit 1
-    else
-        echo "Push stages skipped."
-    fi
+    4_tag_images || exit 1
 
-    5_cleanup_images || exit 1
+    5_push_images || exit 1
+
+    6_cleanup_images || exit 1
 
     local duration=$SECONDS
     echo -e "\n=== Build Process Completed Successfully ==="
@@ -55,7 +51,10 @@ prompt_with_timeout() {
     local message="$1"
     local timeout="$2"
 
-    echo -e "\n${message}"
+    echo -e "\n--------------------"
+    echo -e "${message}"
+    echo -e "--------------------"
+
     echo "Default: Yes (Press 'n' to skip, any other key to continue, Ctrl+C or Esc to cancel)"
 
     trap 'echo -e "\nSkipping..."; return 1' SIGINT
@@ -82,8 +81,25 @@ prompt_with_timeout() {
 # Returns:
 #   0 on success, 1 on failure
 ################################################################################
-2_build_images() {
-    echo -e "\n=== 1. Building Docker Images ==="
+2_build_images(){
+    # Build is optional, other steps are mandatory
+    if prompt_with_timeout "Build [ClientSide] images?" 10; then
+        _build_images_clientside || exit 1
+    else
+        echo "Build clientside image stages skipped."
+    fi
+
+    # Build is optional, other steps are mandatory
+    if prompt_with_timeout "Build [ServerSide] images?" 10; then
+        _build_images_serverside || exit 1
+    else
+        echo "Build serverside image stages skipped."
+    fi
+
+}
+
+_build_images_clientside() {
+    echo -e "\n=== 1. Building ClientSide Docker Images ==="
 
     local stages=(
         "Base image:stage_1_base"
@@ -109,6 +125,17 @@ prompt_with_timeout() {
 
     return 0
 }
+
+_build_images_serverside() {
+    echo -e "\n=== 1. Building ServerSide Docker Images ==="
+
+    echo "Start Building ServerSide Dev Env"
+    docker/dev-env-serverside/build.sh
+    echo "Done with ServerSide Dev Env Building."
+
+    return 0
+}
+
 
 ################################################################################
 # 3. Prepare version information and store final image ID
@@ -200,34 +227,55 @@ _tag_image() {
 # Returns:
 #   0 on success, 1 on failure
 ################################################################################
-4_tag_and_push_images() {
-    echo -e "\n=== 4. Tagging and Pushing Images ==="
-    local result=0
+4_tag_images() {
 
-    # Tag images
-    echo "Tagging images..."
-    if ! _tag_image "${PROJECT_VERSION}"; then
-        echo "✗ Error: Failed to tag images with version ${PROJECT_VERSION}"
-        result=1
-    fi
+    if prompt_with_timeout "Tag images?" 10; then
+        echo -e "\n=== 3. Tagging Images ==="
+        local result=0
 
-    if ! _tag_image "latest"; then
-        echo "✗ Error: Failed to tag images as latest"
-        result=1
-    fi
-
-    # Push images only if tagging was successful
-    if [ ${result} -eq 0 ]; then
-        echo "Pushing images..."
-        if ! _push_and_verify_image "${PROJECT_VERSION}"; then
-            echo "✗ Error: Failed to push version ${PROJECT_VERSION}"
+        # Tag images
+        echo "Tagging images..."
+        if ! _tag_image "${PROJECT_VERSION}"; then
+            echo "✗ Error: Failed to tag images with version ${PROJECT_VERSION}"
             result=1
         fi
 
-        if ! _push_and_verify_image "latest"; then
-            echo "✗ Error: Failed to push latest version"
+        if ! _tag_image "latest"; then
+            echo "✗ Error: Failed to tag images as latest"
             result=1
         fi
+
+        echo "Done with tagging images."
+
+    else
+        echo "Tagging stages skipped."
+    fi
+
+    return ${result}
+}
+
+5_push_images() {
+
+    if prompt_with_timeout "Push images to the registry?" 10; then
+        echo -e "\n=== 4. Pushing Images ==="
+        local result=0
+
+        # Push images only if tagging was successful
+        if [ ${result} -eq 0 ]; then
+            echo "Pushing images..."
+            if ! _push_and_verify_image "${PROJECT_VERSION}"; then
+                echo "✗ Error: Failed to push version ${PROJECT_VERSION}"
+                result=1
+            fi
+
+            if ! _push_and_verify_image "latest"; then
+                echo "✗ Error: Failed to push latest version"
+                result=1
+            fi
+        fi
+
+    else
+        echo "Push stages skipped."
     fi
 
     return ${result}
@@ -245,7 +293,7 @@ _push_and_verify_single_image() {
     local tag="$2"
     local full_image_name="${REGISTRY_URL}/${image_name}:${tag}"
 
-    echo "Pushing ${image_name}:${tag} to registry..."
+    echo -e "\n##############################\nPushing ${image_name}:${tag} to registry...\n##############################"
     echo "Executing: docker push ${full_image_name}"
 
     if ! docker push "${full_image_name}"; then
@@ -253,7 +301,12 @@ _push_and_verify_single_image() {
         return 1
     fi
 
-    if docker manifest inspect "${full_image_name}" >/dev/null 2>&1; then
+    #############################################################
+    # verify the image on the server
+    #############################################################
+
+    echo -e "\nExecuting: docker manifest inspect --insecure ${full_image_name}"
+    if docker manifest inspect --insecure "${full_image_name}" >/dev/null 2>&1; then
         echo "✓ ${image_name}:${tag} pushed successfully"
         return 0
     else
@@ -288,32 +341,36 @@ _push_and_verify_image() {
 # Returns:
 #   0 on success, 1 on failure
 ################################################################################
-5_cleanup_images() {
-    echo -e "\n=== 4. Cleaning Up Intermediate Images ==="
-    
-    # 清理客户端镜像
-    echo "Finding and removing intermediate images for ${IMAGE_NAME}"
-    echo "Keeping final image ID: ${FINAL_IMAGE_ID}"
-    docker images | grep "${IMAGE_NAME}" | grep -v "${REGISTRY_URL}" | \
-    awk '{print $3}' | while read -r id; do
-        if [ "$id" != "$FINAL_IMAGE_ID" ]; then
-            echo "Removing image ID: $id"
-            docker rmi -f "$id" || true
-        fi
-    done
+6_cleanup_images() {
 
-    # 清理服务端镜像
-    if [[ "${ENABLE_SERVERSIDE}" == "true" ]]; then
-        echo "Finding and removing intermediate images for ${SERVERSIDE_IMAGE_NAME}"
-        echo "Keeping final serverside image ID: ${FINAL_SERVERSIDE_IMAGE_ID}"
-        docker images | grep "${SERVERSIDE_IMAGE_NAME}" | grep -v "${REGISTRY_URL}" | \
+
+    if prompt_with_timeout "Clean all mid-stage images?" 10; then
+        echo -e "\n=== 5. Cleaning Up Intermediate Images ==="
+
+        # 清理客户端镜像
+        echo "Finding and removing intermediate images for ${IMAGE_NAME}"
+        echo "Keeping final image ID: ${FINAL_IMAGE_ID}"
+        docker images | grep "${IMAGE_NAME}" | grep -v "${REGISTRY_URL}" | \
         awk '{print $3}' | while read -r id; do
-            if [ "$id" != "$FINAL_SERVERSIDE_IMAGE_ID" ]; then
-                echo "Removing serverside image ID: $id"
+            if [ "$id" != "$FINAL_IMAGE_ID" ]; then
+                echo "Removing image ID: $id"
                 docker rmi -f "$id" || true
             fi
         done
-    fi
+
+        # 清理服务端镜像
+        if [[ "${ENABLE_SERVERSIDE}" == "true" ]]; then
+            echo "Finding and removing intermediate images for ${SERVERSIDE_IMAGE_NAME}"
+            echo "Keeping final serverside image ID: ${FINAL_SERVERSIDE_IMAGE_ID}"
+            docker images | grep "${SERVERSIDE_IMAGE_NAME}" | grep -v "$ {REGISTRY_URL}" | \
+            awk '{print $3}' | while read -r id; do
+                if [ "$id" != "$FINAL_SERVERSIDE_IMAGE_ID" ]; then
+                    echo "Removing serverside image ID: $id"
+                    docker rmi -f "$id" || true
+                fi
+            done
+        fi
+    fi # end of if [ prompt_with_timeout "Clean all mid-stage images?" 10 ];then
 
     return 0
 }
