@@ -55,7 +55,33 @@ gen_environment_variables() {
 #         return 2
 #     fi
 # }
+check_docker_login() {
+    local registry="${REGISTRY_URL}"
 
+    while true; do
+        # 检查登录状态
+        if docker manifest inspect "${REGISTRY_URL}/${SERVERSIDE_IMAGE_NAME}:latest" >/dev/null 2>&1; then
+            print_msg "Already logged in to registry ${registry}" "${GREEN}"
+            return 0
+        fi
+
+        print_msg "Need to login to registry ${registry}" "${YELLOW}"
+
+        # 读取登录信息
+        read -p "Enter username: " username
+        read -s -p "Enter password: " password
+        echo  # 添加换行
+
+        # 尝试登录
+        if echo "$password" | docker login "${registry}" -u "${username}" --password-stdin >/dev/null 2>&1; then
+            print_msg "Successfully logged in to registry ${registry}" "${GREEN}"
+            return 0
+        else
+            print_msg "Login failed! Please try again..." "${RED}"
+            sleep 1
+        fi
+    done
+}
 # Function to check if container exists
 container_exists() {
     docker ps -a --format '{{.Names}}' | grep -q "^${SERVERSIDE_CONTAINER_NAME}$"
@@ -210,24 +236,29 @@ remove_dev_env() {
 case "$1" in
     "start")
         gen_environment_variables
+        check_docker_login
         start_dev_env
         ;;
     "stop")
         gen_environment_variables
+        check_docker_login
         stop_dev_env
         ;;
     "restart")
         gen_environment_variables
+        check_docker_login
         stop_dev_env
         start_dev_env
         ;;
     "recreate")
         gen_environment_variables
+        check_docker_login
         remove_dev_env
         start_dev_env
         ;;
     "remove")
         gen_environment_variables
+        check_docker_login
         remove_dev_env
         ;;
     "-h"|"--help"|"")
