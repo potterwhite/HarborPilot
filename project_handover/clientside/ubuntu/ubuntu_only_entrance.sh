@@ -6,21 +6,21 @@
 ################################################################################
 
 # Get script directory and load environment variables
-SCRIPT_SOURCE="${BASH_SOURCE[0]}"
-SCRIPT_PATH="$(readlink -f ${SCRIPT_SOURCE})"
-SCRIPT_DIR="$(dirname "${SCRIPT_PATH}")"
-PARENT_DIR="$(dirname "${SCRIPT_DIR}")"
+
+BUILD_SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+BUILD_SCRIPT_DIR="$(dirname "${BUILD_SCRIPT_PATH}")"
+# PARENT_DIR="$(dirname "${BUILD_SCRIPT_DIR}")"
 
 #enter script dir
-cd ${SCRIPT_DIR}
+cd ${BUILD_SCRIPT_DIR}
 
-if [ -f "${PARENT_DIR}/.env" ]; then
-    source "${PARENT_DIR}/.env"
+if [ -f "${BUILD_SCRIPT_DIR}/../../.env" ]; then
+    source "${BUILD_SCRIPT_DIR}/../../.env"
     # cat "${PARENT_DIR}/.env"
 else
     echo "Error: .env file not found"
     echo -e "\${PARENT_DIR}=${PARENT_DIR}\n"
-    echo -e "\${SCRIPT_DIR}=${SCRIPT_DIR}\n"
+    echo -e "\${BUILD_SCRIPT_DIR}=${BUILD_SCRIPT_DIR}\n"
     exit 1
 fi
 
@@ -65,7 +65,7 @@ container_running() {
 
 # Function to generate docker-compose configuration
 generate_compose_config() {
-    cat << EOF > "${SCRIPT_DIR}/docker-compose.yaml"
+    cat << EOF > "${BUILD_SCRIPT_DIR}/docker-compose.yaml"
 services:
   dev-env:
     image: ${REGISTRY_URL}/${IMAGE_NAME}:latest
@@ -79,7 +79,7 @@ services:
 
     volumes:
       - /dev:/dev
-      - "${SCRIPT_DIR}/../volumes:${VOLUMES_ROOT}"
+      - "${BUILD_SCRIPT_DIR}/../volumes:${VOLUMES_ROOT}"
 
     ports:
       - "${SSH_PORT}:22"
@@ -95,23 +95,7 @@ services:
 
     networks:
       - dev-net
-
-###############################################################
-#    distcc server side                                       #
-###############################################################
-distcc-${PROJECT_NAME}:
-    image: ${REGISTRY_URL}/distcc:3.4
-    container_name: distcc-${PROJECT_NAME}
-    restart: unless-stopped
-    volumes:
-      - /opt/toolchains:/opt/toolchains:ro
-    environment:
-      - TOOLCHAIN_PATH=/opt/toolchains/${TOOLCHAIN_VERSION}/bin
-    ports:
-      - "${DISTCC_PORT:-3632}:3632"
-    networks:
-      - dev-net
-
+      
 networks:
   dev-net:
     driver: bridge
@@ -192,7 +176,7 @@ _start_container_without_prompt() {
     if ! container_exists; then
         print_msg "Creating new development environment..."
         generate_compose_config
-        (cd "${SCRIPT_DIR}" && docker compose up -d)
+        (cd "${BUILD_SCRIPT_DIR}" && docker compose up -d)
     else
         print_msg "Starting existing container..."
         docker start ${CONTAINER_NAME}
@@ -219,8 +203,8 @@ stop_dev_env() {
 remove_dev_env() {
     if container_exists; then
         print_msg "Removing development environment..."
-        (cd "${SCRIPT_DIR}" && docker compose down)
-        rm -f "${SCRIPT_DIR}/docker-compose.yaml"
+        (cd "${BUILD_SCRIPT_DIR}" && docker compose down)
+        rm -f "${BUILD_SCRIPT_DIR}/docker-compose.yaml"
     else
         print_msg "Container does not exist" "${YELLOW}"
     fi

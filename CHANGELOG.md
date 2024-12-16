@@ -11,7 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - reorganize the structure of project
 
 ### Added
-- dev-env-serverside(distcc)
+- add distcc support with clientside docker image
+- add serverside docker image for distccd server
+ (and the sdk the buildroot is using internal toolchain so distccd server is not used in this version)
+
 
 ## [0.5.6] - 2024-12-12
 ### Changed

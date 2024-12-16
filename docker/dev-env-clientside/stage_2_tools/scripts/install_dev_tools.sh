@@ -33,7 +33,7 @@ first_install_core_tools() {
         libtool \
         meson \
         pkg-config \
-        ccache
+        ccache 
 }
 
 ###############################################################################
@@ -276,13 +276,21 @@ ninth_install_arm_toolchain() {
     fi
 }
 
+tenth_install_distcc() {
+    # netcat-openbsd is for nc cmd
+    apt-get install -y \
+        distcc \
+        netcat-openbsd
+}
+
 ###############################################################################
 # Tenth: Cleanup
 # Description: Clean up package manager cache
 ###############################################################################
-tenth_cleanup() {
+nintyninth_cleanup() {
     apt-get clean && rm -rf /var/lib/apt/lists/*
 }
+
 
 ###############################################################################
 # Main function
@@ -303,7 +311,10 @@ main() {
 
     eighth_install_python_packages
     ninth_install_arm_toolchain
-    tenth_cleanup
+    tenth_install_distcc
+
+    #------------------------------
+    nintyninth_cleanup
 }
 
 # Execute main function

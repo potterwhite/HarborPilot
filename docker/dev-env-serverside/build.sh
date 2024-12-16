@@ -43,17 +43,54 @@ toolchain_preparation() {
 }
 
 entrypoint_preparation() {
+    # 首先设置日志相关的环境变量
+    local log_dir="/development/docker_volumes/log/distccd"
+    local log_level="${DISTCC_LOG_LEVEL:-debug}"
+
     mkdir -p ${TEMP_ENTRYPOINT_SCRIPT_DIR}
     touch ${TEMP_ENTRYPOINT_SCRIPT_DIR}/${TEMP_ENTRYPOINT_SCRIPT_FILE}
-    cat > ${TEMP_ENTRYPOINT_SCRIPT_DIR}/${TEMP_ENTRYPOINT_SCRIPT_FILE} << DELIM
+
+    cat > ${TEMP_ENTRYPOINT_SCRIPT_DIR}/${TEMP_ENTRYPOINT_SCRIPT_FILE} << 'EOF'
 #!/bin/bash
 
+# 启用错误追踪
+set -e
+
+# 添加调试输出
+echo "Starting distcc server..."
+
+# 创建日志目录
+if ! mkdir -p /development/docker_volumes/log/distccd; then
+    echo "ERROR: Failed to create log directory"
+    exit 1
+fi
+
+# 获取CPU信息并验证
+AVAILABLE_CORES=$(nproc)
+if [ -z "${AVAILABLE_CORES}" ] || [ "${AVAILABLE_CORES}" -eq 0 ]; then
+    echo "ERROR: Failed to get CPU cores, using default value 1"
+    AVAILABLE_CORES=1
+fi
+echo "Available cores: ${AVAILABLE_CORES}"
+
+# 计算作业数并验证
+DISTCC_JOBS=$(( ${AVAILABLE_CORES} * 8/10 ))
+if [ "${DISTCC_JOBS}" -lt 1 ]; then
+    echo "WARNING: Calculated jobs too low, using default value 1"
+    DISTCC_JOBS=1
+fi
+echo "Setting jobs to: ${DISTCC_JOBS}"
+
+# 启动服务
 exec distccd --daemon --no-detach \
     --allow 192.168.0.0/16 \
-    --jobs $(nproc) \
+    --jobs ${DISTCC_JOBS} \
     --log-stderr \
-    --log-level info
-DELIM
+    --log-level debug \
+    --log-file /development/docker_volumes/log/distccd/distcc.log \
+    --stats \
+    --stats-port 3633
+EOF
     chmod +x ${TEMP_ENTRYPOINT_SCRIPT_DIR}/${TEMP_ENTRYPOINT_SCRIPT_FILE}
 }
 
