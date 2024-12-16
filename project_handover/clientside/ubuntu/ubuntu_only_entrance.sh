@@ -5,6 +5,8 @@
 # Description: Development environment management script
 ################################################################################
 
+set -e
+
 # Get script directory and load environment variables
 
 BUILD_SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
@@ -53,6 +55,10 @@ Example:
 EOF
 }
 
+image_exists() {
+    docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^${REGISTRY_URL}/${IMAGE_NAME}:latest$"
+}
+
 # Function to check if container exists
 container_exists() {
     docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"
@@ -95,7 +101,7 @@ services:
 
     networks:
       - dev-net
-      
+
 networks:
   dev-net:
     driver: bridge
@@ -110,7 +116,7 @@ start_dev_env() {
             print_msg "Please choose an option (press Ctrl+C to cancel):" "${YELLOW}"
             print_msg "1. Enter the container" "${YELLOW}"
             print_msg "2. Restart container" "${YELLOW}"
-            print_msg "3. Remove and recreate" "${YELLOW}"
+            print_msg "3. Remove(container & image) and recreate" "${YELLOW}"
             print_msg "(You can always enter container manually using: docker exec -it -u ${DEV_USERNAME} ${CONTAINER_NAME} bash)" "${GREEN}"
 
             # Wait for user input
@@ -137,6 +143,8 @@ start_dev_env() {
                     ;;
                 3)
                     remove_dev_env
+                    remove_dev_env_image
+                    retrieve_latest_image
                     _start_container_without_prompt
                     print_msg "Enter container? [Y/n]: " "${YELLOW}"
                     read -r answer
@@ -201,12 +209,33 @@ stop_dev_env() {
 
 # Function to remove development environment
 remove_dev_env() {
-    if container_exists; then
-        print_msg "Removing development environment..."
-        (cd "${BUILD_SCRIPT_DIR}" && docker compose down)
-        rm -f "${BUILD_SCRIPT_DIR}/docker-compose.yaml"
-    else
-        print_msg "Container does not exist" "${YELLOW}"
+    # 1. 先处理容器
+    if container_exists "${CONTAINER_NAME}"; then
+        print_msg "Removing container..."
+        if ! docker rm "${CONTAINER_NAME}" -f; then
+            print_msg "Failed to remove container" "${RED}"
+            return 1
+        fi
+    fi
+}
+
+remove_dev_env_image() {
+    # 2. 再处理镜像
+    if image_exists "${IMAGE_NAME}"; then
+        print_msg "Removing image..."
+        if ! docker rmi "${REGISTRY_URL}/${IMAGE_NAME}:latest"; then
+            print_msg "Failed to remove image" "${RED}"
+            return 1
+        fi
+    fi
+}
+
+retrieve_latest_image() {
+    # 3. 最后尝试拉取新镜像
+    print_msg "Pulling latest image..."
+    if ! docker pull "${REGISTRY_URL}/${IMAGE_NAME}:latest"; then
+        print_msg "Failed to pull new image" "${RED}"
+        return 1
     fi
 }
 
@@ -224,6 +253,8 @@ case "$1" in
         ;;
     "recreate")
         remove_dev_env
+        remove_dev_env_image
+        retrieve_latest_image
         start_dev_env
         ;;
     "remove")
