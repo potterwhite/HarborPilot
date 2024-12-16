@@ -21,8 +21,15 @@ main() {
     echo "#   $(LC_ALL=C date +%a\ %b%d.%Y\ %H:%M:%S)"
     echo "###################################"
 
+
+    BUILD_SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+    # echo "BUILD_SCRIPT_PATH=${BUILD_SCRIPT_PATH}"
+    BUILD_SCRIPT_DIR="$(dirname ${BUILD_SCRIPT_PATH})"
+    # echo "BUILD_SCRIPT_DIR=${BUILD_SCRIPT_DIR}"
+
     echo "Loading environment variables from project_handover/.env"
-    source project_handover/.env
+
+    source ${BUILD_SCRIPT_DIR}/project_handover/.env
 
     2_build_images || exit 1
 
@@ -113,7 +120,7 @@ _build_images_clientside() {
         local name="${stage%%:*}"
         local script="${stage#*:}"
         echo "Building stage: $name"
-        if ! docker/dev-env-clientside/$script/build.sh; then
+        if ! ${BUILD_SCRIPT_DIR}/docker/dev-env-clientside/$script/build.sh; then
             echo "Error: Failed to build $name"
             return 1
         fi
@@ -130,7 +137,7 @@ _build_images_serverside() {
     echo -e "\n=== 1. Building ServerSide Docker Images ==="
 
     echo "Start Building ServerSide Dev Env"
-    docker/dev-env-serverside/build.sh
+    ${BUILD_SCRIPT_DIR}/docker/dev-env-serverside/build.sh
     echo "Done with ServerSide Dev Env Building."
 
     return 0
