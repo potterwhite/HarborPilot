@@ -46,7 +46,7 @@ entrypoint_preparation() {
     mkdir -p ${TEMP_ENTRYPOINT_SCRIPT_DIR}
     touch ${TEMP_ENTRYPOINT_SCRIPT_DIR}/${TEMP_ENTRYPOINT_SCRIPT_FILE}
     cat > ${TEMP_ENTRYPOINT_SCRIPT_DIR}/${TEMP_ENTRYPOINT_SCRIPT_FILE} << DELIM
-#!/bin/bash        
+#!/bin/bash
 
 exec distccd --daemon --no-detach \
     --allow 192.168.0.0/16 \
@@ -72,13 +72,19 @@ RUN apt-get update && apt-get install -y \
 #############################################
 #  toolchian init
 #############################################
-COPY ${TEMP_TOOLCHAIN_TARGET_GCC} /tmp
-COPY ${TEMP_TOOLCHAIN_TARGET_INSTALL_GCC} /tmp
+RUN mkdir -p /tmp/offline_packages/gcc
+
+COPY ${TEMP_TOOLCHAIN_TARGET_GCC} /tmp/offline_packages/gcc/
+COPY ${TEMP_TOOLCHAIN_TARGET_INSTALL_GCC} /tmp/offline_packages/gcc/
 COPY ${TEMP_TOOLCHAIN_TARGET_CONFIG_PATH} /tmp
 
-RUN ls -lha /tmp && \
-    chmod +x /tmp/install_gcc.sh && \
-    /tmp/install_gcc.sh 
+RUN ls -lha /tmp/  && \
+    ls -lha /tmp/offline_packages/ && \
+    ls -lha /tmp/offline_packages/gcc/ && \
+    chmod +x /tmp/offline_packages/gcc/install_gcc.sh && \
+    /tmp/offline_packages/gcc/install_gcc.sh && \
+    echo "source /etc/environment" >> /etc/bash.bashrc && \
+    chmod 644 /etc/environment
 
 #############################################
 #  entrypoint init

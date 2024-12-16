@@ -60,7 +60,7 @@ check_docker_login() {
 
     while true; do
         # 检查登录状态
-        if docker manifest inspect "${REGISTRY_URL}/${SERVERSIDE_IMAGE_NAME}:latest" >/dev/null 2>&1; then
+        if docker manifest inspect --insecure "${REGISTRY_URL}/${SERVERSIDE_IMAGE_NAME}:latest" >/dev/null 2>&1; then
             print_msg "Already logged in to registry ${registry}" "${GREEN}"
             return 0
         fi

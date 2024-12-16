@@ -119,9 +119,9 @@ _build_images_clientside() {
         fi
     done
 
-    echo "Start Building ServerSide Dev Env"
-    docker/dev-env-serverside/build.sh
-    echo "Done with ServerSide Dev Env Building."
+    # echo "Start Building ServerSide Dev Env"
+    # docker/dev-env-serverside/build.sh
+    # echo "Done with ServerSide Dev Env Building."
 
     return 0
 }
