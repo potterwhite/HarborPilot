@@ -1,32 +1,38 @@
 #!/bin/bash
 
-set -e
+func_setup_environment() {
+    echo "Setting up environment..."
 
-BUILD_SCRIPT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
-cd ${BUILD_SCRIPT_DIR}
+    set -e
 
-echo "BUILD_SCRIPT_DIR=${BUILD_SCRIPT_DIR}"
-echo "current_dir=$(pwd -P)"
+    BUILD_SCRIPT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+    cd ${BUILD_SCRIPT_DIR}
 
-# read -r ${OHNO}
-# Load .env file
-set -a
-source "${BUILD_SCRIPT_DIR}/../../project_handover/.env"
-set +a
+    echo "BUILD_SCRIPT_DIR=${BUILD_SCRIPT_DIR}"
+    echo "current_dir=$(pwd -P)"
 
-# ROOT_DIR="$(cd "${BUILD_SCRIPT_DIR}/../../" && pwd)"
-TEMP_TOOLCHAIN_SRC_GCC="${BUILD_SCRIPT_DIR}/../dev-env-clientside/stage_2_tools/offline_packages/gcc/${TOOLCHAIN_TARBALL_NAME}"
-TEMP_TOOLCHAIN_SRC_INSTALL_GCC="${BUILD_SCRIPT_DIR}/../dev-env-clientside/stage_2_tools/offline_packages/gcc/install_gcc.sh"
-TEMP_TOOLCHAIN_SRC_CONFIG_PATH="${BUILD_SCRIPT_DIR}/../dev-env-clientside/stage_2_tools/configs/tool_versions.conf"
+    # read -r ${OHNO}
+    # Load .env file
+    set -a
+    source "${BUILD_SCRIPT_DIR}/../../project_handover/.env"
+    set +a
 
-TEMP_TOOLCHAIN_TARBALLS_DIR="TeMp_toolchains"
-TEMP_TOOLCHAIN_TARGET_GCC="${TEMP_TOOLCHAIN_TARBALLS_DIR}/${TOOLCHAIN_TARBALL_NAME}"
-TEMP_TOOLCHAIN_TARGET_INSTALL_GCC="${TEMP_TOOLCHAIN_TARBALLS_DIR}/install_gcc.sh"
-TEMP_TOOLCHAIN_TARGET_CONFIG_PATH="${TEMP_TOOLCHAIN_TARBALLS_DIR}/tool_versions.conf"
+    # ROOT_DIR="$(cd "${BUILD_SCRIPT_DIR}/../../" && pwd)"
+    TEMP_TOOLCHAIN_SRC_GCC="${BUILD_SCRIPT_DIR}/../dev-env-clientside/stage_2_tools/offline_packages/gcc/${TOOLCHAIN_TARBALL_NAME}"
+    TEMP_TOOLCHAIN_SRC_INSTALL_GCC="${BUILD_SCRIPT_DIR}/../dev-env-clientside/stage_2_tools/offline_packages/gcc/install_gcc.sh"
+    TEMP_TOOLCHAIN_SRC_CONFIG_PATH="${BUILD_SCRIPT_DIR}/../dev-env-clientside/stage_2_tools/configs/tool_versions.conf"
 
-TEMP_ENTRYPOINT_SCRIPT_DIR="TeMp_configs"
-TEMP_ENTRYPOINT_SCRIPT_FILE="entrypoint.sh"
-TEMP_DOCKERFILE_NAME="DockerfileOfServerSide"
+    TEMP_TOOLCHAIN_TARBALLS_DIR="TeMp_toolchains"
+    TEMP_TOOLCHAIN_TARGET_GCC="${TEMP_TOOLCHAIN_TARBALLS_DIR}/${TOOLCHAIN_TARBALL_NAME}"
+    TEMP_TOOLCHAIN_TARGET_INSTALL_GCC="${TEMP_TOOLCHAIN_TARBALLS_DIR}/install_gcc.sh"
+    TEMP_TOOLCHAIN_TARGET_CONFIG_PATH="${TEMP_TOOLCHAIN_TARBALLS_DIR}/tool_versions.conf"
+
+    TEMP_ENTRYPOINT_SCRIPT_DIR="TeMp_configs"
+    TEMP_ENTRYPOINT_SCRIPT_FILE="entrypoint.sh"
+    TEMP_START_DISTCCD_SCRIPT_FILE="start_distccd.sh"
+    TEMP_DOCKERFILE_NAME="DockerfileOfServerSide"
+
+}
 
 read_module() {
     cat "${BUILD_SCRIPT_DIR}/../dockerfile_modules/$1.df" | envsubst
@@ -50,7 +56,37 @@ entrypoint_preparation() {
     mkdir -p ${TEMP_ENTRYPOINT_SCRIPT_DIR}
     touch ${TEMP_ENTRYPOINT_SCRIPT_DIR}/${TEMP_ENTRYPOINT_SCRIPT_FILE}
 
-    cat > ${TEMP_ENTRYPOINT_SCRIPT_DIR}/${TEMP_ENTRYPOINT_SCRIPT_FILE} << 'EOF'
+    cat > ${TEMP_ENTRYPOINT_SCRIPT_DIR}/${TEMP_ENTRYPOINT_SCRIPT_FILE} << EOF
+#!/bin/bash
+
+#-------------------------------------------------
+# 1st. enable exit on error
+set -e
+
+echo -e "\nStarting entrypoint.sh..."
+
+#-------------------------------------------------
+# 2nd. set PATH
+current_path=\$(cat /etc/environment | grep "^PATH=" | cut -d'=' -f2-)
+export PATH=\${current_path}
+echo "PATH=\${PATH}"
+echo "current_path=\${current_path}"
+
+#-------------------------------------------------
+# 3rd. start distccd
+# /usr/local/bin/${TEMP_START_DISTCCD_SCRIPT_FILE} &
+
+echo -e "The end of entrypoint.sh\n"
+tail -f /dev/null
+
+EOF
+    chmod +x ${TEMP_ENTRYPOINT_SCRIPT_DIR}/${TEMP_ENTRYPOINT_SCRIPT_FILE}
+
+    ####################################################################
+    # start distccd script
+    ####################################################################
+    touch ${TEMP_ENTRYPOINT_SCRIPT_DIR}/${TEMP_START_DISTCCD_SCRIPT_FILE}
+    cat > ${TEMP_ENTRYPOINT_SCRIPT_DIR}/${TEMP_START_DISTCCD_SCRIPT_FILE} << 'EOF'
 #!/bin/bash
 
 #-------------------------------------------------
@@ -59,7 +95,8 @@ set -e
 
 #-------------------------------------------------
 # 2nd. add debug output
-echo "Starting distcc server..."
+echo -e "\nStarting distcc server..."
+echo "PATH=${PATH}"
 
 #-------------------------------------------------
 # 3rd. create log directory
@@ -88,7 +125,8 @@ echo "Setting jobs to: ${DISTCC_JOBS}"
 
 #-------------------------------------------------
 # 6th. start service
-exec distccd \
+distccd \
+        --daemon \
         --no-detach \
         --allow 192.168.0.0/16 \
         --jobs ${DISTCC_JOBS} \
@@ -98,9 +136,11 @@ exec distccd \
         --stats \
         --stats-port 3633 \
         --enable-tcp-insecure \
-        --verbose
+        --verbose \
+        --nice 10 \
+        --zeroconf
 EOF
-    chmod +x ${TEMP_ENTRYPOINT_SCRIPT_DIR}/${TEMP_ENTRYPOINT_SCRIPT_FILE}
+    chmod +x ${TEMP_ENTRYPOINT_SCRIPT_DIR}/${TEMP_START_DISTCCD_SCRIPT_FILE}
 }
 
 setup_dockerfile() {
@@ -136,8 +176,10 @@ RUN ls -lha /tmp/  && \
 #  entrypoint init
 #############################################
 COPY ${TEMP_ENTRYPOINT_SCRIPT_DIR}/${TEMP_ENTRYPOINT_SCRIPT_FILE} /usr/local/bin/${TEMP_ENTRYPOINT_SCRIPT_FILE}
+COPY ${TEMP_ENTRYPOINT_SCRIPT_DIR}/${TEMP_START_DISTCCD_SCRIPT_FILE} /usr/local/bin/${TEMP_START_DISTCCD_SCRIPT_FILE}
 
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/${TEMP_ENTRYPOINT_SCRIPT_FILE}"]
+
 DELIM
 }
 
@@ -163,6 +205,7 @@ cleanup(){
 }
 
 main() {
+    func_setup_environment
 
     toolchain_preparation
 
@@ -187,3 +230,15 @@ main "$@"
 
 
 ###################################
+
+# exec distccd \
+#         --no-detach \
+#         --allow 192.168.0.0/16 \
+#         --jobs 50 \
+#         --log-stderr \
+#         --log-level debug \
+#         --log-file /development/docker_volumes/log/distccd/distcc.log \
+#         --stats \
+#         --stats-port 3633 \
+#         --enable-tcp-insecure \
+#         --verbose
