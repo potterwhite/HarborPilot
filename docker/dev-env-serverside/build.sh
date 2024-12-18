@@ -53,19 +53,23 @@ entrypoint_preparation() {
     cat > ${TEMP_ENTRYPOINT_SCRIPT_DIR}/${TEMP_ENTRYPOINT_SCRIPT_FILE} << 'EOF'
 #!/bin/bash
 
-# 启用错误追踪
+#-------------------------------------------------
+# 1st. enable exit on error
 set -e
 
-# 添加调试输出
+#-------------------------------------------------
+# 2nd. add debug output
 echo "Starting distcc server..."
 
-# 创建日志目录
+#-------------------------------------------------
+# 3rd. create log directory
 if ! mkdir -p /development/docker_volumes/log/distccd; then
     echo "ERROR: Failed to create log directory"
     exit 1
 fi
 
-# 获取CPU信息并验证
+#-------------------------------------------------
+# 4th. get cpu info and verify
 AVAILABLE_CORES=$(nproc)
 if [ -z "${AVAILABLE_CORES}" ] || [ "${AVAILABLE_CORES}" -eq 0 ]; then
     echo "ERROR: Failed to get CPU cores, using default value 1"
@@ -73,7 +77,8 @@ if [ -z "${AVAILABLE_CORES}" ] || [ "${AVAILABLE_CORES}" -eq 0 ]; then
 fi
 echo "Available cores: ${AVAILABLE_CORES}"
 
-# 计算作业数并验证
+#-------------------------------------------------
+# 5th. calculate jobs and verify
 DISTCC_JOBS=$(( ${AVAILABLE_CORES} * 8/10 ))
 if [ "${DISTCC_JOBS}" -lt 1 ]; then
     echo "WARNING: Calculated jobs too low, using default value 1"
@@ -81,15 +86,19 @@ if [ "${DISTCC_JOBS}" -lt 1 ]; then
 fi
 echo "Setting jobs to: ${DISTCC_JOBS}"
 
-# 启动服务
-exec distccd --daemon --no-detach \
-    --allow 192.168.0.0/16 \
-    --jobs ${DISTCC_JOBS} \
-    --log-stderr \
-    --log-level debug \
-    --log-file /development/docker_volumes/log/distccd/distcc.log \
-    --stats \
-    --stats-port 3633
+#-------------------------------------------------
+# 6th. start service
+exec distccd \
+        --no-detach \
+        --allow 192.168.0.0/16 \
+        --jobs ${DISTCC_JOBS} \
+        --log-stderr \
+        --log-level debug \
+        --log-file /development/docker_volumes/log/distccd/distcc.log \
+        --stats \
+        --stats-port 3633 \
+        --enable-tcp-insecure \
+        --verbose
 EOF
     chmod +x ${TEMP_ENTRYPOINT_SCRIPT_DIR}/${TEMP_ENTRYPOINT_SCRIPT_FILE}
 }
@@ -174,3 +183,7 @@ main() {
 
 main "$@"
 
+
+
+
+###################################
