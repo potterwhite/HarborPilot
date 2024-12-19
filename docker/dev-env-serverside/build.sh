@@ -125,9 +125,27 @@ echo "Setting jobs to: ${DISTCC_JOBS}"
 
 #-------------------------------------------------
 # 6th. start service
+# --daemon: running in background
+# --no-detach: do not detach from the terminal
+# --no-avahi: do not use avahi
+# --allow: allow connections from the specified IP address
+# --jobs: set the number of jobs
+# --log-stderr: log to stderr
+# --log-level: set the log level
+# --log-file: set the log file
+# --stats: enable stats
+# --stats-port: set the stats port
+# --enable-tcp-insecure: enable tcp insecure
+# --verbose: enable verbose
+# --nice: set the priority of the process;
+          nice is from -20 to 19,
+          lower number means higher priority.
+          so 10 means lower priority.
+
 distccd \
         --daemon \
         --no-detach \
+        --no-avahi \
         --allow 192.168.0.0/16 \
         --jobs ${DISTCC_JOBS} \
         --log-stderr \
@@ -137,8 +155,7 @@ distccd \
         --stats-port 3633 \
         --enable-tcp-insecure \
         --verbose \
-        --nice 10 \
-        --zeroconf
+        --nice 10
 EOF
     chmod +x ${TEMP_ENTRYPOINT_SCRIPT_DIR}/${TEMP_START_DISTCCD_SCRIPT_FILE}
 }

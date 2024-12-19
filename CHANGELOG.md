@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.7.1] - 2024-12-19
+### Added
+- distccd server support but only in frontground
+- add a tool in serverside that could start harbor, but not done yet
+
+### Changed
+- Host tools(e.g., ubuntu_only_entrance.sh && serverside_only_entrance.sh)
+  remove container will remove image at the same time
+
+
 ## [0.5.7] - 2024-12-14
 ### Changed
 - reorganize the structure of project
@@ -91,3 +101,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.5.6]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.6
 
 [0.5.7]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.6
+
+[0.5.7.1]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.7.1
