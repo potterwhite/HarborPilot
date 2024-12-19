@@ -147,7 +147,7 @@ distccd \
         --no-detach \
         --no-avahi \
         --allow 192.168.0.0/16 \
-        --jobs ${DISTCC_JOBS} \
+        --jobs ${AVAILABLE_CORES} \
         --log-stderr \
         --log-level debug \
         --log-file /development/docker_volumes/log/distccd/distcc.log \
