@@ -2,6 +2,8 @@
 
 set -e
 
+source /.env
+
 # Install required packages
 func_install_prerequisites() {
     echo "Installing required packages..."
@@ -33,6 +35,7 @@ cat > /usr/local/bin/distcc_switcher.sh << EOF
 #------------------------------------------------------------------------------
 func_setup_environment() {
     # set -e
+    set -x
 
     #------------------------------------------------------------------------------
     # System paths and directories
@@ -57,13 +60,15 @@ func_setup_environment() {
     # Distcc behavior control
     #------------------------------------------------------------------------------
     # Performance settings
-    readonly DISTCC_VERBOSE="\${DISTCC_VERBOSE:-0}"
-    readonly DISTCC_LOG_LEVEL="\${DISTCC_LOG_LEVEL:-"warning"}"
-    readonly DISTCC_JOBS="\${DISTCC_JOBS:-8}"
-    readonly DISTCC_TCP_CORK="\${DISTCC_TCP_CORK:-1}"
-    readonly DISTCC_SAVE_TEMPS="\${DISTCC_SAVE_TEMPS:-0}"
-    readonly DISTCC_FALLBACK="\${DISTCC_FALLBACK:-1}"
-    readonly ENABLE_PUMP_MODE="\${ENABLE_PUMP_MODE:-0}"
+    readonly DISTCC_VERBOSE="${DISTCC_VERBOSE:-0}"
+    readonly DISTCC_LOG_LEVEL="${DISTCC_LOG_LEVEL:-"warning"}"
+    readonly DISTCC_JOBS="${DISTCC_JOBS:-8}"
+    readonly DISTCC_TCP_CORK="${DISTCC_TCP_CORK:-1}"
+    readonly DISTCC_SAVE_TEMPS="${DISTCC_SAVE_TEMPS:-0}"
+    readonly DISTCC_FALLBACK="${DISTCC_FALLBACK:-1}"
+    readonly RO_DISTCC_URL="${DISTCC_PORT:+${UBUNTU_SERVER_IP:+${UBUNTU_SERVER_IP}:${DISTCC_PORT}}}"
+    readonly RO_DISTCC_HOSTS="\${RO_DISTCC_URL:-localhost/2}"
+    readonly ENABLE_PUMP_MODE="${ENABLE_PUMP_MODE:-0}"
 
     #------------------------------------------------------------------------------
     # Toolchain configurations
@@ -101,7 +106,7 @@ func_setup_cross_toolchain() {
 
     for prefix in "\${CROSS_TOOLCHAIN_NAMES[@]}"; do
         for cmd in "\${TOOLCHAIN_COMMANDS[@]}"; do
-            ln -sf \${DISTCC_PATH} "\${prefix}-\${cmd}"
+            sudo ln -sf \${DISTCC_PATH} "\${prefix}-\${cmd}"
         done
     done
 }
@@ -110,7 +115,7 @@ func_restore_cross_toolchain() {
     echo "Cleaning cross toolchain symlinks..."
     for prefix in "\${CROSS_TOOLCHAIN_NAMES[@]}"; do
         for cmd in "\${TOOLCHAIN_COMMANDS[@]}"; do
-            rm -f "\${DISTCC_LINKS_DIR}/\${prefix}-\${cmd}"
+            sudo rm -f "\${DISTCC_LINKS_DIR}/\${prefix}-\${cmd}"
         done
     done
 }
@@ -139,30 +144,30 @@ func_restore_host_toolchain() {
 func_setup_environment_vars() {
     echo "Setting up environment variables..."
 
-    cat > \${DISTCC_PROFILE_FILE} << EOPROFILE
+    sudo tee \${DISTCC_PROFILE_FILE} > /dev/null << EOPROFILE
 # Set up distcc configuration
-export DISTCC_HOSTS="\${DISTCC_HOSTS:-localhost/2}"
-export DISTCC_VERBOSE="\${DISTCC_VERBOSE}"
-export DISTCC_LOG_LEVEL="\${DISTCC_LOG_LEVEL}"
-export DISTCC_TCP_CORK="\${DISTCC_TCP_CORK}"
-export DISTCC_SAVE_TEMPS="\${DISTCC_SAVE_TEMPS}"
-export DISTCC_FALLBACK="\${DISTCC_FALLBACK}"
-export DISTCC_JOBS="\${DISTCC_JOBS}"
+export DISTCC_HOSTS="\${RO_DISTCC_HOSTS:-localhost/2}"
 
 # Enable pump mode if configured
 if [ "\${ENABLE_PUMP_MODE}" -eq 1 ]; then
     export PUMP_MODE=1
 fi
 EOPROFILE
-    chmod +x \${DISTCC_PROFILE_FILE}
+
+    sudo chmod +x \${DISTCC_PROFILE_FILE}
 
     # make all environments take effect
-    source \${DISTCC_PROFILE_FILE}
+    if [ -f \${DISTCC_PROFILE_FILE} ]; then
+        source \${DISTCC_PROFILE_FILE}
+    else
+        echo "Warning: Failed to create profile file"
+        return 1
+    fi
 }
 
 func_clean_environment() {
     echo "Cleaning environment..."
-    rm -f \${DISTCC_PROFILE_FILE}
+    sudo rm -f \${DISTCC_PROFILE_FILE}
 }
 
 #------------------------------------------------------------------------------
@@ -203,10 +208,13 @@ func_disable_distcc() {
 #------------------------------------------------------------------------------
 func_usage() {
     local script_name=\$(basename \${0})
+    echo
     echo "Usage: \${script_name} {enable|disable}"
+    echo -e "\n\n"
     echo "Current status: \$([ -f \${DISTCC_PROFILE_FILE} ] && echo 'enabled' || echo 'disabled')"
     echo "Cross toolchain distcc: \$([ \${ENABLE_CROSS_TOOLCHAIN:-0} -eq 1 ] && echo 'enabled' || echo 'disabled')"
     echo "Host toolchain distcc: \$([ \${ENABLE_HOST_TOOLCHAIN:-0} -eq 1 ] && echo 'enabled' || echo 'disabled')"
+    echo
     return 1
 }
 
@@ -226,9 +234,19 @@ func_check_prerequisites() {
     return 0
 }
 
+func_ensure_root() {
+    if [ "$(id -u)" -ne 0 ]; then
+        echo "This script requires root privileges. Requesting sudo access..."
+        exec sudo "$0" "$@"
+    fi
+}
+
 main() {
     # Setup environment first
     func_setup_environment
+
+    # Ensure root
+    func_ensure_root
 
     # Check prerequisites
     if ! func_check_prerequisites; then
@@ -236,8 +254,11 @@ main() {
         exit 1
     fi
 
+    echo -e "\nArgument count: \${#}\n"
+
     # Show usage if no arguments or help requested
-    if [ "\${#}" -lt 2 ] || [ "\${#}" -gt 2 ] || [ "\${1}" = "-h" ] || [ "\${1}" = "--help" ] || [ "\${1}" = "?" ]; then
+    if [ "\${#}" -ne 1 ] || [ "\${1}" = "-h" ] || [ "\${1}" = "--help" ] || [ "\${1}" = "?" ]; then
+        echo -e "\n\\\${#}=\${#}\n"
         func_usage
         exit 0
     fi
@@ -259,7 +280,7 @@ main() {
 }
 
 # Execute main function with all script arguments
-main "$@"
+main "\$@"
 EOF
 }
 
@@ -291,4 +312,4 @@ main() {
 }
 
 # Execute main installation function
-main
+main "$@"
