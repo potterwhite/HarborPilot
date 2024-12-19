@@ -148,12 +148,31 @@ setup_dockerfile() {
     cat > "${BUILD_SCRIPT_DIR}/${TEMP_DOCKERFILE_NAME}" << DELIM
 FROM ubuntu:22.04
 
+########################
+# apt source
+########################
 $(read_module apt_source)
+
+########################
+# base packages
+########################
 $(read_module base_packages)
 
+########################
+# distcc
+########################
 RUN apt-get update && apt-get install -y \
     distcc \
     && rm -rf /var/lib/apt/lists/*
+
+########################
+# distccd user
+########################
+# RUN groupadd -r distccd && \
+#     useradd -r -g distccd -d /home/distccd -s /usr/sbin/nologin -c "distcc daemon" distccd && \
+
+RUN mkdir -p /home/distccd && \
+    chown distccd: /home/distccd
 
 #############################################
 #  toolchian init
