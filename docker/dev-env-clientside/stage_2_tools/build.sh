@@ -20,6 +20,7 @@ source "${BUILD_SCRIPT_DIR}/../../../project_handover/.env"
 
 echo "Building development tools stage..."
 echo "##### IMAGE_NAME: ${IMAGE_NAME}"
+echo "##### INSTALL_DISTCC: ${INSTALL_DISTCC}"
 docker build \
     --progress=plain \
     --no-cache \
@@ -34,7 +35,13 @@ docker build \
     --build-arg DEV_USERNAME="${DEV_USERNAME}" \
     --build-arg INSTALL_CUDA="${INSTALL_CUDA}" \
     --build-arg INSTALL_OPENCV="${INSTALL_OPENCV}" \
+    --build-arg INSTALL_DISTCC="${INSTALL_DISTCC}" \
     --build-arg IMAGE_NAME="${IMAGE_NAME}" \
+    --build-arg PROJECT_MAINTAINER="${PROJECT_MAINTAINER}" \
+    --build-arg PROJECT_EMAIL="${PROJECT_EMAIL}" \
+    --build-arg PROJECT_COPYRIGHT="${PROJECT_COPYRIGHT}" \
+    --build-arg PROJECT_LICENSE="${PROJECT_LICENSE}" \
+    --build-arg PROJECT_VERSION="${PROJECT_VERSION}" \
     -t "${IMAGE_NAME}:stage2" \
     -f "${BUILD_SCRIPT_DIR}/Dockerfile" \
     "${BUILD_SCRIPT_DIR}" 2>&1 | tee "${BUILD_SCRIPT_DIR}/build_log.txt"

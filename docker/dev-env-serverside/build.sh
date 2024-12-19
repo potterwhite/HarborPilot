@@ -114,14 +114,14 @@ if [ -z "${AVAILABLE_CORES}" ] || [ "${AVAILABLE_CORES}" -eq 0 ]; then
 fi
 echo "Available cores: ${AVAILABLE_CORES}"
 
-#-------------------------------------------------
-# 5th. calculate jobs and verify
-DISTCC_JOBS=$(( ${AVAILABLE_CORES} * 8/10 ))
-if [ "${DISTCC_JOBS}" -lt 1 ]; then
-    echo "WARNING: Calculated jobs too low, using default value 1"
-    DISTCC_JOBS=1
-fi
-echo "Setting jobs to: ${DISTCC_JOBS}"
+# #-------------------------------------------------
+# # 5th. calculate jobs and verify
+# DISTCC_JOBS=$(( ${AVAILABLE_CORES} * 8/10 ))
+# if [ "${DISTCC_JOBS}" -lt 1 ]; then
+#     echo "WARNING: Calculated jobs too low, using default value 1"
+#     DISTCC_JOBS=1
+# fi
+# echo "Setting jobs to: ${DISTCC_JOBS}"
 
 #-------------------------------------------------
 # 6th. start service
@@ -138,14 +138,13 @@ echo "Setting jobs to: ${DISTCC_JOBS}"
 # --enable-tcp-insecure: enable tcp insecure
 # --verbose: enable verbose
 # --nice: set the priority of the process;
-          nice is from -20 to 19,
-          lower number means higher priority.
-          so 10 means lower priority.
+#          nice is from -20 to 19,
+#          lower number means higher priority.
+#          so 10 means lower priority.
 
 distccd \
         --daemon \
         --no-detach \
-        --no-avahi \
         --allow 192.168.0.0/16 \
         --jobs ${AVAILABLE_CORES} \
         --log-stderr \

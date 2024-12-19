@@ -25,7 +25,6 @@ source /tmp/tool_versions.conf
 first_install_core_tools() {
     apt-get update && apt-get install -y \
         build-essential \
-        cmake \
         ninja-build \
         make \
         autoconf \
@@ -33,7 +32,11 @@ first_install_core_tools() {
         libtool \
         meson \
         pkg-config \
-        ccache 
+        ccache
+    if [ "${INSTALL_HOST_CMAKE}" = "true" ]; then
+        apt-get install -y \
+            cmake
+    fi
 }
 
 ###############################################################################
@@ -276,12 +279,6 @@ ninth_install_arm_toolchain() {
     fi
 }
 
-tenth_install_distcc() {
-    # netcat-openbsd is for nc cmd
-    apt-get install -y \
-        distcc \
-        netcat-openbsd
-}
 
 ###############################################################################
 # Tenth: Cleanup
@@ -311,7 +308,6 @@ main() {
 
     eighth_install_python_packages
     ninth_install_arm_toolchain
-    tenth_install_distcc
 
     #------------------------------
     nintyninth_cleanup

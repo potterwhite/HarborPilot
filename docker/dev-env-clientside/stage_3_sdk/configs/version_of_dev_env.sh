@@ -3,9 +3,9 @@
 # This script is auto-generated during docker build
 # DO NOT EDIT MANUALLY
 
-PROJECT_VERSION="0.5.7"
+PROJECT_VERSION="0.5.7.1"
 
-echo "Current Version of SDK Development Environment is: 0.5.7"
+echo "Current Version of SDK Development Environment is: 0.5.7.1"
 
 # Show SDK Version
 SDK_VERSION="__SDK_VERSION__"

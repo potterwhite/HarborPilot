@@ -130,6 +130,7 @@ container_running() {
 
 _create_and_enter_container() {
     docker run -d \
+        --hostname "${SERVERSIDE_CONTAINER_NAME}" \
         --name "${SERVERSIDE_CONTAINER_NAME}" \
         --restart unless-stopped \
         -p ${DISTCC_PORT}:3632 \
