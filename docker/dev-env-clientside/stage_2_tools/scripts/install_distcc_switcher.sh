@@ -1,49 +1,50 @@
 #!/bin/bash
 
 
-# Install required packages
-func_install_prerequisites() {
-    echo "Installing required packages..."
-    apt-get update
-    apt-get install -y \
-        distcc \
-        netcat-openbsd
 
-
-}
 
 func_preparation() {
     set -e
+    set -x
 
     source /.env
     ##################################################################################################
     # 1st file: hide engine
     # it is used to generate the config file which contains lots of distcc related environment variables
-    RO_HIDE_SWITCHER_ENGINE_FILE="/usr/local/bin/distcc/.hide_distcc_switcher_engine.sh"
+    # RW_SWITCHER_ENGINE_FILE_PATH="/usr/local/bin/distcc/.hide_distcc_switcher_engine.sh"
+    RW_SWITCHER_ENGINE_FILE_PATH="/usr/local/bin/distcc_switcher.sh"
     # 2nd file: config file
     # it is used to store the config of distcc switcher
     # e.g., export DISTCC_HOSTS="192.168.xxxxx"
-    RO_SWITCHER_CONFIG_FILE="/usr/local/bin/distcc/.distcc_switcher_config.sh"
-    # 3rd file: surface switcher
+    # RW_SWITCHER_CONFIG_FILE_PATH="/usr/local/bin/distcc/.distcc_switcher_config.sh"
+    RW_SWITCHER_CONFIG_FILE_PATH="/etc/profile.d/distcc_switcher_config.sh"
+    # 3rd file: surface switcher-obsoleted now!
     # it is used to control from top of all
-    RO_SURFACE_SWITCHER_FILE="/usr/local/bin/distcc_switcher.sh"
+    # RW_SURFACE_SWITCHER_FILE_PATH="/usr/local/bin/distcc_switcher.sh"
+    RW_SURFACE_SWITCHER_FILE_PATH=""
     ##################################################################################################
 
 
     # 1. create the distcc directory
-    sudo mkdir -p $(dirname ${RO_HIDE_SWITCHER_ENGINE_FILE})
+    sudo mkdir -p $(dirname ${RW_SWITCHER_ENGINE_FILE_PATH})
+    sudo mkdir -p $(dirname ${RW_SWITCHER_CONFIG_FILE_PATH})
 
-    sudo touch ${RO_HIDE_SWITCHER_ENGINE_FILE}
-    sudo touch ${RO_SWITCHER_CONFIG_FILE}
-    sudo touch ${RO_SURFACE_SWITCHER_FILE}
+    sudo touch ${RW_SWITCHER_ENGINE_FILE_PATH}
+    sudo touch ${RW_SWITCHER_CONFIG_FILE_PATH}
+    if [ -n "${RW_SURFACE_SWITCHER_FILE_PATH}" ]; then
+        sudo touch ${RW_SURFACE_SWITCHER_FILE_PATH}
+    fi
 }
 
 # Generate the final switcher script
 func_generate_switcher_script() {
-    echo "Generating distcc scripts..."
 
-    # 主控制脚本
-    sudo tee ${RO_HIDE_SWITCHER_ENGINE_FILE} > /dev/null << EOF
+    echo "###########################################################################################"
+    echo "# Generating distcc scripts (1/2)..."
+    echo "# 1st stage of distcc switcher"
+    echo "# who is the core and base of all business processor"
+    echo "###########################################################################################"
+    sudo tee ${RW_SWITCHER_ENGINE_FILE_PATH} > /dev/null << EOF
 #!/bin/bash
 #==============================================================================
 # Distcc Switcher Script
@@ -62,16 +63,7 @@ func_generate_switcher_script() {
 #------------------------------------------------------------------------------
 func_setup_environment() {
     set -e
-    # set -x
-
-    #------------------------------------------------------------------------------
-    # System paths and directories
-    #------------------------------------------------------------------------------
-
-    #------------------------------------------------------------------------------
-    # Distcc paths and configurations
-    #------------------------------------------------------------------------------
-    readonly RO_DISTCC_PROFILE_FILE="${RO_SWITCHER_CONFIG_FILE}"
+    set -x
 
     #------------------------------------------------------------------------------
     # Control switches
@@ -83,34 +75,74 @@ func_setup_environment() {
     # Distcc behavior control
     #------------------------------------------------------------------------------
     # Performance settings
-    readonly RO_DISTCC_VERBOSE="${DISTCC_VERBOSE:-0}"
-    readonly RO_DISTCC_LOG_LEVEL="${DISTCC_LOG_LEVEL:-"warning"}"
-    readonly RO_DISTCC_JOBS="${DISTCC_JOBS:-8}"
-    readonly RO_DISTCC_TCP_CORK="${DISTCC_TCP_CORK:-1}"
-    readonly RO_DISTCC_SAVE_TEMPS="${DISTCC_SAVE_TEMPS:-0}"
-    readonly RO_DISTCC_FALLBACK="${DISTCC_FALLBACK:-1}"
-    readonly RO_DISTCC_URL="${DISTCC_PORT:+${UBUNTU_SERVER_IP:+${UBUNTU_SERVER_IP}:${DISTCC_PORT}}}"
-    readonly RO_DISTCC_HOSTS="\${RO_DISTCC_URL:-localhost/2}"
-    readonly RO_ENABLE_PUMP_MODE="${ENABLE_PUMP_MODE:-0}"
-    readonly RO_DISTCC_PATH="\${PATH}"
+    RW_BAYTTO_INTERNAL_SERVER_URL="${DISTCC_PORT:+${UBUNTU_SERVER_IP:+${UBUNTU_SERVER_IP}:${DISTCC_PORT}}}"
+    RW_DISTCC_HOSTS="\${RW_BAYTTO_INTERNAL_SERVER_URL:-localhost/2}"
+    RW_DISTCC_PATH="\${PATH}"
 
-    readonly RO_CROSS_TOOLCHAIN_DIR="${SDK_INSTALL_PATH:+${SDK_INSTALL_PATH}/prebuilts/gcc/linux-x86/aarch64/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin}"
-    readonly RO_BACKUP_DIR="${VOLUMES_ROOT}/backup"
+    RW_CROSS_TOOLCHAIN_DIR="${SDK_INSTALL_PATH:+${SDK_INSTALL_PATH}/prebuilts/gcc/linux-x86/aarch64/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin}"
+    RW_BACKUP_DIR="${VOLUMES_ROOT}/backup"
 
     #------------------------------------------------------------------------------
     # Toolchain configurations
     #------------------------------------------------------------------------------
-    readonly RO_CROSS_TOOLCHAIN_NAMES=(
+    RW_CROSS_TOOLCHAIN_NAMES=(
         "aarch64-none-linux-gnu"
         "aarch64-rockchip1031-linux-gnu"
     )
-    readonly RO_TOOLCHAIN_COMMANDS=(
+    RW_TOOLCHAIN_COMMANDS=(
         "gcc"
         "g++"
         "c++"
         "cpp"
     )
 }
+
+# Install required packages
+func_all_preparations() {
+
+    tmp_result="$(which distcc)"
+
+    if [ -n "${tmp_result}" ]; then
+        echo "distcc has been installed"
+        return 0
+    fi
+
+    echo "Installing required packages..."
+    apt-get update
+    apt-get install -y \
+        distcc \
+        netcat-openbsd
+}
+
+
+#------------------------------------------------------------------------------
+# Environment Config file processing
+#------------------------------------------------------------------------------
+func_initial_distcc_config_file() {
+    echo "Setting up environment variables..."
+
+    sudo tee \${RW_SWITCHER_CONFIG_FILE_PATH} > /dev/null << EOPROFILE
+# Set up distcc configuration
+export DISTCC_HOSTS="\${RW_DISTCC_HOSTS:-localhost/2}"
+export DISTCC_PATH="\${RW_DISTCC_PATH}"
+EOPROFILE
+
+    sudo chmod +x \${RW_SWITCHER_CONFIG_FILE_PATH}
+
+    # make all environments take effect
+    if [ -f \${RW_SWITCHER_CONFIG_FILE_PATH} ]; then
+        source \${RW_SWITCHER_CONFIG_FILE_PATH}
+    else
+        echo "Warning: Failed to create profile file"
+        return 1
+    fi
+}
+
+func_uninitial_distcc_config_file() {
+    echo "Cleaning environment..."
+    sudo rm -f \${RW_SWITCHER_CONFIG_FILE_PATH}
+}
+
 
 #------------------------------------------------------------------------------
 # Cross toolchain related functions
@@ -121,26 +153,19 @@ func_setup_cross_toolchain() {
         return 0
     fi
 
-    # # Check if distcc directory exists
-    # if [ ! -d "\${RO_DISTCC_LINKS_DIR}" ]; then
-    #     echo "Error: Distcc directory \${RO_DISTCC_LINKS_DIR} does not exist"
-    #     echo "Please make sure distcc is properly installed"
-    #     return 1
-    # fi
-
     # echo "Setting up cross toolchain symlinks..."
-    # cd \${RO_DISTCC_LINKS_DIR}
+    # cd \${RW_DISTCC_LINKS_DIR}
 
-    for prefix in "\${RO_CROSS_TOOLCHAIN_NAMES[@]}"; do
-        for cmd in "\${RO_TOOLCHAIN_COMMANDS[@]}"; do
-            if [ -d "\${RO_CROSS_TOOLCHAIN_DIR}" ]; then
-                sudo mkdir -p \${RO_BACKUP_DIR}
-                sudo chown "\${DEV_USERNAME}:\${DEV_GROUP}" \${RO_BACKUP_DIR}
-                cp -fv "\${RO_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}" "\${RO_BACKUP_DIR}"
-                rm -f "\${RO_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
-                ln -sf \$(which distcc) "\${RO_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
+    for prefix in "\${RW_CROSS_TOOLCHAIN_NAMES[@]}"; do
+        for cmd in "\${RW_TOOLCHAIN_COMMANDS[@]}"; do
+            if [ -d "\${RW_CROSS_TOOLCHAIN_DIR}" ]; then
+                sudo mkdir -p \${RW_BACKUP_DIR}
+                sudo chown "\${DEV_USERNAME}:\${DEV_GROUP}" \${RW_BACKUP_DIR} -R
+                cp -fv "\${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}" "\${RW_BACKUP_DIR}"
+                rm -f "\${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
+                ln -sf \$(which distcc) "\${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
             else
-                echo "Error: Cross toolchain directory \${RO_CROSS_TOOLCHAIN_DIR} does not exist."
+                echo "Error: Cross toolchain directory \${RW_CROSS_TOOLCHAIN_DIR} does not exist."
                 echo -e "\tYou can exec this script again after the sdk of \${CONTAINER_NAME} has been cloned."
 
                 return 1
@@ -151,10 +176,10 @@ func_setup_cross_toolchain() {
 
 func_restore_cross_toolchain() {
     echo "Cleaning cross toolchain symlinks..."
-    for prefix in "\${RO_CROSS_TOOLCHAIN_NAMES[@]}"; do
-        for cmd in "\${RO_TOOLCHAIN_COMMANDS[@]}"; do
-            rm -f "\${RO_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
-            cp -fv "\${RO_BACKUP_DIR}/\${prefix}-\${cmd}" "\${RO_CROSS_TOOLCHAIN_DIR}"
+    for prefix in "\${RW_CROSS_TOOLCHAIN_NAMES[@]}"; do
+        for cmd in "\${RW_TOOLCHAIN_COMMANDS[@]}"; do
+            rm -f "\${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
+            cp -fv "\${RW_BACKUP_DIR}/\${prefix}-\${cmd}" "\${RW_CROSS_TOOLCHAIN_DIR}"
         done
     done
 }
@@ -178,45 +203,6 @@ func_restore_host_toolchain() {
 }
 
 #------------------------------------------------------------------------------
-# Environment variables setup
-#------------------------------------------------------------------------------
-func_setup_environment_vars() {
-    echo "Setting up environment variables..."
-
-    sudo tee \${RO_DISTCC_PROFILE_FILE} > /dev/null << EOPROFILE
-# Set up distcc configuration
-export DISTCC_HOSTS="\${RO_DISTCC_HOSTS:-localhost/2}"
-export DISTCC_PATH="\${RO_DISTCC_PATH}"
-export DISTCC_VERBOSE="\${RO_DISTCC_VERBOSE}"
-export DISTCC_LOG_LEVEL="\${RO_DISTCC_LOG_LEVEL}"
-export DISTCC_JOBS="\${RO_DISTCC_JOBS}"
-export DISTCC_TCP_CORK="\${RO_DISTCC_TCP_CORK}"
-export DISTCC_SAVE_TEMPS="\${RO_DISTCC_SAVE_TEMPS}"
-export DISTCC_FALLBACK="\${RO_DISTCC_FALLBACK}"
-
-# Enable pump mode if configured
-if [ "\${RO_ENABLE_PUMP_MODE}" -eq 1 ]; then
-    export PUMP_MODE=1
-fi
-EOPROFILE
-
-    sudo chmod +x \${RO_DISTCC_PROFILE_FILE}
-
-    # make all environments take effect
-    if [ -f \${RO_DISTCC_PROFILE_FILE} ]; then
-        source \${RO_DISTCC_PROFILE_FILE}
-    else
-        echo "Warning: Failed to create profile file"
-        return 1
-    fi
-}
-
-func_clean_environment() {
-    echo "Cleaning environment..."
-    sudo rm -f \${RO_DISTCC_PROFILE_FILE}
-}
-
-#------------------------------------------------------------------------------
 # Main functionality functions
 #------------------------------------------------------------------------------
 func_enable_distcc() {
@@ -230,7 +216,7 @@ func_enable_distcc() {
         func_setup_host_toolchain
     fi
 
-    func_setup_environment_vars
+    func_initial_distcc_config_file
     echo -e "\ndistcc has been enabled with selected features!\n"
     echo "-------------------------------------------------------------------"
 }
@@ -246,7 +232,7 @@ func_disable_distcc() {
         func_restore_host_toolchain
     fi
 
-    func_clean_environment
+    func_uninitial_distcc_config_file
     echo "distcc has been disabled"
 }
 
@@ -258,7 +244,7 @@ func_usage() {
     echo
     echo "Usage: \${script_name} {enable|disable}"
     echo -e "\n\n"
-    echo "Current status: \$([ -f \${RO_DISTCC_PROFILE_FILE} ] && echo 'enabled' || echo 'disabled')"
+    echo "Current status: \$([ -f \${RW_SWITCHER_CONFIG_FILE_PATH} ] && echo 'enabled' || echo 'disabled')"
     echo "Cross toolchain distcc: \$([ \${ENABLE_CROSS_TOOLCHAIN:-0} -eq 1 ] && echo 'enabled' || echo 'disabled')"
     echo "Host toolchain distcc: \$([ \${ENABLE_HOST_TOOLCHAIN:-0} -eq 1 ] && echo 'enabled' || echo 'disabled')"
     echo -e "\nYou have two ways to use distcc control:"
@@ -274,35 +260,9 @@ func_usage() {
     return 1
 }
 
-func_check_prerequisites() {
-    # # Check distcc executable
-    # if [ ! -x "\${DISTCC_PATH}" ]; then
-    #     echo "Error: distcc not found or not executable"
-    #     return 1
-    # fi
-
-    # # Check distcc directory
-    # if [ ! -d "\${RO_DISTCC_LINKS_DIR}" ]; then
-    #     echo "Error: Distcc directory \${RO_DISTCC_LINKS_DIR} does not exist"
-    #     return 1
-    # fi
-
-    return 0
-}
-
-func_ensure_root() {
-    if [ "$(id -u)" -ne 0 ]; then
-        echo "This script requires root privileges. Requesting sudo access..."
-        exec sudo "\$0" "\$@"
-    fi
-}
-
 main() {
     # Setup environment first
     func_setup_environment
-
-    # Ensure root
-    func_ensure_root
 
     # Check prerequisites
     if ! func_check_prerequisites; then
@@ -339,71 +299,27 @@ main() {
 main "\$@"
 EOF
 
-    # 创建 enable 脚本
-    sudo tee ${RO_SURFACE_SWITCHER_FILE} > /dev/null << EOF
-#!/bin/bash
-# Enable distcc with environment setup
-func_enable_distcc() {
-    ${RO_HIDE_SWITCHER_ENGINE_FILE} enable
-    source ${RO_SURFACE_SWITCHER_FILE}
-}
-
-func_disable_distcc() {
-    ${RO_HIDE_SWITCHER_ENGINE_FILE} disable
-    # source ${RO_SURFACE_SWITCHER_FILE}
-}
-
-func_usage() {
-    echo
-    echo "###########################################################################################"
-    echo -e "#\tInstallation completed. distcc control has been installed.                        #"
-    echo "###########################################################################################"
-    echo -e "\nTo use distcc control:"
-    echo
-    echo "   ${RO_SURFACE_SWITCHER_FILE} enable     # Enable distcc"
-    echo "   ${RO_SURFACE_SWITCHER_FILE} disable    # Disable distcc"
-    echo
-}
-
-
-main (){
-    if [ "\${#}" -ne 1 ] || [ "\${1}" = "-h" ] || [ "\${1}" = "--help" ] || [ "\${1}" = "?" ]; then
-        echo -e "\n\\\${#}=\${#}\n"
-        func_usage
-        exit 0
-    fi
-
-    case "\${1}" in
-        "enable")
-            func_enable_distcc
-            ;;
-        "disable")
-            func_disable_distcc
-            ;;
-    esac
-}
-
-main "\$@"
-EOF
 }
 
 func_set_permissions() {
     echo "Setting executable permissions..."
-    sudo chmod +x ${RO_HIDE_SWITCHER_ENGINE_FILE}
-    sudo chmod +x ${RO_SWITCHER_CONFIG_FILE}
-    sudo chmod +x ${RO_SURFACE_SWITCHER_FILE}
+    sudo chmod +x ${RW_SWITCHER_ENGINE_FILE_PATH}
+    sudo chmod +x ${RW_SWITCHER_CONFIG_FILE_PATH}
+    if [ -n "${RW_SURFACE_SWITCHER_FILE_PATH}" ]; then
+        sudo chmod +x ${RW_SURFACE_SWITCHER_FILE_PATH}
+    fi
 }
 
 # 修改使用说明
 func_print_completion() {
     echo
-    echo "###########################################################################################"
-    echo -e "#\tInstallation completed. distcc control has been installed.                        #"
-    echo "###########################################################################################"
+    echo "###############################################################################"
+    echo -e "#    Installation completed. distcc control has been installed.        #"
+    echo "###############################################################################"
     echo -e "\nTo use distcc control:"
     echo
-    echo "   ${RO_SURFACE_SWITCHER_FILE} enable     # Enable distcc"
-    echo "   ${RO_SURFACE_SWITCHER_FILE} disable    # Disable distcc"
+    echo "   ${RW_SWITCHER_ENGINE_FILE_PATH} enable     # Enable distcc"
+    echo "   ${RW_SWITCHER_ENGINE_FILE_PATH} disable    # Disable distcc"
     echo
 }
 

@@ -56,11 +56,23 @@ check_docker_login() {
     local registry="${REGISTRY_URL}"
 
     while true; do
-        if docker manifest inspect --insecure "${REGISTRY_URL}/${IMAGE_NAME}:latest" >/dev/null 2>&1; then
+        # if docker manifest inspect --insecure "${REGISTRY_URL}/${IMAGE_NAME}:latest" >/dev/null 2>&1; then
+        #     print_msg "Already logged in to registry ${registry}" "${GREEN}"
+        #     return 0
+        # fi
+
+        #------------------------------------------------------------------------------
+        # 尝试使用现有凭证登录，并捕获输出
+        login_output=$(docker login "${registry}" 2>&1)
+        login_status=$?
+
+        # 检查输出中是否包含成功登录的标志
+        if [ $login_status -eq 0 ] && echo "$login_output" | grep -q "Authenticating with existing credentials"; then
             print_msg "Already logged in to registry ${registry}" "${GREEN}"
             return 0
         fi
 
+        #------------------------------------------------------------------------------
         print_msg "Need to login to registry ${registry}" "${YELLOW}"
         read -p "Enter username: " username
         read -s -p "Enter password: " password
