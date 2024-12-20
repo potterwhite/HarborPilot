@@ -42,6 +42,19 @@ docker build \
     --build-arg PROJECT_COPYRIGHT="${PROJECT_COPYRIGHT}" \
     --build-arg PROJECT_LICENSE="${PROJECT_LICENSE}" \
     --build-arg PROJECT_VERSION="${PROJECT_VERSION}" \
+    --build-arg DISTCC_PORT="${DISTCC_PORT}" \
+    --build-arg UBUNTU_SERVER_IP="${UBUNTU_SERVER_IP}" \
+    --build-arg SDK_INSTALL_PATH="${SDK_INSTALL_PATH}" \
+    --build-arg VOLUMES_ROOT="${VOLUMES_ROOT}" \
+    --build-arg DEV_USERNAME="${DEV_USERNAME}" \
+    --build-arg DEV_GROUP="${DEV_GROUP}" \
     -t "${IMAGE_NAME}:stage2" \
     -f "${BUILD_SCRIPT_DIR}/Dockerfile" \
     "${BUILD_SCRIPT_DIR}" 2>&1 | tee "${BUILD_SCRIPT_DIR}/build_log.txt"
+
+# check if docker build failed and halt the script if it did
+exit_status=${PIPESTATUS[0]}
+if [ $exit_status -ne 0 ]; then
+    echo "In ${BUILD_SCRIPT_PATH}, Docker build failed with exit status: $exit_status"
+    exit $exit_status
+fi

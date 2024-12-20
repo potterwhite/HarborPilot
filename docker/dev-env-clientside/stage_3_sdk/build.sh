@@ -65,3 +65,10 @@ docker build \
 
 # Clean up processed files (清理生成的文件)
 # rm -f "${BUILD_SCRIPT_DIR}"/configs/*.{sh,conf}
+
+# check if docker build failed and halt the script if it did
+exit_status=${PIPESTATUS[0]}
+if [ $exit_status -ne 0 ]; then
+    echo "In ${BUILD_SCRIPT_PATH}, Docker build failed with exit status: $exit_status"
+    exit $exit_status
+fi

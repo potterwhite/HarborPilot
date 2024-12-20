@@ -229,7 +229,16 @@ build_distcc_image() {
         --network=host \
         -t "${SERVERSIDE_IMAGE_NAME}:${PROJECT_VERSION}" \
         -f "${BUILD_SCRIPT_DIR}/${TEMP_DOCKERFILE_NAME}" \
-        ${BUILD_SCRIPT_DIR}
+        ${BUILD_SCRIPT_DIR} 2>&1 | tee "${BUILD_SCRIPT_DIR}/build_log.txt"
+
+    # 检查 docker build 的退出状态
+    local exit_status=${PIPESTATUS[0]}
+    if [ $exit_status -ne 0 ]; then
+        echo "Error: Docker build failed in ${BUILD_SCRIPT_DIR}/build.sh with exit status: $exit_status"
+        exit $exit_status
+    fi
+
+    return 0
 }
 
 cleanup(){
@@ -240,19 +249,23 @@ cleanup(){
 }
 
 main() {
-    func_setup_environment
+    func_setup_environment || return 1
 
-    toolchain_preparation
+    toolchain_preparation || return 1
 
-    entrypoint_preparation
+    entrypoint_preparation || return 1
 
-    setup_dockerfile
+    setup_dockerfile || return 1
 
-    build_distcc_image
+    if ! build_distcc_image; then
+        echo "Error: Failed to build distcc image"
+        return 1
+    fi
 
     # cleanup
 
     echo "Serverside building completed."
+    return 0
 }
 
 

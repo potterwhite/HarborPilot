@@ -16,7 +16,8 @@
 
 set -e
 
-BUILD_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BUILD_SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+BUILD_SCRIPT_DIR="$(cd "$(dirname "${BUILD_SCRIPT_PATH}")" && pwd)"
 source "${BUILD_SCRIPT_DIR}/../../../project_handover/.env"
 
 echo "Building base stage..."
@@ -40,3 +41,10 @@ docker build \
     -t "${IMAGE_NAME}:stage1" \
     -f "${BUILD_SCRIPT_DIR}/Dockerfile" \
     "${BUILD_SCRIPT_DIR}" 2>&1 | tee "${BUILD_SCRIPT_DIR}/build_log.txt"
+
+# check if docker build failed and halt the script if it did
+exit_status=${PIPESTATUS[0]}
+if [ $exit_status -ne 0 ]; then
+    echo "In ${BUILD_SCRIPT_PATH}, Docker build failed with exit status: $exit_status"
+    exit $exit_status
+fi

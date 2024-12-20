@@ -21,7 +21,6 @@ func_preparation() {
     RW_SURFACE_SWITCHER_FILE_PATH=""
     ##################################################################################################
 
-
     # 1. create the distcc directory
     sudo mkdir -p $(dirname ${RW_SWITCHER_ENGINE_FILE_PATH})
     sudo mkdir -p $(dirname ${RW_SWITCHER_CONFIG_FILE_PATH})
@@ -39,7 +38,7 @@ func_generate_switcher_script() {
     echo "######################################################"
     echo "# Generating distcc scripts ..."
     echo "######################################################"
-    sudo tee ${RW_SWITCHER_ENGINE_FILE_PATH} > /dev/null << EOF
+    sudo tee ${RW_SWITCHER_ENGINE_FILE_PATH} << EOF
 #!/bin/bash
 #==============================================================================
 # Distcc Switcher Script
@@ -57,7 +56,7 @@ func_generate_switcher_script() {
 # Constants and configurations
 #------------------------------------------------------------------------------
 lv2_func_setup_environment() {
-    set -e
+    # set -e
     # set -x
 
     #------------------------------------------------------------------------------
@@ -186,20 +185,18 @@ lv2_func_setup_cross_toolchain() {
         return 0
     fi
 
-    # echo "Setting up cross toolchain symlinks..."
-    # cd \${RW_DISTCC_LINKS_DIR}
 
     for prefix in "\${RW_CROSS_TOOLCHAIN_NAMES[@]}"; do
         for cmd in "\${RW_TOOLCHAIN_COMMANDS[@]}"; do
             if [ -d "\${RW_CROSS_TOOLCHAIN_DIR}" ]; then
                 sudo mkdir -p \${RW_BACKUP_DIR}
-                sudo chown "\${DEV_USERNAME}:\${DEV_GROUP}" \${RW_BACKUP_DIR} -R
+                sudo chown "${DEV_USERNAME}:${DEV_GROUP}" \${RW_BACKUP_DIR} -R
                 cp -fv "\${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}" "\${RW_BACKUP_DIR}"
                 rm -f "\${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
                 ln -sf \$(which distcc) "\${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
 
                 # echo "sudo mkdir -p \${RW_BACKUP_DIR}"
-                # echo "sudo chown \${DEV_USERNAME}:\${DEV_GROUP} \${RW_BACKUP_DIR} -R"
+                # echo "sudo chown ${DEV_USERNAME}:${DEV_GROUP} \${RW_BACKUP_DIR} -R"
                 # echo "cp -fv \${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd} \${RW_BACKUP_DIR}"
                 # echo "rm -f \${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
                 # echo "ln -sf \$(which distcc) \${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
@@ -239,7 +236,7 @@ lv1_func_all_preparations() {
     #------------------------------------------------------------------------------
     tmp_result="\$(which distcc)"
 
-    if [ -n "\${tmp_result}" ]; then
+    if which distcc > /dev/null 2>&1; then
         echo "distcc has been installed"
     else
         echo "Installing required packages..."
@@ -254,7 +251,7 @@ lv1_func_all_preparations() {
     #------------------------------------------------------------------------------
     # Show usage if no arguments or help requested
     #------------------------------------------------------------------------------
-    if [ "\${#}" -ne 1 ] || [ "\${1}" = "-h" ] || [ "\${1}" = "--help" ] || [ "\${1}" = "?" ]; then
+    if [ "\$#" -ne 1 ] || [ "\${1}" = "-h" ] || [ "\${1}" = "--help" ] || [ "\${1}" = "?" ]; then
         echo -e "\n\\\${#}=\${#}\n"
         lv2_func_usage
         exit 0
@@ -277,7 +274,9 @@ lv1_func_enable_distcc() {
 
     echo -e "\ndistcc has been enabled with selected features!\n"
     echo -e "Please exec below command to make it take effect right now:"
+    echo -e "##############################################################"
     echo -e "source ${RW_SWITCHER_CONFIG_FILE_PATH}"
+    echo -e "##############################################################"
     echo
     echo "-------------------------------------------------------------------"
 }
@@ -298,17 +297,19 @@ lv1_func_disable_distcc() {
 }
 
 main() {
-    lv1_func_all_preparations "\$@"
 
     # Process command
     case "\${1}" in
         "enable")
+            lv1_func_all_preparations "\$@"
             lv1_func_enable_distcc
             ;;
         "disable")
+            lv1_func_all_preparations "\$@"
             lv1_func_disable_distcc
             ;;
         *)
+            lv1_func_all_preparations "\$@"
             echo "Error: Invalid command '\${1}'"
             lv2_func_usage
             exit 1
@@ -330,6 +331,12 @@ func_set_permissions() {
         sudo chmod +x ${RW_SURFACE_SWITCHER_FILE_PATH}
     fi
     echo -e "\nExecutable permissions have been set successfully!\n"
+}
+
+func_exec_distcc_switcher_script() {
+    echo -e "\nExecuting distcc switcher script..."
+    ${RW_SWITCHER_ENGINE_FILE_PATH} enable
+    echo -e "\nDistcc switcher script has been executed enable successfully!\n"
 }
 
 # 修改使用说明
@@ -357,7 +364,10 @@ main() {
     # Step 3: Set proper permissions
     func_set_permissions
 
-    # Step 4: Print completion message
+    # Step 4: Execute distcc switcher script to install distcc
+    func_exec_distcc_switcher_script
+
+    # Step 5: Print completion message
     func_print_completion
 }
 

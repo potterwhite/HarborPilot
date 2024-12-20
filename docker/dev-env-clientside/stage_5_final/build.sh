@@ -179,6 +179,13 @@ build_image() {
         -t "${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" \
         -f "${BUILD_SCRIPT_DIR}/Dockerfile" \
         "${BUILD_SCRIPT_DIR}" 2>&1 | tee "${BUILD_SCRIPT_DIR}/build_log.txt"
+
+    # check if docker build failed and halt the script if it did
+    exit_status=${PIPESTATUS[0]}
+    if [ $exit_status -ne 0 ]; then
+        echo "In ${BUILD_SCRIPT_PATH}, Docker build failed with exit status: $exit_status"
+        exit $exit_status
+    fi
 }
 
 # Main execution
