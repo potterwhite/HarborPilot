@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.8] - 2024-12-20
+### Added
+- add distcc_switcher.sh script to docker image
+- fixed host name of serverside container
+
+
 ## [0.5.7.1] - 2024-12-19
 ### Added
 - distccd server support but only in frontground
@@ -103,3 +109,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.5.7]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.6
 
 [0.5.7.1]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.7.1
+
+[0.5.8]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.8
