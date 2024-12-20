@@ -1,13 +1,10 @@
 #!/bin/bash
 
-
-
-
 func_preparation() {
     set -e
     set -x
 
-    source /.env
+    # source /.env
     ##################################################################################################
     # 1st file: hide engine
     # it is used to generate the config file which contains lots of distcc related environment variables
@@ -61,7 +58,7 @@ func_generate_switcher_script() {
 #------------------------------------------------------------------------------
 lv2_func_setup_environment() {
     set -e
-    set -x
+    # set -x
 
     #------------------------------------------------------------------------------
     # Control switches
@@ -145,7 +142,20 @@ EOPROFILE
 
 lv2_func_uninitial_distcc_config_file() {
     echo "Cleaning environment..."
-    sudo rm -f ${RW_SWITCHER_CONFIG_FILE_PATH}
+    sudo tee ${RW_SWITCHER_CONFIG_FILE_PATH} > /dev/null << EOPROFILE
+unset DISTCC_HOSTS
+unset DISTCC_PATH
+EOPROFILE
+
+    sudo chmod +x ${RW_SWITCHER_CONFIG_FILE_PATH}
+
+    # make all environments take effect
+    if [ -f ${RW_SWITCHER_CONFIG_FILE_PATH} ]; then
+        source ${RW_SWITCHER_CONFIG_FILE_PATH}
+    else
+        echo "Warning: Failed to create profile file"
+        return 1
+    fi
 }
 
 
@@ -182,16 +192,17 @@ lv2_func_setup_cross_toolchain() {
     for prefix in "\${RW_CROSS_TOOLCHAIN_NAMES[@]}"; do
         for cmd in "\${RW_TOOLCHAIN_COMMANDS[@]}"; do
             if [ -d "\${RW_CROSS_TOOLCHAIN_DIR}" ]; then
-                # sudo mkdir -p \${RW_BACKUP_DIR}
-                # sudo chown "\${DEV_USERNAME}:\${DEV_GROUP}" \${RW_BACKUP_DIR} -R
-                # cp -fv "\${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}" "\${RW_BACKUP_DIR}"
-                # rm -f "\${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
-                # ln -sf \$(which distcc) "\${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
-                echo "sudo mkdir -p \${RW_BACKUP_DIR}"
-                echo "sudo chown \${DEV_USERNAME}:\${DEV_GROUP} \${RW_BACKUP_DIR} -R"
-                echo "cp -fv \${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd} \${RW_BACKUP_DIR}"
-                echo "rm -f \${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
-                echo "ln -sf \$(which distcc) \${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
+                sudo mkdir -p \${RW_BACKUP_DIR}
+                sudo chown "\${DEV_USERNAME}:\${DEV_GROUP}" \${RW_BACKUP_DIR} -R
+                cp -fv "\${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}" "\${RW_BACKUP_DIR}"
+                rm -f "\${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
+                ln -sf \$(which distcc) "\${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
+
+                # echo "sudo mkdir -p \${RW_BACKUP_DIR}"
+                # echo "sudo chown \${DEV_USERNAME}:\${DEV_GROUP} \${RW_BACKUP_DIR} -R"
+                # echo "cp -fv \${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd} \${RW_BACKUP_DIR}"
+                # echo "rm -f \${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
+                # echo "ln -sf \$(which distcc) \${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
             else
                 echo "Error: Cross toolchain directory \${RW_CROSS_TOOLCHAIN_DIR} does not exist."
                 echo -e "\tYou can exec this script again after the sdk of \${CONTAINER_NAME} has been cloned."
@@ -265,6 +276,9 @@ lv1_func_enable_distcc() {
     lv2_func_initial_distcc_config_file
 
     echo -e "\ndistcc has been enabled with selected features!\n"
+    echo -e "Please exec below command to make it take effect right now:"
+    echo -e "source ${RW_SWITCHER_CONFIG_FILE_PATH}"
+    echo
     echo "-------------------------------------------------------------------"
 }
 
