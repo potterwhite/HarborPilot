@@ -39,11 +39,9 @@ func_preparation() {
 # Generate the final switcher script
 func_generate_switcher_script() {
 
-    echo "###########################################################################################"
-    echo "# Generating distcc scripts (1/2)..."
-    echo "# 1st stage of distcc switcher"
-    echo "# who is the core and base of all business processor"
-    echo "###########################################################################################"
+    echo "######################################################"
+    echo "# Generating distcc scripts ..."
+    echo "######################################################"
     sudo tee ${RW_SWITCHER_ENGINE_FILE_PATH} > /dev/null << EOF
 #!/bin/bash
 #==============================================================================
@@ -61,7 +59,7 @@ func_generate_switcher_script() {
 #------------------------------------------------------------------------------
 # Constants and configurations
 #------------------------------------------------------------------------------
-func_setup_environment() {
+lv2_func_setup_environment() {
     set -e
     set -x
 
@@ -97,154 +95,16 @@ func_setup_environment() {
     )
 }
 
-# Install required packages
-func_all_preparations() {
-
-    tmp_result="$(which distcc)"
-
-    if [ -n "${tmp_result}" ]; then
-        echo "distcc has been installed"
-        return 0
-    fi
-
-    echo "Installing required packages..."
-    apt-get update
-    apt-get install -y \
-        distcc \
-        netcat-openbsd
-}
-
-
-#------------------------------------------------------------------------------
-# Environment Config file processing
-#------------------------------------------------------------------------------
-func_initial_distcc_config_file() {
-    echo "Setting up environment variables..."
-
-    sudo tee \${RW_SWITCHER_CONFIG_FILE_PATH} > /dev/null << EOPROFILE
-# Set up distcc configuration
-export DISTCC_HOSTS="\${RW_DISTCC_HOSTS:-localhost/2}"
-export DISTCC_PATH="\${RW_DISTCC_PATH}"
-EOPROFILE
-
-    sudo chmod +x \${RW_SWITCHER_CONFIG_FILE_PATH}
-
-    # make all environments take effect
-    if [ -f \${RW_SWITCHER_CONFIG_FILE_PATH} ]; then
-        source \${RW_SWITCHER_CONFIG_FILE_PATH}
-    else
-        echo "Warning: Failed to create profile file"
-        return 1
-    fi
-}
-
-func_uninitial_distcc_config_file() {
-    echo "Cleaning environment..."
-    sudo rm -f \${RW_SWITCHER_CONFIG_FILE_PATH}
-}
-
-
-#------------------------------------------------------------------------------
-# Cross toolchain related functions
-#------------------------------------------------------------------------------
-func_setup_cross_toolchain() {
-    if [ "\${ENABLE_CROSS_TOOLCHAIN}" -eq 0 ]; then
-        echo "Cross toolchain distcc is disabled"
-        return 0
-    fi
-
-    # echo "Setting up cross toolchain symlinks..."
-    # cd \${RW_DISTCC_LINKS_DIR}
-
-    for prefix in "\${RW_CROSS_TOOLCHAIN_NAMES[@]}"; do
-        for cmd in "\${RW_TOOLCHAIN_COMMANDS[@]}"; do
-            if [ -d "\${RW_CROSS_TOOLCHAIN_DIR}" ]; then
-                sudo mkdir -p \${RW_BACKUP_DIR}
-                sudo chown "\${DEV_USERNAME}:\${DEV_GROUP}" \${RW_BACKUP_DIR} -R
-                cp -fv "\${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}" "\${RW_BACKUP_DIR}"
-                rm -f "\${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
-                ln -sf \$(which distcc) "\${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
-            else
-                echo "Error: Cross toolchain directory \${RW_CROSS_TOOLCHAIN_DIR} does not exist."
-                echo -e "\tYou can exec this script again after the sdk of \${CONTAINER_NAME} has been cloned."
-
-                return 1
-            fi
-        done
-    done
-}
-
-func_restore_cross_toolchain() {
-    echo "Cleaning cross toolchain symlinks..."
-    for prefix in "\${RW_CROSS_TOOLCHAIN_NAMES[@]}"; do
-        for cmd in "\${RW_TOOLCHAIN_COMMANDS[@]}"; do
-            rm -f "\${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
-            cp -fv "\${RW_BACKUP_DIR}/\${prefix}-\${cmd}" "\${RW_CROSS_TOOLCHAIN_DIR}"
-        done
-    done
-}
-
-#------------------------------------------------------------------------------
-# Host toolchain related functions (reserved interfaces)
-#------------------------------------------------------------------------------
-func_setup_host_toolchain() {
-    if [ "\${ENABLE_HOST_TOOLCHAIN}" -eq 0 ]; then
-        echo "Host toolchain distcc is disabled"
-        return 0
-    fi
-    echo "Empty now, will add host toolchain setup later"
-}
-
-func_restore_host_toolchain() {
-    if [ "\${ENABLE_HOST_TOOLCHAIN}" -eq 0 ]; then
-        return 0
-    fi
-    echo "Empty now, will add host toolchain cleanup later"
-}
-
-#------------------------------------------------------------------------------
-# Main functionality functions
-#------------------------------------------------------------------------------
-func_enable_distcc() {
-    # Enable cross toolchain
-    if [ "\${ENABLE_CROSS_TOOLCHAIN}" -eq 1 ]; then
-        func_setup_cross_toolchain
-    fi
-
-    # Enable host toolchain (reserved)
-    if [ "\${ENABLE_HOST_TOOLCHAIN}" -eq 1 ]; then
-        func_setup_host_toolchain
-    fi
-
-    func_initial_distcc_config_file
-    echo -e "\ndistcc has been enabled with selected features!\n"
-    echo "-------------------------------------------------------------------"
-}
-
-func_disable_distcc() {
-    # Clean cross toolchain
-    if [ "\${ENABLE_CROSS_TOOLCHAIN}" -eq 1 ]; then
-        func_restore_cross_toolchain
-    fi
-
-    # Clean host toolchain (reserved)
-    if [ "\${ENABLE_HOST_TOOLCHAIN}" -eq 1 ]; then
-        func_restore_host_toolchain
-    fi
-
-    func_uninitial_distcc_config_file
-    echo "distcc has been disabled"
-}
 
 #------------------------------------------------------------------------------
 # Usage function
 #------------------------------------------------------------------------------
-func_usage() {
+lv2_func_usage() {
     local script_name=\$(basename \${0})
     echo
     echo "Usage: \${script_name} {enable|disable}"
     echo -e "\n\n"
-    echo "Current status: \$([ -f \${RW_SWITCHER_CONFIG_FILE_PATH} ] && echo 'enabled' || echo 'disabled')"
+    echo "Current status: \$([ -f ${RW_SWITCHER_CONFIG_FILE_PATH} ] && echo 'enabled' || echo 'disabled')"
     echo "Cross toolchain distcc: \$([ \${ENABLE_CROSS_TOOLCHAIN:-0} -eq 1 ] && echo 'enabled' || echo 'disabled')"
     echo "Host toolchain distcc: \$([ \${ENABLE_HOST_TOOLCHAIN:-0} -eq 1 ] && echo 'enabled' || echo 'disabled')"
     echo -e "\nYou have two ways to use distcc control:"
@@ -260,36 +120,183 @@ func_usage() {
     return 1
 }
 
-main() {
-    # Setup environment first
-    func_setup_environment
+#------------------------------------------------------------------------------
+# Environment Config file processing
+#------------------------------------------------------------------------------
+lv2_func_initial_distcc_config_file() {
+    echo "Setting up environment variables..."
 
-    # Check prerequisites
-    if ! func_check_prerequisites; then
-        echo "Error: distcc is not properly installed"
-        exit 1
+    sudo tee ${RW_SWITCHER_CONFIG_FILE_PATH} > /dev/null << EOPROFILE
+# Set up distcc configuration
+export DISTCC_HOSTS="\${RW_DISTCC_HOSTS:-localhost/2}"
+export DISTCC_PATH="\${RW_DISTCC_PATH}"
+EOPROFILE
+
+    sudo chmod +x ${RW_SWITCHER_CONFIG_FILE_PATH}
+
+    # make all environments take effect
+    if [ -f ${RW_SWITCHER_CONFIG_FILE_PATH} ]; then
+        source ${RW_SWITCHER_CONFIG_FILE_PATH}
+    else
+        echo "Warning: Failed to create profile file"
+        return 1
+    fi
+}
+
+lv2_func_uninitial_distcc_config_file() {
+    echo "Cleaning environment..."
+    sudo rm -f ${RW_SWITCHER_CONFIG_FILE_PATH}
+}
+
+
+#------------------------------------------------------------------------------
+# Host toolchain related functions (reserved interfaces)
+#------------------------------------------------------------------------------
+lv2_func_setup_host_toolchain() {
+    if [ "\${ENABLE_HOST_TOOLCHAIN}" -eq 0 ]; then
+        echo "Host toolchain distcc is disabled"
+        return 0
+    fi
+    echo "Empty now, will add host toolchain setup later"
+}
+
+lv2_func_restore_host_toolchain() {
+    if [ "\${ENABLE_HOST_TOOLCHAIN}" -eq 0 ]; then
+        return 0
+    fi
+    echo "Empty now, will add host toolchain cleanup later"
+}
+
+#------------------------------------------------------------------------------
+# Cross toolchain related functions
+#------------------------------------------------------------------------------
+lv2_func_setup_cross_toolchain() {
+    if [ "\${ENABLE_CROSS_TOOLCHAIN}" -eq 0 ]; then
+        echo "Cross toolchain distcc is disabled"
+        return 0
     fi
 
-    echo -e "\nArgument count: \${#}\n"
+    # echo "Setting up cross toolchain symlinks..."
+    # cd \${RW_DISTCC_LINKS_DIR}
 
+    for prefix in "\${RW_CROSS_TOOLCHAIN_NAMES[@]}"; do
+        for cmd in "\${RW_TOOLCHAIN_COMMANDS[@]}"; do
+            if [ -d "\${RW_CROSS_TOOLCHAIN_DIR}" ]; then
+                # sudo mkdir -p \${RW_BACKUP_DIR}
+                # sudo chown "\${DEV_USERNAME}:\${DEV_GROUP}" \${RW_BACKUP_DIR} -R
+                # cp -fv "\${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}" "\${RW_BACKUP_DIR}"
+                # rm -f "\${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
+                # ln -sf \$(which distcc) "\${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
+                echo "sudo mkdir -p \${RW_BACKUP_DIR}"
+                echo "sudo chown \${DEV_USERNAME}:\${DEV_GROUP} \${RW_BACKUP_DIR} -R"
+                echo "cp -fv \${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd} \${RW_BACKUP_DIR}"
+                echo "rm -f \${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
+                echo "ln -sf \$(which distcc) \${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
+            else
+                echo "Error: Cross toolchain directory \${RW_CROSS_TOOLCHAIN_DIR} does not exist."
+                echo -e "\tYou can exec this script again after the sdk of \${CONTAINER_NAME} has been cloned."
+
+                return 1
+            fi
+        done
+    done
+}
+
+lv2_func_restore_cross_toolchain() {
+    echo "Cleaning cross toolchain symlinks..."
+    for prefix in "\${RW_CROSS_TOOLCHAIN_NAMES[@]}"; do
+        for cmd in "\${RW_TOOLCHAIN_COMMANDS[@]}"; do
+            rm -f "\${RW_CROSS_TOOLCHAIN_DIR}/\${prefix}-\${cmd}"
+            cp -fv "\${RW_BACKUP_DIR}/\${prefix}-\${cmd}" "\${RW_CROSS_TOOLCHAIN_DIR}"
+        done
+    done
+}
+
+
+#------------------------------------------------------------------------------
+# Main functionality functions
+#------------------------------------------------------------------------------
+lv1_func_all_preparations() {
+    #------------------------------------------------------------------------------
+    # Setup environment first
+    #------------------------------------------------------------------------------
+    lv2_func_setup_environment
+
+    #------------------------------------------------------------------------------
+    # Check if distcc is installed
+    # Install it if not installed
+    #------------------------------------------------------------------------------
+    tmp_result="\$(which distcc)"
+
+    if [ -n "\${tmp_result}" ]; then
+        echo "distcc has been installed"
+    else
+        echo "Installing required packages..."
+        sudo apt-get update
+        sudo apt-get install -y \
+            distcc \
+            netcat-openbsd
+    fi
+
+    echo "arguments: \$#"
+
+    #------------------------------------------------------------------------------
     # Show usage if no arguments or help requested
+    #------------------------------------------------------------------------------
     if [ "\${#}" -ne 1 ] || [ "\${1}" = "-h" ] || [ "\${1}" = "--help" ] || [ "\${1}" = "?" ]; then
         echo -e "\n\\\${#}=\${#}\n"
-        func_usage
+        lv2_func_usage
         exit 0
     fi
+}
+
+lv1_func_enable_distcc() {
+    # Enable cross toolchain
+    if [ "\${ENABLE_CROSS_TOOLCHAIN}" -eq 1 ]; then
+        lv2_func_setup_cross_toolchain
+    fi
+
+    # Enable host toolchain (reserved)
+    if [ "\${ENABLE_HOST_TOOLCHAIN}" -eq 1 ]; then
+        lv2_func_setup_host_toolchain
+    fi
+
+    # Initialize distcc config file
+    lv2_func_initial_distcc_config_file
+
+    echo -e "\ndistcc has been enabled with selected features!\n"
+    echo "-------------------------------------------------------------------"
+}
+
+lv1_func_disable_distcc() {
+    # Clean cross toolchain
+    if [ "\${ENABLE_CROSS_TOOLCHAIN}" -eq 1 ]; then
+        lv2_func_restore_cross_toolchain
+    fi
+
+    # Clean host toolchain (reserved)
+    if [ "\${ENABLE_HOST_TOOLCHAIN}" -eq 1 ]; then
+        lv2_func_restore_host_toolchain
+    fi
+
+    lv2_func_uninitial_distcc_config_file
+    echo "distcc has been disabled"
+}
+
+main() {
+    lv1_func_all_preparations "\$@"
 
     # Process command
     case "\${1}" in
         "enable")
-            func_enable_distcc
+            lv1_func_enable_distcc
             ;;
         "disable")
-            func_disable_distcc
+            lv1_func_disable_distcc
             ;;
         *)
             echo "Error: Invalid command '\${1}'"
-            func_usage
+            lv2_func_usage
             exit 1
             ;;
     esac
@@ -302,12 +309,13 @@ EOF
 }
 
 func_set_permissions() {
-    echo "Setting executable permissions..."
+    echo -e "\nSetting executable permissions..."
     sudo chmod +x ${RW_SWITCHER_ENGINE_FILE_PATH}
     sudo chmod +x ${RW_SWITCHER_CONFIG_FILE_PATH}
     if [ -n "${RW_SURFACE_SWITCHER_FILE_PATH}" ]; then
         sudo chmod +x ${RW_SURFACE_SWITCHER_FILE_PATH}
     fi
+    echo -e "\nExecutable permissions have been set successfully!\n"
 }
 
 # 修改使用说明
