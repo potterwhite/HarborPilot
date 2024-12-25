@@ -6,6 +6,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [0.5.9] - 2024-12-25
+### Added
+- Add tree command support via `apt install tree`
+- Add man documentation support controlled by `.env` configuration
+- Add cmake and ctest from buildroot (same location as qmake)
+- Add branch name parameter support in pull_sdk.sh (defaults to 'main' if not specified)
+
+### Fixed
+- Fix version_of_dev_env.sh environment mismatched problem
+- Fix distcc_watcher.sh disable functionality not working properly
+
+### Changed
+- Enhance pull_sdk.sh to support both 'all' parameter and specific branch names
+
 ## [0.5.8] - 2024-12-20
 ### Added
 - add distcc_switcher.sh script to docker image

@@ -7,15 +7,15 @@ PROJECT_VERSION="0.5.8"
 
 echo "Current Version of SDK Development Environment is: 0.5.8"
 
-# Show SDK Version
-SDK_VERSION="__SDK_VERSION__"
-echo "Current SDK Version: ${SDK_VERSION}"
+# # Show SDK Version
+# SDK_VERSION="__SDK_VERSION__"
+# echo "Current SDK Version: ${SDK_VERSION}"
 
-# Show Docker Login Status
-echo -e "\nDocker Registry Login Status:"
-if [ -f ~/.docker/config.json ]; then
-    echo "Logged in to:"
-    jq -r '.auths | keys[]' ~/.docker/config.json 2>/dev/null || echo "No registry login found"
-else
-    echo "Not logged in to any Docker registry"
-fi
+# # Show Docker Login Status
+# echo -e "\nDocker Registry Login Status:"
+# if [ -f ~/.docker/config.json ]; then
+#     echo "Logged in to:"
+#     jq -r '.auths | keys[]' ~/.docker/config.json 2>/dev/null || echo "No registry login found"
+# else
+#     echo "Not logged in to any Docker registry"
+# fi

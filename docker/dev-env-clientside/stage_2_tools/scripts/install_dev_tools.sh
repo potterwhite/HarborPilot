@@ -151,32 +151,38 @@ EOF
 # Description: Documentation and visualization tools installation
 ###############################################################################
 fourth_install_doc_tools() {
+    echo "Installing documentation tools..."
     # Install documentation generation tools
     apt-get install -y \
         doxygen \
         graphviz
 
-    # Install man documentation system
-    apt-get install -y \
-        man-db \
-        manpages \
-        manpages-dev \
-        manpages-posix \
-        manpages-posix-dev \
-        gcc-doc \
-        cpp-doc \
-        glibc-doc \
-        python3-doc \
-        bash-doc
+    if [ "${INSTALL_MAN_DOC}" = "true" ]; then
+        echo -e "\tInstalling man documentation system..."
+        # Install man documentation system
+        apt-get install -y \
+            man-db \
+            manpages \
+            manpages-dev \
+            manpages-posix \
+            manpages-posix-dev \
+            gcc-doc \
+            cpp-doc \
+            glibc-doc \
+            python3-doc \
+            bash-doc
+        # Rebuild man database
+        mandb
 
-    # Rebuild man database
-    mandb
-
-    # Add man page search path configuration if not exists
-    if ! grep -q "MANPATH_MAP /usr/local/bin" /etc/manpath.config; then
-        echo 'MANPATH_MAP /usr/local/bin /usr/local/man' >> /etc/manpath.config
-        echo 'MANPATH_MAP /usr/bin /usr/share/man' >> /etc/manpath.config
+        # Add man page search path configuration if not exists
+        if ! grep -q "MANPATH_MAP /usr/local/bin" /etc/manpath.config; then
+            echo 'MANPATH_MAP /usr/local/bin /usr/local/man' >> /etc/manpath.config
+            echo 'MANPATH_MAP /usr/bin /usr/share/man' >> /etc/manpath.config
+        fi
+        echo -e "\tMan documentation system installed successfully"
     fi
+
+    echo "Documentation tools installation completed"
 }
 
 ###############################################################################
