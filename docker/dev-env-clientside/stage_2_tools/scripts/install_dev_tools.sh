@@ -34,7 +34,7 @@ first_install_core_tools() {
         pkg-config \
         ccache \
         tree
-        
+
     if [ "${INSTALL_HOST_CMAKE}" = "true" ]; then
         apt-get install -y \
             cmake

@@ -8,63 +8,186 @@
 
 set -e
 
-# Check required variables
-if [ -z "${SDK_INSTALL_PATH}" ] || [ -z "${SDK_GIT_REPO}" ]; then
-    echo "Error: Required environment variables are not set"
-    echo "Please ensure SDK_INSTALL_PATH and SDK_GIT_REPO are defined"
-    exit 1
-fi
+################################################################################
+# Load environment variables
+################################################################################
+func_load_env() {
+    # SDK paths
+    SDK_INSTALL_PATH="${SDK_INSTALL_PATH:-/development/sdk}"
+    BUILDROOT_OUTPUT="${SDK_INSTALL_PATH}/buildroot/output/rockchip_rk3588"
 
-echo "Creating SDK directory structure..."
-mkdir -p ${SDK_INSTALL_PATH}
+    # Build tools to be linked
+    BUILD_TOOLS=(
+        "cmake"
+        "ctest"
+    )
+    # "ninja"
+    # "make"
+    # "pkg-config"
+    # "ccache"
 
-echo "Setting initial ownership..."
-chown -R developer:developer ${SDK_INSTALL_PATH}
+    # Qt tools to be linked
+    QT_TOOLS=(
+        "qmake"
+        "uic"
+        "moc"
+        "rcc"
+        "qdbuscpp2xml"
+        "qdbusxml2cpp"
+        "qlalr"
+        "qvkgen"
+    )
 
-echo "Setting up Git repository..."
-cd ${SDK_INSTALL_PATH}
+    # File processing tools
+    FILE_TOOLS=(
+        "mksquashfs"
+        "unsquashfs"
+    )
+    # "lz4"
+    # "zip"
+    # "unzip"
 
-# Switch to developer user for Git operations
-echo "Switching to developer user for Git operations..."
-su - developer -c "
-    cd ${SDK_INSTALL_PATH} && \
-    git config --global init.defaultBranch main && \
-    git config --global --add safe.directory ${SDK_INSTALL_PATH} && \
-    git lfs install && \
-    git init
-    if [ \$? -eq 0 ]; then
-        echo 'Git repository initialized successfully'
-        git remote add origin ${SDK_GIT_REPO}
-        echo 'Git remote added: ${SDK_GIT_REPO}'
-    else
-        echo 'Failed to initialize Git repository'
-        exit 1
+    # Debug tools
+    DEBUG_TOOLS=(
+
+    )
+    # "addr2line"
+    # "gdb"
+    # "objdump"
+    # "readelf"
+    # "nm"
+    # "size"
+    # "strings"
+    # "strip"
+}
+
+################################################################################
+# Verify environment variables
+################################################################################
+func_verify_env() {
+    # Check required variables
+    if [ -z "${SDK_INSTALL_PATH}" ] || [ -z "${SDK_GIT_REPO}" ]; then
+        echo "Error: Required environment variables are not set"
+        echo "Please ensure SDK_INSTALL_PATH and SDK_GIT_REPO are defined"
+        return 1
     fi
-"
+    return 0
+}
 
-# Add upgrade_tool to standard path so that it can be used directly
-ln -s ${SDK_INSTALL_PATH}/tools/linux/Linux_Upgrade_Tool/Linux_Upgrade_Tool/upgrade_tool /usr/local/bin/upgrade_tool
+################################################################################
+# Create directory structure
+################################################################################
+func_create_dirs() {
+    echo "Creating SDK directory structure..."
+    mkdir -p "${SDK_INSTALL_PATH}"
+    chown -R developer:developer "${SDK_INSTALL_PATH}"
+    return 0
+}
 
-# Add qmake to PATH so that it can be used directly
-ln -s ${SDK_INSTALL_PATH}/buildroot/output/rockchip_rk3588/host/bin/qmake /usr/local/bin/qmake
+################################################################################
+# Initialize Git repository
+################################################################################
+func_init_git() {
+    echo "Setting up Git repository..."
+    cd "${SDK_INSTALL_PATH}"
 
+    # Switch to developer user for Git operations
+    su - developer -c "
+        cd ${SDK_INSTALL_PATH} && \
+        git config --global init.defaultBranch main && \
+        git config --global --add safe.directory ${SDK_INSTALL_PATH} && \
+        git lfs install && \
+        git init && \
+        git remote add origin ${SDK_GIT_REPO}
+    "
+    return $?
+}
+
+################################################################################
+# Create symbolic links for tools
+################################################################################
+func_create_links() {
+    echo "Creating symbolic links for tools..."
+    local host_bin="${BUILDROOT_OUTPUT}/host/bin"
+
+    # Link upgrade tool
+    ln -sf "${SDK_INSTALL_PATH}/tools/linux/Linux_Upgrade_Tool/Linux_Upgrade_Tool/upgrade_tool" /usr/local/bin/upgrade_tool
+
+    # Link build tools
+    for tool in "${BUILD_TOOLS[@]}"; do
+        if [ -f "${host_bin}/${tool}" ]; then
+            ln -sf "${host_bin}/${tool}" "/usr/local/bin/${tool}-cross"
+            ln -sf "/usr/local/bin/${tool}-cross" "/usr/local/bin/${tool}"
+        fi
+    done
+
+    # Link Qt tools
+    for tool in "${QT_TOOLS[@]}"; do
+        if [ -f "${host_bin}/${tool}" ]; then
+            ln -sf "${host_bin}/${tool}" "/usr/local/bin/${tool}-cross"
+            ln -sf "/usr/local/bin/${tool}-cross" "/usr/local/bin/${tool}"
+        fi
+    done
+
+    # Link file processing tools
+    for tool in "${FILE_TOOLS[@]}"; do
+        if [ -f "${host_bin}/${tool}" ]; then
+            ln -sf "${host_bin}/${tool}" "/usr/local/bin/${tool}"
+        fi
+    done
+
+    # Link debug tools
+    for tool in "${DEBUG_TOOLS[@]}"; do
+        if [ -f "${host_bin}/${tool}" ]; then
+            ln -sf "${host_bin}/${tool}" "/usr/local/bin/${tool}"
+        fi
+    done
+
+    return 0
+}
+
+################################################################################
 # Verify installation
-echo "Verifying installation..."
-echo "SDK directory contents:"
-ls -la ${SDK_INSTALL_PATH}
+################################################################################
+func_verify_install() {
+    echo "Verifying installation..."
 
-# Check remote repository only if .git directory exists
-if [ -d "${SDK_INSTALL_PATH}/.git" ]; then
-    echo "Git remote configuration:"
-    cd ${SDK_INSTALL_PATH} && \
-    git config --global --add safe.directory ${SDK_INSTALL_PATH} && \
-    git remote -v
-else
-    echo "Warning: Git repository not properly initialized"
-    exit 1
-fi
+    # Check SDK directory
+    echo "SDK directory contents:"
+    ls -la "${SDK_INSTALL_PATH}"
 
-echo "SDK installation completed successfully"
-exit 0
+    # Verify Git repository
+    if [ -d "${SDK_INSTALL_PATH}/.git" ]; then
+        echo "Git remote configuration:"
+        cd "${SDK_INSTALL_PATH}" && \
+        git config --global --add safe.directory "${SDK_INSTALL_PATH}" && \
+        git remote -v
+        return $?
+    else
+        echo "Warning: Git repository not properly initialized"
+        return 1
+    fi
+}
+
+################################################################################
+# Main function
+################################################################################
+main() {
+    # Load and verify environment
+    func_load_env
+    func_verify_env || exit 1
+
+    # Execute installation steps
+    func_create_dirs || exit 1
+    func_init_git || exit 1
+    func_create_links || exit 1
+    func_verify_install || exit 1
+
+    echo "SDK installation completed successfully"
+    return 0
+}
+
+# Execute main function
+main "$@"
 
 
