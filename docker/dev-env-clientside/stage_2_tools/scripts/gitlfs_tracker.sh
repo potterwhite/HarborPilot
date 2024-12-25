@@ -69,7 +69,8 @@ git lfs track
 
 # Prompt for next steps
 echo -e "\nTo apply changes to repository:"
-echo "1. git add ."
-echo "2. git commit -a"
-echo "3. git lfs migrate import --everything --above=${SIZE_THRESHOLD}"
-echo "4. git push origin --force"
+echo "1.    git add ."
+echo "2.    git commit -a"
+echo "3.    git lfs migrate import --everything --above=${SIZE_THRESHOLD}"
+echo "   or git lfs migrate import --include-ref=refs/heads/\${YOUR_BRANCH_NAME} --above=${SIZE_THRESHOLD}"
+echo "4.    git push origin --force"
