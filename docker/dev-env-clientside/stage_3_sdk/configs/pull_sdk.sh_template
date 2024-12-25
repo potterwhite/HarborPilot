@@ -27,10 +27,12 @@ Options:
     -h, --help     Show this help message
 
 Examples:
-    $(basename "$0")             # Pull all remote branches
-    $(basename "$0") develop     # Pull only develop branch
-    $(basename "$0") feature/xyz # Pull only feature branch
+    $(basename "$0")                     # Pull main remote branches defaultly
+    $(basename "$0") develop             # Pull only develop branch(if exists)
+    $(basename "$0") all                 # Pull all remote branches
 EOF
+    # $(basename "$0") feature/xyz         # Pull only feature branch
+
     exit 0
 }
 
@@ -41,14 +43,31 @@ main() {
     # Parse command line arguments
     local branch=""  # empty means pull all branches
 
-    # Check for help flag
-    if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
-        print_help
-    fi
+    if [ "$#" -gt 1 ]; then
+        # a. if we have more than 1 argument, then it's an error
+        echo "Error: Too many arguments"
+        return 1
+    elif [ "$#" -eq 1 ]; then
+        # b.if we have 1 argument, then it's a branch name
+        # Check for help flag
+        if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+            print_help
+        fi
 
-    # Parse branch name if provided
-    if [ -n "$1" ] && [[ ! "$1" =~ ^- ]]; then
-        branch="$1"
+        # Parse branch name if provided
+        if [[ ! "$1" =~ ^- ]]; then
+            branch="$1"
+        else
+            echo "Error: Invalid branch name format, should not start with '-'"
+            return 1
+        fi
+    elif [ "$#" -eq 0 ]; then
+        # c. if we have no argument, then it's a default pull main branch
+        branch="main"
+    else
+        # d. if we have invalid arguments, then it's an error
+        echo "Error: Invalid arguments number: $#"
+        return 1
     fi
 
     echo "=== Starting SDK Pull Process ==="
@@ -151,13 +170,13 @@ main() {
     echo "Fetching remote information..."
     git fetch origin || return 1
 
-    if [ -n "$target_branch" ]; then
-        # Pull specific branch
-        _pull_single_branch "$target_branch"
-        return $?
-    else
+    if [ "$target_branch" = "all" ]; then
         # Pull all remote branches
         _pull_all_branches
+        return $?
+    else
+        # Pull specific branch
+        _pull_single_branch "$target_branch"
         return $?
     fi
 }
