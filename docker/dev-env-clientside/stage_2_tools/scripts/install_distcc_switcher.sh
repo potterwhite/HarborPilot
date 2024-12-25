@@ -292,8 +292,16 @@ lv1_func_disable_distcc() {
         lv2_func_restore_host_toolchain
     fi
 
+    # Uninitialize distcc config file
     lv2_func_uninitial_distcc_config_file
+
     echo "distcc has been disabled"
+    echo -e "\nPlease exec below command to make it take effect right now:"
+    echo -e "##############################################################"
+    echo -e "source ${RW_SWITCHER_CONFIG_FILE_PATH}"
+    echo -e "##############################################################"
+    echo
+    echo "-------------------------------------------------------------------"
 }
 
 main() {
