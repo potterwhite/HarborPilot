@@ -1,4 +1,3 @@
-
 # Changelog
 
 All notable changes to this project will be documented in this file.
@@ -23,29 +22,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.8] - 2024-12-20
 ### Added
-- add distcc_switcher.sh script to docker image
-- fixed host name of serverside container
-
+- Add distcc_switcher.sh script to docker image
+- Fix host name of serverside container
 
 ## [0.5.7.1] - 2024-12-19
 ### Added
-- distccd server support but only in frontground
-- add a tool in serverside that could start harbor, but not done yet
+- Add distccd server support but only in frontground
+- Add a tool in serverside that could start harbor (not completed)
 
 ### Changed
-- Host tools(e.g., ubuntu_only_entrance.sh && serverside_only_entrance.sh)
+- Host tools (e.g., ubuntu_only_entrance.sh && serverside_only_entrance.sh)
   remove container will remove image at the same time
-
 
 ## [0.5.7] - 2024-12-14
 ### Changed
-- reorganize the structure of project
+- Reorganize the structure of project
 
 ### Added
-- add distcc support with clientside docker image
-- add serverside docker image for distccd server
- (and the sdk the buildroot is using internal toolchain so distccd server is not used in this version)
-
+- Add distcc support with clientside docker image
+- Add serverside docker image for distccd server
+  (and the sdk the buildroot is using internal toolchain so distccd server is not used in this version)
 
 ## [0.5.6] - 2024-12-12
 ### Changed
@@ -54,22 +50,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.5] - 2024-12-09
 ### Added
-- symbolic link "/usr/local/bin/qmake" to "/development/sdk/buildroot/output/rockchip_rk3588/host/bin/qmake"
+- Add symbolic link "/usr/local/bin/qmake" to "/development/sdk/buildroot/output/rockchip_rk3588/host/bin/qmake"
 
 ## [0.5.4] - 2024-12-04
 ### Added
-- /usr/bin/python symlink for python2.7
-- /dev:/dev volume mount
-- "upgrade_tool" symlink for Linux Upgrade Tool
+- Add /usr/bin/python symlink for python2.7
+- Add /dev:/dev volume mount
+- Add "upgrade_tool" symlink for Linux Upgrade Tool
 
 ### Changed
-- gitlfs_tracker.sh notify message at the end
+- Update gitlfs_tracker.sh notify message at the end
 
 ## [0.5.3] - 2024-12-03
 ### Fixed
-- some bugs in project_handover/ubuntu/
-- fixed "unable to rm" problem when executing pull_sdk.sh
-- change owner of `${WORKSPACE_ROOT}` to `${DEV_USERNAME}`
+- Fix bugs in project_handover/ubuntu/
+- Fix "unable to rm" problem when executing pull_sdk.sh
+- Fix owner of `${WORKSPACE_ROOT}` to `${DEV_USERNAME}`
 
 ## [0.5.1] - 2024-11-29
 ### Added
@@ -126,3 +122,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.5.7.1]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.7.1
 
 [0.5.8]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.8
+
+[0.5.9]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.9
