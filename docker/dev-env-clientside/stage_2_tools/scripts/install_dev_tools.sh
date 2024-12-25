@@ -32,7 +32,9 @@ first_install_core_tools() {
         libtool \
         meson \
         pkg-config \
-        ccache
+        ccache \
+        tree
+        
     if [ "${INSTALL_HOST_CMAKE}" = "true" ]; then
         apt-get install -y \
             cmake
