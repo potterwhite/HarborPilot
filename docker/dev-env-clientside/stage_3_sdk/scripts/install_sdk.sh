@@ -115,32 +115,24 @@ func_create_links() {
 
     # Link build tools
     for tool in "${BUILD_TOOLS[@]}"; do
-        if [ -f "${host_bin}/${tool}" ]; then
-            ln -sf "${host_bin}/${tool}" "/usr/local/bin/${tool}-cross"
-            ln -sf "/usr/local/bin/${tool}-cross" "/usr/local/bin/${tool}"
-        fi
+        ln -sf "${host_bin}/${tool}" "/usr/local/bin/${tool}-cross"
+        ln -sf "/usr/local/bin/${tool}-cross" "/usr/local/bin/${tool}"
     done
 
     # Link Qt tools
     for tool in "${QT_TOOLS[@]}"; do
-        if [ -f "${host_bin}/${tool}" ]; then
-            ln -sf "${host_bin}/${tool}" "/usr/local/bin/${tool}-cross"
-            ln -sf "/usr/local/bin/${tool}-cross" "/usr/local/bin/${tool}"
-        fi
+        ln -sf "${host_bin}/${tool}" "/usr/local/bin/${tool}-cross"
+        ln -sf "/usr/local/bin/${tool}-cross" "/usr/local/bin/${tool}"
     done
 
     # Link file processing tools
     for tool in "${FILE_TOOLS[@]}"; do
-        if [ -f "${host_bin}/${tool}" ]; then
-            ln -sf "${host_bin}/${tool}" "/usr/local/bin/${tool}"
-        fi
+        ln -sf "${host_bin}/${tool}" "/usr/local/bin/${tool}"
     done
 
     # Link debug tools
     for tool in "${DEBUG_TOOLS[@]}"; do
-        if [ -f "${host_bin}/${tool}" ]; then
-            ln -sf "${host_bin}/${tool}" "/usr/local/bin/${tool}"
-        fi
+        ln -sf "${host_bin}/${tool}" "/usr/local/bin/${tool}"
     done
 
     return 0
