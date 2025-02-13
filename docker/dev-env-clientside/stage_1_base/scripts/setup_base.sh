@@ -30,7 +30,8 @@ func_install_system_core() {
         apt-utils \
         apt-transport-https \
         ca-certificates \
-        software-properties-common
+        software-properties-common \
+        libncursesw5
 }
 
 ###############################################################################

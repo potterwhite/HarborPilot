@@ -32,10 +32,12 @@ func_setup_environment() {
     TEMP_START_DISTCCD_SCRIPT_FILE="start_distccd.sh"
     TEMP_DOCKERFILE_NAME="DockerfileOfServerSide"
 
+    TEMP_VERSION_SCRIPT_DIR="TeMp_version"
+    TEMP_VERSION_SCRIPT_FILE="version_of_dev_env.sh"
 }
 
 read_module() {
-    cat "${BUILD_SCRIPT_DIR}/../dockerfile_modules/$1.df" | envsubst
+    cat "${BUILD_SCRIPT_DIR}/dockerfile_modules/$1.df" | envsubst
 }
 
 toolchain_preparation() {
@@ -159,6 +161,23 @@ EOF
     chmod +x ${TEMP_ENTRYPOINT_SCRIPT_DIR}/${TEMP_START_DISTCCD_SCRIPT_FILE}
 }
 
+version_script_preparation() {
+    mkdir -p ${TEMP_VERSION_SCRIPT_DIR}
+    touch ${TEMP_VERSION_SCRIPT_DIR}/${TEMP_VERSION_SCRIPT_FILE}
+
+    cat > ${TEMP_VERSION_SCRIPT_DIR}/${TEMP_VERSION_SCRIPT_FILE} << EOF
+#!/bin/bash
+
+# This script is auto-generated during docker build
+# DO NOT EDIT MANUALLY
+
+PROJECT_VERSION="${PROJECT_VERSION}"
+
+echo "Current Version of Distcc Server Environment is: \${PROJECT_VERSION}"
+EOF
+    chmod +x ${TEMP_VERSION_SCRIPT_DIR}/${TEMP_VERSION_SCRIPT_FILE}
+}
+
 setup_dockerfile() {
 
     cat > "${BUILD_SCRIPT_DIR}/${TEMP_DOCKERFILE_NAME}" << DELIM
@@ -213,6 +232,11 @@ RUN ls -lha /tmp/  && \
 COPY ${TEMP_ENTRYPOINT_SCRIPT_DIR}/${TEMP_ENTRYPOINT_SCRIPT_FILE} /usr/local/bin/${TEMP_ENTRYPOINT_SCRIPT_FILE}
 COPY ${TEMP_ENTRYPOINT_SCRIPT_DIR}/${TEMP_START_DISTCCD_SCRIPT_FILE} /usr/local/bin/${TEMP_START_DISTCCD_SCRIPT_FILE}
 
+#############################################
+#  version script init
+#############################################
+COPY ${TEMP_VERSION_SCRIPT_DIR}/${TEMP_VERSION_SCRIPT_FILE} /usr/local/bin/${TEMP_VERSION_SCRIPT_FILE}
+
 ENTRYPOINT ["/usr/local/bin/${TEMP_ENTRYPOINT_SCRIPT_FILE}"]
 
 DELIM
@@ -244,6 +268,7 @@ build_distcc_image() {
 cleanup(){
     rm -rf ${BUILD_SCRIPT_DIR}/${TEMP_TOOLCHAIN_TARBALLS_DIR}
     rm -rf ${BUILD_SCRIPT_DIR}/${TEMP_ENTRYPOINT_SCRIPT_DIR}
+    rm -rf ${BUILD_SCRIPT_DIR}/${TEMP_VERSION_SCRIPT_DIR}
     rm -f ${BUILD_SCRIPT_DIR}/${TEMP_DOCKERFILE_NAME}
     echo "Done cleanup()"
 }
@@ -254,6 +279,8 @@ main() {
     toolchain_preparation || return 1
 
     entrypoint_preparation || return 1
+
+    version_script_preparation || return 1
 
     setup_dockerfile || return 1
 

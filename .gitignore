@@ -26,16 +26,12 @@
 !**/.gitkeep
 
 # Ignore generated config files
-docker/dev-env-clientside/stage_3_sdk/configs/sdk_config.conf
-docker/dev-env-clientside/stage_3_sdk/configs/pull_sdk.sh
-docker/dev-env-clientside/stage_3_sdk/configs/push_sdk.sh
-# docker/dev-env-clientside/stage_3_sdk/configs/verify_ssh_key.sh
-docker/dev-env-clientside/stage_3_sdk/configs/version_of_dev_env.sh
+docker/dev-env-clientside/stage_3_sdk/configs/*
+!docker/dev-env-clientside/stage_3_sdk/configs/*template
 
 docker/dev-env-clientside/stage_4_config/configs/env_config.conf
 docker/dev-env-clientside/stage_5_final/configs/entrypoint.conf
 docker/dev-env-clientside/stage_5_final/configs/workspace.conf
-
 
 # Ignore build log files in all directories
 **/build_log.txt
@@ -49,7 +45,15 @@ project_handover/clientside/ubuntu/docker-compose.yaml
 project_handover/clientside/volumes/*
 !project_handover/clientside/volumes/WelcomeToVolumesRoot
 
+project_handover/scripts/*
+!project_handover/scripts/archive_tarball.sh
 
-docker/dev-env-serverside/**
+# Ignore all files in docker/dev-env-serverside directory except build.sh and dockerfile_modules
+docker/dev-env-serverside/*
 !docker/dev-env-serverside/build.sh
+!docker/dev-env-serverside/dockerfile_modules
+!docker/dev-env-serverside/dockerfile_modules/**
+
+# Ignore all files in .vscode directory
+.vscode/*
 

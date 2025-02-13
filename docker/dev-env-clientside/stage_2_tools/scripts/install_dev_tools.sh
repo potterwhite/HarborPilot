@@ -193,14 +193,7 @@ fifth_install_vcs_tools() {
     apt-get install -y \
         git \
         git-lfs \
-        python2.7 \
-        python3 \
-        python3-pip \
         bash-completion
-
-    # Create symlinks for python and python2
-    ln -s /usr/bin/python2.7 /usr/bin/python
-    ln -s /usr/bin/python2.7 /usr/bin/python2
 
     # Configure git completion for both root and dev user
     for user_home in "/root" "/home/${DEV_USERNAME}"; do
@@ -269,6 +262,24 @@ EOF
 # Description: Install specific versions of Python packages
 ###############################################################################
 eighth_install_python_packages() {
+    # Install Python basic packages
+    apt-get update && apt-get install -y \
+        python2.7 \
+        python2.7-dev \
+        libpython2.7 \
+        libpython2.7-dev
+
+    # Setup Python symlinks
+    ln -sf /usr/bin/python2.7 /usr/bin/python
+    ln -sf /usr/bin/python2.7 /usr/bin/python2
+
+    #----------------------------------------------
+    # Python 3.x Installation
+    python3 --version
+    apt-get update && apt-get install -y python3-pip python3-dev
+    pip3 --version
+
+    # Install Python package manager
     local max_retries=3
 
     install_package() {

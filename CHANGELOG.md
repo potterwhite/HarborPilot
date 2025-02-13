@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2025-02-13
+### Added
+- Added Python 2.7 and its development packages:
+  - python2.7
+  - python2.7-dev
+  - libpython2.7
+  - libpython2.7-dev
+- Added project_handover/scripts/archive_tarball.sh script to archive tarball of project_handover directory
+
+### Changed
+- Added libncursesw5 to system core packages in stage_1_base/scripts/setup_base.sh
+- Added version_of_dev_env.sh script for environment version tracking in serverside image
+
 
 ## [0.5.9] - 2024-12-25
 ### Added
@@ -124,3 +137,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.5.8]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.8
 
 [0.5.9]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.9
+
+[0.6.1]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.6.1
