@@ -1,51 +1,48 @@
 ################################################################################
-# File: docker/stage_5_final/configs/workspace.conf.template
+# File: docker/stage_5_final/configs/entrypoint.conf.template
 #
-# Description: Configuration template for embedded development workspace
+# Description: Configuration template for container entrypoint
 #              All values are populated from .env file
 #
-# Author: [MrJamesLZA]
+# Author: ${PROJECT_MAINTAINER}
 # Created: 2024-11-21
 # Last Modified: 2024-11-21
 #
-# Copyright (c) 2024 [Baytto Electronics Technology Co., Ltd.]
-# License: MIT
+# Copyright (c) 2024 ${PROJECT_COPYRIGHT}
+# License: ${PROJECT_LICENSE}
 ################################################################################
 
 # =============================================================================
-# Workspace Paths Configuration
+# User Configuration
 # =============================================================================
-WORKSPACE_ROOT="/development"
-SOURCE_DIR="/development/src"
-BUILD_DIR="/development/build"
-LOGS_DIR="/development/logs"
-TEMP_DIR="/development/temp"
-DEFAULT_USER="developer"
-USER_ID="1000"
-GROUP_ID="1000"
+DEFAULT_USER="${DEV_USERNAME}"
+DEFAULT_GROUP="${DEV_GROUP}"
+USER_ID="${DEV_UID}"
+GROUP_ID="${DEV_GID}"
 
 # =============================================================================
-# Project Settings
+# Service Configuration
 # =============================================================================
-DEFAULT_PROJECT_NAME="embedded_project"
-DEFAULT_BUILD_TYPE="Debug"
-BUILD_THREADS=4
+ENABLE_SSH="${ENABLE_SSH}"
+CLIENT_SSH_PORT="${CLIENT_SSH_PORT}"
+ENABLE_SYSLOG="${ENABLE_SYSLOG}"
 
 # =============================================================================
-# Development Environment Settings
+# Debug Configuration
 # =============================================================================
-ENABLE_AUTO_SAVE=true
-ENABLE_ERROR_REPORTING=true
-LOG_LEVEL="INFO"
+ENABLE_GDB_SERVER="${ENABLE_GDB_SERVER}"
+GDB_PORT="${GDB_PORT}"
+ENABLE_CORE_DUMPS="${ENABLE_CORE_DUMPS}"
+CORE_PATTERN="${CORE_PATTERN}"
 
 # =============================================================================
-# IDE Integration Settings
+# Resource Limits
 # =============================================================================
-ENABLE_VSC_INTEGRATION=false
-ENABLE_REMOTE_DEBUG=true
-DEBUG_PORT=3000
+MAX_FILE_DESCRIPTORS="${MAX_FILE_DESCRIPTORS}"
+MAX_PROCESSES="${MAX_PROCESSES}"
+MEMORY_LIMIT="${MEMORY_LIMIT}"
 
 # =============================================================================
-# Volumes Configuration
+# Image Configuration
 # =============================================================================
-VOLUMES_ROOT="/development/docker_volumes"
+IMAGE_NAME="${IMAGE_NAME}"

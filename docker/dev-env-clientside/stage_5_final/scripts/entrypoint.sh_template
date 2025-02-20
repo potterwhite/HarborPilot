@@ -25,15 +25,15 @@ func_setup_env(){
 
 # Function: Initialize services
 func_init_services() {
-    if [ "true" = "true" ]; then
+    if [ "${ENABLE_SSH}" = "true" ]; then
         sudo service ssh start || echo "Failed to start SSH service"
     fi
 }
 
 # Function: Start development services
 func_start_dev_services() {
-    if [ "true" = "true" ]; then
-        echo "Starting GDB server on port 2345..."
+    if [ "${ENABLE_GDB_SERVER}" = "true" ]; then
+        echo "Starting GDB server on port ${GDB_PORT}..."
     fi
 }
 

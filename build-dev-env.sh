@@ -21,7 +21,6 @@ main() {
     echo "#   $(LC_ALL=C date +%a\ %b%d.%Y\ %H:%M:%S)"
     echo "###################################"
 
-
     BUILD_SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
     # echo "BUILD_SCRIPT_PATH=${BUILD_SCRIPT_PATH}"
     BUILD_SCRIPT_DIR="$(dirname ${BUILD_SCRIPT_PATH})"

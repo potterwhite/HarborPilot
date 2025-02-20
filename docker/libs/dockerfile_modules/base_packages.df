@@ -2,6 +2,7 @@
 
 RUN echo "Install base packages" && \
     apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    ca-certificates \
     python${PYTHON_VERSION} \
     python3-pip \
     python${PYTHON_VERSION}-dev \
@@ -11,6 +12,7 @@ RUN echo "Install base packages" && \
     cmake \
     pkg-config \
     git \
+    git-lfs \
     wget \
     unzip \
     vim \

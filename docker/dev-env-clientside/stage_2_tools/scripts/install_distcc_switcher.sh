@@ -185,7 +185,6 @@ lv2_func_setup_cross_toolchain() {
         return 0
     fi
 
-
     for prefix in "\${RW_CROSS_TOOLCHAIN_NAMES[@]}"; do
         for cmd in "\${RW_TOOLCHAIN_COMMANDS[@]}"; do
             if [ -d "\${RW_CROSS_TOOLCHAIN_DIR}" ]; then

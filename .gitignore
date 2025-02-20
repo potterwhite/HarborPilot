@@ -27,7 +27,8 @@
 
 # Ignore generated config files
 docker/dev-env-clientside/stage_3_sdk/configs/*
-!docker/dev-env-clientside/stage_3_sdk/configs/*template
+!docker/dev-env-clientside/stage_3_sdk/configs/*_template
+docker/dev-env-clientside/stage_3_sdk/scripts/install_sdk.sh
 
 docker/dev-env-clientside/stage_4_config/configs/env_config.conf
 docker/dev-env-clientside/stage_5_final/configs/entrypoint.conf
@@ -51,6 +52,8 @@ project_handover/scripts/*
 # Ignore all files in docker/dev-env-serverside directory except build.sh and dockerfile_modules
 docker/dev-env-serverside/*
 !docker/dev-env-serverside/build.sh
+!docker/dev-env-serverside/new_build.sh
+!docker/dev-env-serverside/old_build.sh
 !docker/dev-env-serverside/dockerfile_modules
 !docker/dev-env-serverside/dockerfile_modules/**
 

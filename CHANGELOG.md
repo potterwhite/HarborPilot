@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - 2025-02-19
+### Added
+- [Clientside][Serverside]Added PROJECT_RELEASE_DATE environment variable and its output display in both clientside and serverside commands
+- [Clientside]Added automatic Samba mount on clientside startup
+- [Serverside]Added git-lfs installation and configuration
+- [Clientside]Added support for git-lfs file restoration when executing pull_sdk.sh script
+
+### Changed
+- Updated workspace subdirectory creation in 5th stage to strictly follow environment variables
+- Modified SSH port configuration to differentiate between clientside and serverside
+- Updated pull_sdk.sh with the default branch name
+
+### Fixed
+- Enhanced workspace directory structure compliance with environment variables
+- Improved SSH port isolation between clientside and serverside containers
+
+
 ## [0.6.1] - 2025-02-13
 ### Added
 - Added Python 2.7 and its development packages:
@@ -139,3 +156,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.5.9]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.9
 
 [0.6.1]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.6.1
+
+[0.6.2]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.6.2

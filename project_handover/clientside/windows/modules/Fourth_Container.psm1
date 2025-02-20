@@ -405,7 +405,7 @@ function Fourth-CreateComposeFile {
         $timezone = Get-GlobalVar -Key "TIMEZONE"
         $workspaceEnableRemoteDebug = Get-GlobalVar -Key "WORKSPACE_ENABLE_REMOTE_DEBUG"
         $workspaceLogLevel = Get-GlobalVar -Key "WORKSPACE_LOG_LEVEL"
-        $sshPort = Get-GlobalVar -Key "SSH_PORT"
+        $sshPort = Get-GlobalVar -Key "CLIENT_SSH_PORT"
         $gdbPort = Get-GlobalVar -Key "GDB_PORT"
 
         if (-not $workspaceRoot) {

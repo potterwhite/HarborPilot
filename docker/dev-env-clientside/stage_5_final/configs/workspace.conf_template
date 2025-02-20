@@ -1,7 +1,7 @@
 ################################################################################
-# File: docker/stage_5_final/configs/entrypoint.conf.template
+# File: docker/stage_5_final/configs/workspace.conf.template
 #
-# Description: Configuration template for container entrypoint
+# Description: Configuration template for embedded development workspace
 #              All values are populated from .env file
 #
 # Author: ${PROJECT_MAINTAINER}
@@ -13,36 +13,39 @@
 ################################################################################
 
 # =============================================================================
-# User Configuration
+# Workspace Paths Configuration
 # =============================================================================
+WORKSPACE_ROOT="${WORKSPACE_ROOT}"
+SOURCE_DIR="${WORKSPACE_1ST_SOURCE_SUBDIR}"
+BUILD_DIR="${WORKSPACE_2ND_BUILD_SUBDIR}"
+LOGS_DIR="${WORKSPACE_3RD_LOGS_SUBDIR}"
+TEMP_DIR="${WORKSPACE_4TH_TEMP_SUBDIR}"
 DEFAULT_USER="${DEV_USERNAME}"
-DEFAULT_GROUP="${DEV_GROUP}"
 USER_ID="${DEV_UID}"
 GROUP_ID="${DEV_GID}"
 
 # =============================================================================
-# Service Configuration
+# Project Settings
 # =============================================================================
-ENABLE_SSH="${ENABLE_SSH}"
-SSH_PORT="${SSH_PORT}"
-ENABLE_SYSLOG="${ENABLE_SYSLOG}"
+DEFAULT_PROJECT_NAME="${WORKSPACE_DEFAULT_PROJECT_NAME}"
+DEFAULT_BUILD_TYPE="${WORKSPACE_DEFAULT_BUILD_TYPE}"
+BUILD_THREADS=${WORKSPACE_BUILD_THREADS}
 
 # =============================================================================
-# Debug Configuration
+# Development Environment Settings
 # =============================================================================
-ENABLE_GDB_SERVER="${ENABLE_GDB_SERVER}"
-GDB_PORT="${GDB_PORT}"
-ENABLE_CORE_DUMPS="${ENABLE_CORE_DUMPS}"
-CORE_PATTERN="${CORE_PATTERN}"
+ENABLE_AUTO_SAVE=${WORKSPACE_ENABLE_AUTO_SAVE}
+ENABLE_ERROR_REPORTING=${WORKSPACE_ENABLE_ERROR_REPORTING}
+LOG_LEVEL="${WORKSPACE_LOG_LEVEL}"
 
 # =============================================================================
-# Resource Limits
+# IDE Integration Settings
 # =============================================================================
-MAX_FILE_DESCRIPTORS="${MAX_FILE_DESCRIPTORS}"
-MAX_PROCESSES="${MAX_PROCESSES}"
-MEMORY_LIMIT="${MEMORY_LIMIT}"
+ENABLE_VSC_INTEGRATION=${WORKSPACE_ENABLE_VSC_INTEGRATION}
+ENABLE_REMOTE_DEBUG=${WORKSPACE_ENABLE_REMOTE_DEBUG}
+DEBUG_PORT=${WORKSPACE_DEBUG_PORT}
 
 # =============================================================================
-# Image Configuration
+# Volumes Configuration
 # =============================================================================
-IMAGE_NAME="${IMAGE_NAME}"
+VOLUMES_ROOT="${VOLUMES_ROOT}"

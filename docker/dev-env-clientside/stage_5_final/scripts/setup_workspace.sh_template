@@ -37,19 +37,19 @@ func_utils_create_directory() {
 init_workspace() {
     echo "Initializing workspace structure..."
 
-    func_utils_create_directory "/development" "developer" "755"
+    func_utils_create_directory "${WORKSPACE_ROOT}" "${DEV_USERNAME}" "755"
     # Setup user and group
-    chown -R "developer:developer" "/development"
+    chown -R "${DEV_USERNAME}:${DEV_GROUP}" "${WORKSPACE_ROOT}"
 
     # Create main directories
-    func_utils_create_directory "/development/i_src" "developer" "755"
-    func_utils_create_directory "/development/ii_build" "developer" "755"
-    func_utils_create_directory "/development/iii_logs" "developer" "755"
-    func_utils_create_directory "/development/iv_temp" "developer" "755"
+    func_utils_create_directory "${WORKSPACE_1ST_SOURCE_SUBDIR}" "${DEV_USERNAME}" "755"
+    func_utils_create_directory "${WORKSPACE_2ND_BUILD_SUBDIR}" "${DEV_USERNAME}" "755"
+    func_utils_create_directory "${WORKSPACE_3RD_LOGS_SUBDIR}" "${DEV_USERNAME}" "755"
+    func_utils_create_directory "${WORKSPACE_4TH_TEMP_SUBDIR}" "${DEV_USERNAME}" "755"
 
     # Create additional development directories
-    func_utils_create_directory "/development/v_docs" "developer" "755"
-    func_utils_create_directory "/development/vi_tools" "developer" "755"
+    func_utils_create_directory "${WORKSPACE_5TH_DOCS_SUBDIR}" "${DEV_USERNAME}" "755"
+    func_utils_create_directory "${WORKSPACE_6TH_TOOLS_SUBDIR}" "${DEV_USERNAME}" "755"
 
     echo "Workspace initialization completed."
 }

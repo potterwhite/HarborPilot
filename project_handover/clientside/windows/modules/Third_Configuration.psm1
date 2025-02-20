@@ -114,7 +114,7 @@ services:
       - "$volumePath`:$script:VOLUMES_ROOT"
 
     ports:
-      - "$script:SSH_PORT`:22"
+      - "$script:CLIENT_SSH_PORT`:22"
       - "$script:GDB_PORT`:2345"
       - "$script:WORKSPACE_DEBUG_PORT`:3000"
 

@@ -11,10 +11,36 @@
 set -e
 trap 'echo "Error occurred. Exiting..."; exit 1' ERR
 
+
+################################################################################
+# Get default branch from remote repository
+################################################################################
+func_9_2_get_default_branch() {
+
+    # local default_branch=$(git ls-remote --symref origin HEAD | awk '/^ref:/ {sub("refs/heads/", "", $2); print $2}')
+    # if [ -z "$default_branch" ]; then
+    #     echo "Warning: Could not determine default branch, falling back to 'main'" >&2
+    #     echo "main"
+    #     return 1
+    # fi
+
+    local default_branch="${SDK_GIT_DEFAULT_BRANCH}"
+
+    echo "$default_branch"
+}
+
+######################################################################
+# Setup environment variables
+######################################################################
+func_1_1_setup_env(){
+    # Get default branch once at script start
+    DEFAULT_BRANCH=$(func_9_2_get_default_branch)
+}
+
 ################################################################################
 # Print help message
 ################################################################################
-print_help() {
+func_1_2_print_help() {
     cat << EOF
 Usage: $(basename "$0") [-h|--help] [branch_name]
 
@@ -27,64 +53,18 @@ Options:
     -h, --help     Show this help message
 
 Examples:
-    $(basename "$0")                     # Pull main remote branches defaultly
+    $(basename "$0")                     # Pull default remote branch
     $(basename "$0") develop             # Pull only develop branch(if exists)
     $(basename "$0") all                 # Pull all remote branches
 EOF
     # $(basename "$0") feature/xyz         # Pull only feature branch
 
-    exit 0
+    return 0
 }
-
-################################################################################
-# Main function to orchestrate the SDK pulling process
-################################################################################
-main() {
-    # Parse command line arguments
-    local branch=""  # empty means pull all branches
-
-    if [ "$#" -gt 1 ]; then
-        # a. if we have more than 1 argument, then it's an error
-        echo "Error: Too many arguments"
-        return 1
-    elif [ "$#" -eq 1 ]; then
-        # b.if we have 1 argument, then it's a branch name
-        # Check for help flag
-        if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
-            print_help
-        fi
-
-        # Parse branch name if provided
-        if [[ ! "$1" =~ ^- ]]; then
-            branch="$1"
-        else
-            echo "Error: Invalid branch name format, should not start with '-'"
-            return 1
-        fi
-    elif [ "$#" -eq 0 ]; then
-        # c. if we have no argument, then it's a default pull main branch
-        branch="main"
-    else
-        # d. if we have invalid arguments, then it's an error
-        echo "Error: Invalid arguments number: $#"
-        return 1
-    fi
-
-    echo "=== Starting SDK Pull Process ==="
-    [ -n "$branch" ] && echo "Target branch: $branch" || echo "Target: All remote branches"
-
-    1_check_git_user || exit 1
-    2_verify_ssh_access || exit 1
-    3_validate_repository || exit 1
-    4_pull_changes "$branch" || exit 1
-
-    echo "=== SDK Pull Process Completed Successfully ==="
-}
-
 ################################################################################
 # 1. Check and configure Git user information if needed
 ################################################################################
-1_check_git_user() {
+func_2_1_check_git_user() {
     echo "Checking Git user configuration..."
 
     # Check global git config first
@@ -120,7 +100,7 @@ main() {
 ################################################################################
 # 2. Verify SSH access using verify_ssh_key.sh
 ################################################################################
-2_verify_ssh_access() {
+func_2_2_verify_ssh_access() {
     echo "Verifying SSH access..."
     if ! /usr/local/bin/verify_ssh_key.sh; then
         echo "Error: SSH key verification failed"
@@ -132,7 +112,7 @@ main() {
 ################################################################################
 # 3. Validate repository exists and has correct remote
 ################################################################################
-3_validate_repository() {
+func_2_3_validate_repository() {
     cd "${SDK_INSTALL_PATH}"
 
     # For fresh repository (only .git exists), remove and clone again
@@ -165,26 +145,56 @@ main() {
 ################################################################################
 # 4. Pull latest changes from remote repository
 ################################################################################
-4_pull_changes() {
+func_2_4_pull_changes() {
     local target_branch="$1"
     echo "Fetching remote information..."
     git fetch origin || return 1
 
     if [ "$target_branch" = "all" ]; then
         # Pull all remote branches
-        _pull_all_branches
+        func_2_5_pull_all_branches
         return $?
     else
         # Pull specific branch
-        _pull_single_branch "$target_branch"
+        func_2_6_pull_single_branch "$target_branch"
         return $?
     fi
 }
 
 ################################################################################
+# Helper function to pull all remote branches
+################################################################################
+func_2_5_pull_all_branches() {
+    echo "Pulling all remote branches..."
+    local error_occurred=false
+
+    # Get list of remote branches
+    local remote_branches=$(git ls-remote --heads origin | grep -oP "refs/heads/\K.*")
+
+    # Pull each branch
+    for branch in $remote_branches; do
+        echo -e "\nProcessing branch: $branch"
+        if ! func_2_6_pull_single_branch "$branch"; then
+            echo "Warning: Failed to pull branch '$branch'"
+            error_occurred=true
+            continue
+        fi
+    done
+
+    # Always return to default branch if it exists
+    if echo "$remote_branches" | grep -q "^${DEFAULT_BRANCH}$"; then
+        echo -e "\nReturning to default branch: ${DEFAULT_BRANCH}"
+        git checkout "${DEFAULT_BRANCH}"
+    fi
+
+    [ "$error_occurred" = true ] && return 1
+    return 0
+}
+
+################################################################################
 # Helper function to pull a single branch
 ################################################################################
-_pull_single_branch() {
+func_2_6_pull_single_branch() {
     local branch="$1"
     echo "Pulling branch: $branch"
 
@@ -214,35 +224,55 @@ _pull_single_branch() {
     return 0
 }
 
-################################################################################
-# Helper function to pull all remote branches
-################################################################################
-_pull_all_branches() {
-    echo "Pulling all remote branches..."
-    local error_occurred=false
 
-    # Get list of remote branches
-    local remote_branches=$(git ls-remote --heads origin | grep -oP "refs/heads/\K.*")
 
-    # Pull each branch
-    for branch in $remote_branches; do
-        echo -e "\nProcessing branch: $branch"
-        if ! _pull_single_branch "$branch"; then
-            echo "Warning: Failed to pull branch '$branch'"
-            error_occurred=true
-            continue
+################################################################################
+# Main function to orchestrate the SDK pulling process
+################################################################################
+main() {
+    func_1_1_setup_env
+
+    # Parse command line arguments
+    local branch=""  # empty means pull all branches
+
+    if [ "$#" -gt 1 ]; then
+        # a. if we have more than 1 argument, then it's an error
+        echo "Error: Too many arguments"
+        return 1
+    elif [ "$#" -eq 1 ]; then
+        # b.if we have 1 argument, then it's a branch name
+        # Check for help flag
+        if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+            func_1_2_print_help
         fi
-    done
 
-    # Always return to main branch if it exists
-    if echo "$remote_branches" | grep -q "^main$"; then
-        echo -e "\nReturning to main branch"
-        git checkout main
+        # Parse branch name if provided
+        if [[ ! "$1" =~ ^- ]]; then
+            branch="$1"
+        else
+            echo "Error: Invalid branch name format, should not start with '-'"
+            return 1
+        fi
+    elif [ "$#" -eq 0 ]; then
+        # c. if we have no argument, then use the default branch from remote
+        branch="${DEFAULT_BRANCH}"
+    else
+        # d. if we have invalid arguments, then it's an error
+        echo "Error: Invalid arguments number: $#"
+        return 1
     fi
 
-    [ "$error_occurred" = true ] && return 1
-    return 0
+    echo "=== Starting SDK Pull Process ==="
+    [ -n "$branch" ] && echo "Target branch: $branch" || echo "Target: All remote branches"
+
+    func_2_1_check_git_user || exit 1
+    func_2_2_verify_ssh_access || exit 1
+    func_2_3_validate_repository || exit 1
+    func_2_4_pull_changes "$branch" || exit 1
+
+    echo "=== SDK Pull Process Completed Successfully ==="
 }
+
 
 # Execute main function with all arguments
 main "$@"

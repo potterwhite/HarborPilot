@@ -114,6 +114,6 @@ nautilus . &
     - 邮箱 (Email): `[baytoo_e_corp@hotmail.com]`
 
 - 4.5 版本信息 (Version Information)
-    - 版本号 (Version): `[v0.6.1]`
-    - 最后更新 (Last Updated): `[2025-02-13]`
+    - 版本号 (Version): `[v0.6.2]`
+    - 最后更新 (Last Released): `[2025-02-19]`
 

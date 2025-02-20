@@ -91,10 +91,13 @@ func_init_git() {
     echo "Setting up Git repository..."
     cd "${SDK_INSTALL_PATH}"
 
+    echo "SDK_GIT_DEFAULT_BRANCH: ${SDK_GIT_DEFAULT_BRANCH}"
+    read -p "Press Enter to continue..."
+
     # Switch to developer user for Git operations
     su - developer -c "
         cd ${SDK_INSTALL_PATH} && \
-        git config --global init.defaultBranch main && \
+        git config --global init.defaultBranch ${SDK_GIT_DEFAULT_BRANCH} && \
         git config --global --add safe.directory ${SDK_INSTALL_PATH} && \
         git lfs install && \
         git init && \
