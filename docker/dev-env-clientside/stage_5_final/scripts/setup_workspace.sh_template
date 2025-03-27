@@ -1,0 +1,64 @@
+#!/bin/bash
+# =============================================================================
+# Workspace Setup Script
+# =============================================================================
+# Description: Sets up the development workspace environment and structure
+# Author: Your Organization
+# Created: 2024-03-19
+# Last Modified: 2024-03-19
+# Version: 1.0
+# =============================================================================
+
+set -e
+
+# Function: Create directory with proper permissions
+func_utils_create_directory() {
+    local dir_path="$1"
+    local dir_owner="$2"
+    local dir_perms="$3"
+
+    echo "Creating directory: ${dir_path}"
+    if [ -z "${dir_path}" ]; then
+        echo "ERROR: Directory path is empty"
+        exit 1
+    fi
+
+    echo "Parameters:"
+    echo "  Path: ${dir_path}"
+    echo "  Owner: ${dir_owner}"
+    echo "  Permissions: ${dir_perms}"
+
+    mkdir -p "${dir_path}"
+    chown "${dir_owner}:${dir_owner}" "${dir_path}"
+    chmod "${dir_perms}" "${dir_path}"
+}
+
+# Function: Initialize workspace structure
+init_workspace() {
+    echo "Initializing workspace structure..."
+
+    func_utils_create_directory "${WORKSPACE_ROOT}" "${DEV_USERNAME}" "755"
+    # Setup user and group
+    chown -R "${DEV_USERNAME}:${DEV_GROUP}" "${WORKSPACE_ROOT}"
+
+    # Create main directories
+    func_utils_create_directory "${WORKSPACE_1ST_SOURCE_SUBDIR}" "${DEV_USERNAME}" "755"
+    func_utils_create_directory "${WORKSPACE_2ND_BUILD_SUBDIR}" "${DEV_USERNAME}" "755"
+    func_utils_create_directory "${WORKSPACE_3RD_LOGS_SUBDIR}" "${DEV_USERNAME}" "755"
+    func_utils_create_directory "${WORKSPACE_4TH_TEMP_SUBDIR}" "${DEV_USERNAME}" "755"
+
+    # Create additional development directories
+    func_utils_create_directory "${WORKSPACE_5TH_DOCS_SUBDIR}" "${DEV_USERNAME}" "755"
+    func_utils_create_directory "${WORKSPACE_6TH_TOOLS_SUBDIR}" "${DEV_USERNAME}" "755"
+
+    echo "Workspace initialization completed."
+}
+
+# Main execution
+main() {
+    echo -e "\nStarting workspace setup..."
+    init_workspace
+    echo -e "Workspace setup completed successfully.\n"
+}
+
+main "$@"

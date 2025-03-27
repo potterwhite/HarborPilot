@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# This script is auto-generated during docker build
+# DO NOT EDIT MANUALLY
+
+PROJECT_VERSION="${PROJECT_VERSION}"
+PROJECT_RELEASE_DATE="${PROJECT_RELEASE_DATE}"
+
+echo "Current Version of SDK Development Environment is: ${PROJECT_VERSION}"
+echo "Current Release Date of SDK Development Environment is: ${PROJECT_RELEASE_DATE}"

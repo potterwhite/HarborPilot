@@ -1,0 +1,54 @@
+#!/bin/bash
+
+################################################################################
+# File: docker/stage_5_final/scripts/entrypoint.sh
+#
+# Description: Container entrypoint script
+#              Handles container initialization and startup procedures
+#
+# Author: [Your Name]
+# Created: 2024-11-21
+# Last Modified: 2024-11-21
+#
+# Copyright (c) 2024 [Your Company/Name]
+# License: MIT
+################################################################################
+
+func_setup_env(){
+    set -e
+
+    # Source configuration files
+    # source /etc/workspace.conf
+    # source /etc/entrypoint.conf
+}
+
+
+# Function: Initialize services
+func_init_services() {
+    if [ "true" = "true" ]; then
+        sudo service ssh start || echo "Failed to start SSH service"
+    fi
+}
+
+# Function: Start development services
+func_start_dev_services() {
+    if [ "true" = "true" ]; then
+        echo "Starting GDB server on port 2345..."
+    fi
+}
+
+# Main execution
+main() {
+    func_init_services
+    func_start_dev_services
+
+    #################################
+    # exec "$@"
+    # It is used to run the command passed to the container
+    # e.g., docker run -it --rm n8-dev-env:stage5 /bin/bash
+    # if without this line, the container will not run the command passed to the container
+    #################################
+    exec "$@"
+}
+
+main "$@"

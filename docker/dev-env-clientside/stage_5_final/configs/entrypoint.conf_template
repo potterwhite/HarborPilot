@@ -1,0 +1,48 @@
+################################################################################
+# File: docker/stage_5_final/configs/entrypoint.conf.template
+#
+# Description: Configuration template for container entrypoint
+#              All values are populated from .env file
+#
+# Author: ${PROJECT_MAINTAINER}
+# Created: 2024-11-21
+# Last Modified: 2024-11-21
+#
+# Copyright (c) 2024 ${PROJECT_COPYRIGHT}
+# License: ${PROJECT_LICENSE}
+################################################################################
+
+# =============================================================================
+# User Configuration
+# =============================================================================
+DEFAULT_USER="${DEV_USERNAME}"
+DEFAULT_GROUP="${DEV_GROUP}"
+USER_ID="${DEV_UID}"
+GROUP_ID="${DEV_GID}"
+
+# =============================================================================
+# Service Configuration
+# =============================================================================
+ENABLE_SSH="${ENABLE_SSH}"
+CLIENT_SSH_PORT="${CLIENT_SSH_PORT}"
+ENABLE_SYSLOG="${ENABLE_SYSLOG}"
+
+# =============================================================================
+# Debug Configuration
+# =============================================================================
+ENABLE_GDB_SERVER="${ENABLE_GDB_SERVER}"
+GDB_PORT="${GDB_PORT}"
+ENABLE_CORE_DUMPS="${ENABLE_CORE_DUMPS}"
+CORE_PATTERN="${CORE_PATTERN}"
+
+# =============================================================================
+# Resource Limits
+# =============================================================================
+MAX_FILE_DESCRIPTORS="${MAX_FILE_DESCRIPTORS}"
+MAX_PROCESSES="${MAX_PROCESSES}"
+MEMORY_LIMIT="${MEMORY_LIMIT}"
+
+# =============================================================================
+# Image Configuration
+# =============================================================================
+IMAGE_NAME="${IMAGE_NAME}"
