@@ -230,10 +230,22 @@ sixth_install_kernel_tools() {
 
 ###############################################################################
 # Seventh: Install Node.js development environment
-# Description: Setup Node.js using nvm
+# Description: Setup Node.js using nvm or direct install based on region
 ###############################################################################
 seventh_install_nodejs() {
-    echo "Installing nvm and Node.js..."
+    # 根据环境变量决定使用哪个安装方法
+    if [ "${NPM_USE_CHINA_MIRROR}" = "true" ]; then
+        echo "Using China mirror for Node.js installation..."
+        seventh_install_nodejs_china
+    else
+        echo "Using overseas mirror for Node.js installation..."
+        seventh_install_nodejs_overseas
+    fi
+}
+
+# 国外源安装方法（原始方法）
+seventh_install_nodejs_overseas() {
+    echo "Installing nvm and Node.js from original source..."
     # Install nvm
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 
@@ -253,6 +265,55 @@ export NVM_DIR="\$HOME/.nvm"
 [ -s "\$NVM_DIR/nvm.sh" ] && \. "\$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "\$NVM_DIR/bash_completion" ] && \. "\$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 EOF
+
+    return 0
+}
+
+# 中国区安装方法（使用国内镜像）
+seventh_install_nodejs_china() {
+    echo "Installing Node.js using China mirrors..."
+
+    # 安装nodejs直接从国内镜像
+    curl -fsSL https://npmmirror.com/mirrors/node/v18.18.2/node-v18.18.2-linux-x64.tar.gz -o /tmp/node.tar.gz
+
+    # 创建安装目录
+    mkdir -p /usr/local/lib/nodejs
+
+    # 解压缩安装
+    tar -xzf /tmp/node.tar.gz -C /usr/local/lib/nodejs
+
+    # 获取版本名称
+    NODE_VERSION=$(ls /usr/local/lib/nodejs | grep "node-v")
+
+    # 创建环境变量配置
+    cat > /etc/profile.d/nodejs.sh << EOF
+export PATH=/usr/local/lib/nodejs/${NODE_VERSION}/bin:\$PATH
+EOF
+
+    # 同时添加到系统PATH
+    ln -sf /usr/local/lib/nodejs/${NODE_VERSION}/bin/node /usr/local/bin/
+    ln -sf /usr/local/lib/nodejs/${NODE_VERSION}/bin/npm /usr/local/bin/
+    ln -sf /usr/local/lib/nodejs/${NODE_VERSION}/bin/npx /usr/local/bin/
+
+    # 配置npm使用国内镜像
+    npm config set registry https://registry.npmmirror.com
+
+    # 验证安装
+    if ! node -v; then
+        echo "Failed to setup Node.js"
+        return 1
+    fi
+
+    # 添加到用户profile
+    cat >> /home/$DEV_USERNAME/.bashrc << EOF
+# Node.js 配置
+export PATH=/usr/local/lib/nodejs/${NODE_VERSION}/bin:\$PATH
+# NPM 国内镜像配置
+npm config set registry https://registry.npmmirror.com
+EOF
+
+    # 清理
+    rm -f /tmp/node.tar.gz
 
     return 0
 }
