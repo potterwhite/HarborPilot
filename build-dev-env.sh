@@ -115,19 +115,23 @@ _build_images_clientside() {
         "Final image:stage_5_final"
     )
 
-    for stage in "${stages[@]}"; do
-        local name="${stage%%:*}"
-        local script="${stage#*:}"
-        echo "Building stage: $name"
-        if ! ${BUILD_SCRIPT_DIR}/docker/dev-env-clientside/$script/build.sh; then
-            echo "Error: Failed to build $name"
-            return 1
-        fi
-    done
 
-    # echo "Start Building ServerSide Dev Env"
-    # docker/dev-env-serverside/build.sh
-    # echo "Done with ServerSide Dev Env Building."
+    if ! ${BUILD_SCRIPT_DIR}/docker/dev-env-clientside/build.sh; then
+        echo "Error: Failed to build $name"
+        return 1
+    fi
+
+
+    # for stage in "${stages[@]}"; do
+    #     local name="${stage%%:*}"
+    #     local script="${stage#*:}"
+    #     echo "Building stage: $name"
+    #     if ! ${BUILD_SCRIPT_DIR}/docker/dev-env-clientside/$script/build.sh; then
+    #         echo "Error: Failed to build $name"
+    #         return 1
+    #     fi
+    # done
+
 
     return 0
 }

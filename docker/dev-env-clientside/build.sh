@@ -50,14 +50,14 @@ func_1_1_setup_env(){
         echo "Warning: .env not found, using defaults"
     fi
 
-    # Default product type (can be overridden via command line)
-    PRODUCT=${1:-$PRODUCT_TYPE}
-    if [ -z "$PRODUCT" ]; then
-        PRODUCT="generic"
-    fi
+    # # Default product type (can be overridden via command line)
+    # PRODUCT=${1:-$PRODUCT_TYPE}
+    # if [ -z "$PRODUCT" ]; then
+    #     PRODUCT="generic"
+    # fi
 
-    # Define image name (example, adjust as needed)
-    IMAGE_NAME=${IMAGE_NAME:-${PRODUCT}-dev-env}
+    # # Define image name (example, adjust as needed)
+    # IMAGE_NAME=${IMAGE_NAME:-${PRODUCT}-dev-env}
 
     # Collect all .env variables for build args
     # Note: Only include variables used in Dockerfile
@@ -82,28 +82,28 @@ func_1_1_setup_env(){
 }
 
 func_1_2_preparation(){
-    # Create temporary directory structure
-    echo "Creating temporary directory structure..."
-    mkdir -p "${BUILD_SCRIPT_DIR}/libs/iv_scripts"
+    # # Create temporary directory structure
+    # echo "Creating temporary directory structure..."
+    # mkdir -p "${BUILD_SCRIPT_DIR}/libs/iv_scripts"
 
-    # Copy the required files
-    echo "Copying setup_base.sh..."
-    cp -rfav "${LIBS_DIR}" "${BUILD_SCRIPT_DIR}/"
+    # # Copy the required files
+    # echo "Copying setup_base.sh..."
+    # cp -rfav "${LIBS_DIR}" "${BUILD_SCRIPT_DIR}/"
 
-    # Verify the copy
-    if [ ! -f "${BUILD_SCRIPT_DIR}/libs/iv_scripts/setup_base.sh" ]; then
-        echo "Error: Failed to copy setup_base.sh"
-        exit 1
-    fi
+    # # Verify the copy
+    # if [ ! -f "${BUILD_SCRIPT_DIR}/libs/iv_scripts/setup_base.sh" ]; then
+    #     echo "Error: Failed to copy setup_base.sh"
+    #     exit 1
+    # fi
+    echo
 }
 
 func_2_1_build_docker_image(){
     # Build the Docker image
-    echo "Building ${IMAGE_NAME}:${PRODUCT}..."
+    echo "Building ${IMAGE_NAME}:${PROJECT_VERSION}..."
     docker build \
         "${BUILD_ARGS[@]}" \
-        --build-arg PRODUCT_TYPE="$PRODUCT" \
-        -t "${IMAGE_NAME}:${PRODUCT}" \
+        -t "${IMAGE_NAME}:${PROJECT_VERSION}" \
         -f "${BUILD_SCRIPT_DIR}/Dockerfile" \
         "${BUILD_SCRIPT_DIR}" 2>&1 | tee "${BUILD_SCRIPT_DIR}/build_log.txt"
 

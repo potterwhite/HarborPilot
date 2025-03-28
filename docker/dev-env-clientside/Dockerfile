@@ -34,7 +34,7 @@ ENV DEV_GID=${DEV_GID}
 ENV DEV_USER_ROOT_PASSWORD=${DEV_USER_ROOT_PASSWORD}
 
 # Copy scripts
-COPY libs/iv_scripts/setup_base.sh /tmp/
+COPY stage_1_base/scripts/setup_base.sh /tmp/
 
 # Change apt source to China mirrors
 RUN echo "Change apt source to China mirrors" && \
@@ -56,3 +56,5 @@ RUN apt-get clean && \
 RUN chmod +x /tmp/setup_base.sh && \
     /tmp/setup_base.sh && \
     rm -f /tmp/setup_base.sh
+
+RUN echo -e "Stage 1st completed!\n"
