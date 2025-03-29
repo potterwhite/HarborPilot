@@ -16,7 +16,7 @@
 set -e
 
 # Source tool versions
-source /tmp/tool_versions.conf
+# source /tmp/tool_versions.conf
 
 ###############################################################################
 # First: Install core build tools and compilers
