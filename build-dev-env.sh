@@ -10,6 +10,9 @@
 ################################################################################
 
 # set -e
+if [ "${V}" == "1" ];then
+    set -x
+fi
 
 ################################################################################
 # Main function to orchestrate the entire build process
@@ -96,10 +99,12 @@ prompt_with_timeout() {
     fi
 
     # Build is optional, other steps are mandatory
-    if [ ${ENABLE_SERVERSIDE} = "true" ] && [ "$(prompt_with_timeout \"Build [ServerSide] images?\" 10)" ]; then
-        _build_images_serverside || exit 1
-    else
-        echo "Build serverside image stages skipped."
+    if [ "${ENABLE_SERVERSIDE}" == "true" ];then
+        if prompt_with_timeout \"Build [ServerSide] images?\" 10; then
+            _build_images_serverside || exit 1
+        else
+            echo "Build serverside image stages skipped."
+        fi
     fi
 }
 
@@ -219,7 +224,7 @@ _tag_image_onair() {
     local is_local="${1}"
     local full_client_source="${IMAGE_NAME}:${tag_num}"
 
-    if [ ${is_local} = "false" ];then
+    if [ "${is_local}" != "local" ];then
         # 1.1 Tag client image with version number
         local full_target="${REGISTRY_URL}/${IMAGE_NAME}:${tag_num}"
 
@@ -230,7 +235,7 @@ _tag_image_onair() {
     fi
 
     # 1.2 Tag client image as tag latest
-    if [ ${is_local} = "local" ];then
+    if [ "${is_local}" == "local" ];then
         local full_target_latest="${IMAGE_NAME}:${tag_latest}"
     else
         local full_target_latest="${REGISTRY_URL}/${IMAGE_NAME}:${tag_latest}"
@@ -245,7 +250,7 @@ _tag_image_onair() {
         local full_server_source="${SERVERSIDE_IMAGE_NAME}:${tag_num}"
 
         # 2.1 Tag server image with version number
-        if [ ${is_local} = "false" ];then
+        if [ "${is_local}" != "local" ];then
             local full_server_target="${REGISTRY_URL}/${SERVERSIDE_IMAGE_NAME}:${tag_num}"
             if ! _tag_single_image "${full_server_source}" "${full_server_target}"; then
                 echo "✗ Error: Failed to tag server image ${full_server_source} as ${full_server_target}"
@@ -254,7 +259,7 @@ _tag_image_onair() {
         fi
 
         # 2.2 Tag server image as tag latest
-        if [ ${is_local} = "local" ];then
+        if [ "${is_local}" == "local" ];then
             local full_server_target_latest="${SERVERSIDE_IMAGE_NAME}:${tag_latest}"
         else
             local full_server_target_latest="${REGISTRY_URL}/${SERVERSIDE_IMAGE_NAME}:${tag_latest}"
@@ -281,7 +286,7 @@ _tag_image_onair() {
 
         # Tag images
         echo "Tagging images..."
-        if [ ${HAVE_HARBOR_SERVER} = "TRUE" ];then
+        if [ "${HAVE_HARBOR_SERVER}" == "TRUE" ];then
             _tag_image_onair "onair"
         else
             _tag_image_onair "local"
@@ -297,13 +302,13 @@ _tag_image_onair() {
 }
 
 5_push_images() {
+    local result="0"
 
-    if [ ${HAVE_HARBOR_SERVER} = "TRUE" ] && [ "$(prompt_with_timeout "Push images to the registry?" 10)" ]; then
-        echo -e "\n=== 4. Pushing Images ==="
-        local result=0
+    if [ "${HAVE_HARBOR_SERVER}" == "TRUE" ];then
+        if prompt_with_timeout "Push images to the registry?" 10; then
+            echo -e "\n=== 4. Pushing Images ==="
 
-        # Push images only if tagging was successful
-        if [ ${result} -eq 0 ]; then
+            # Push images only if tagging was successful
             echo "Pushing images..."
             if ! _push_and_verify_image "${PROJECT_VERSION}"; then
                 echo "✗ Error: Failed to push version ${PROJECT_VERSION}"
@@ -314,10 +319,10 @@ _tag_image_onair() {
                 echo "✗ Error: Failed to push latest version"
                 result=1
             fi
-        fi
 
-    else
-        echo "Push stages skipped."
+        else
+            echo "Push stages skipped."
+        fi
     fi
 
     return ${result}
