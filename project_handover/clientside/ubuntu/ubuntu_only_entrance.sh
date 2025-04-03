@@ -52,27 +52,75 @@ check_docker_group() {
     fi
 }
 
+# check_docker_login() {
+#     local registry="${REGISTRY_URL}"
+
+#     while true; do
+#         # if docker manifest inspect --insecure "${REGISTRY_URL}/${IMAGE_NAME}:latest" >/dev/null 2>&1; then
+#         #     print_msg "Already logged in to registry ${registry}" "${GREEN}"
+#         #     return 0
+#         # fi
+
+#         #------------------------------------------------------------------------------
+#         # 尝试使用现有凭证登录，并捕获输出
+#         login_output=$(docker login "${registry}" 2>&1)
+#         login_status=$?
+
+#         # 检查输出中是否包含成功登录的标志
+#         if [ $login_status -eq 0 ] && echo "$login_output" | grep -q "Authenticating with existing credentials"; then
+#             print_msg "Already logged in to registry ${registry}" "${GREEN}"
+#             return 0
+#         fi
+
+#         #------------------------------------------------------------------------------
+#         print_msg "Need to login to registry ${registry}" "${YELLOW}"
+#         read -p "Enter username: " username
+#         read -s -p "Enter password: " password
+#         echo
+
+#         login_output=$(echo "$password" | docker login "${registry}" -u "${username}" --password-stdin 2>&1)
+#         login_status=$?
+
+#         if [ $login_status -eq 0 ]; then
+#             print_msg "Successfully logged in to registry ${registry}" "${GREEN}"
+#             return 0
+#         else
+#             if echo "$login_output" | grep -q "unauthorized"; then
+#                 print_msg "Authentication failed" "${RED}"
+#             elif echo "$login_output" | grep -q "no such host"; then
+#                 print_msg "Registry host not found" "${RED}"
+#             elif echo "$login_output" | grep -q "connection refused"; then
+#                 print_msg "Registry not available" "${RED}"
+#             else
+#                 print_msg "Login failed:" "${RED}"
+#                 echo "$login_output"
+#             fi
+#             sleep 1
+#         fi
+#     done
+# }
 check_docker_login() {
-    local registry="${REGISTRY_URL}"
+    print_msg "Do you want to login to a registry? [Y/n]: " "${YELLOW}"
+    read -r need_login
+    if [[ "$need_login" =~ ^[Nn]$ ]]; then
+        print_msg "Skipping registry login. Using local image if available." "${GREEN}"
+        return 0
+    fi
+
+    print_msg "Enter registry URL (leave empty for default: ${REGISTRY_URL}): " "${YELLOW}"
+    read -r custom_registry
+    local registry="${custom_registry:-${REGISTRY_URL}}"
 
     while true; do
-        # if docker manifest inspect --insecure "${REGISTRY_URL}/${IMAGE_NAME}:latest" >/dev/null 2>&1; then
-        #     print_msg "Already logged in to registry ${registry}" "${GREEN}"
-        #     return 0
-        # fi
-
-        #------------------------------------------------------------------------------
-        # 尝试使用现有凭证登录，并捕获输出
+        # 检查是否已登录（使用现有凭证）
         login_output=$(docker login "${registry}" 2>&1)
         login_status=$?
 
-        # 检查输出中是否包含成功登录的标志
         if [ $login_status -eq 0 ] && echo "$login_output" | grep -q "Authenticating with existing credentials"; then
             print_msg "Already logged in to registry ${registry}" "${GREEN}"
             return 0
         fi
 
-        #------------------------------------------------------------------------------
         print_msg "Need to login to registry ${registry}" "${YELLOW}"
         read -p "Enter username: " username
         read -s -p "Enter password: " password
@@ -83,6 +131,7 @@ check_docker_login() {
 
         if [ $login_status -eq 0 ]; then
             print_msg "Successfully logged in to registry ${registry}" "${GREEN}"
+            REGISTRY_URL="${registry}"  # 更新全局变量，以便后续使用
             return 0
         else
             if echo "$login_output" | grep -q "unauthorized"; then
@@ -123,8 +172,11 @@ Example:
 EOF
 }
 
+# image_exists() {
+#     docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^${REGISTRY_URL}/${IMAGE_NAME}:latest$"
+# }
 image_exists() {
-    docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^${REGISTRY_URL}/${IMAGE_NAME}:latest$"
+    docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^${IMAGE_NAME}:latest$"
 }
 
 # Function to check if container exists
@@ -244,6 +296,17 @@ start_dev_env() {
         return 0
     fi
 
+    # 添加镜像检查
+    if ! image_exists; then
+        print_msg "Local image ${IMAGE_NAME}:latest not found" "${YELLOW}"
+        print_msg "You may need to login to a registry or ensure the image is available locally." "${YELLOW}"
+        retrieve_latest_image
+        if [ $? -ne 0 ]; then
+            print_msg "Failed to retrieve image. Exiting..." "${RED}"
+            exit 1
+        fi
+    fi
+
     _start_container_without_prompt
     print_msg "Enter container? [Y/n]: " "${YELLOW}"
     read -r answer
@@ -307,9 +370,25 @@ remove_dev_env_image() {
     fi
 }
 
+# retrieve_latest_image() {
+#     # 3. 最后尝试拉取新镜像
+#     print_msg "Pulling latest image..."
+#     if ! docker pull "${REGISTRY_URL}/${IMAGE_NAME}:latest"; then
+#         print_msg "Failed to pull new image" "${RED}"
+#         return 1
+#     fi
+# }
 retrieve_latest_image() {
-    # 3. 最后尝试拉取新镜像
-    print_msg "Pulling latest image..."
+    if image_exists; then
+        print_msg "Local image ${REGISTRY_URL}/${IMAGE_NAME}:latest already exists" "${GREEN}"
+        print_msg "Do you want to pull the latest image anyway? [y/N]: " "${YELLOW}"
+        read -r pull_anyway
+        if [[ ! "$pull_anyway" =~ ^[Yy]$ ]]; then
+            return 0
+        fi
+    fi
+
+    print_msg "Pulling latest image from ${REGISTRY_URL}..." "${GREEN}"
     if ! docker pull "${REGISTRY_URL}/${IMAGE_NAME}:latest"; then
         print_msg "Failed to pull new image" "${RED}"
         return 1
@@ -320,8 +399,8 @@ retrieve_latest_image() {
 case "$1" in
     "start")
         gen_environment_variables
-        #check_docker_group
-        #check_docker_login
+        check_docker_group
+        check_docker_login
         start_dev_env
         ;;
     "stop")

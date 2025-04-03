@@ -6,7 +6,7 @@
 # Description: Base system setup script for the development environment
 #              Installs essential packages and configures basic system settings
 #
-# Author: [Your Name]
+# Author: MrJamesLZAZ
 # Created: 2024-11-21
 # Last Modified: 2024-12-26
 #

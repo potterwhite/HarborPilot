@@ -4,7 +4,7 @@
 # Description: Build script for stage 4 (environment configuration)
 #              Builds the environment configuration Docker image
 #
-# Author: [Your Name]
+# Author: MrJamesLZAZ
 # Created: 2024-11-21
 # Last Modified: 2024-11-21
 #

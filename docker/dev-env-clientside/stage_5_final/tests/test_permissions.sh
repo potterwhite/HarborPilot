@@ -4,7 +4,7 @@
 # Description: Test script for permissions verification
 #              Validates user permissions and security settings
 #
-# Author: [Your Name]
+# Author: MrJamesLZAZ
 # Created: 2024-11-21
 # Last Modified: 2024-11-21
 #

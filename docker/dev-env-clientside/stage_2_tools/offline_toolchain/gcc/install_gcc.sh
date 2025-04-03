@@ -19,7 +19,7 @@
 #   This script is intended to be run during Docker image build process
 #   Requires root privileges for installation
 #
-# Author: [Your Name]
+# Author: MrJamesLZAZ
 # Created: 2024-11-21
 # Last Modified: 2024-11-21
 #

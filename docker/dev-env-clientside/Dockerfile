@@ -4,7 +4,7 @@
 # Description: Base stage Dockerfile for embedded development environment
 #              Sets up the fundamental Ubuntu system with essential packages
 #
-# Author: [Your Name]
+# Author: MrJamesLZAZ
 # Created: 2024-11-21
 # Last Modified: 2024-11-21
 #
@@ -19,11 +19,11 @@ RUN echo -e "\n========= Stage 1st =========\n\n"
 SHELL ["/bin/bash", "-c"]
 
 # =============================================================================
-# 所有构建参数定义 - 第一阶段定义，所有后续阶段自动继承
+# All build arguments definition - Defined in the first stage, inherited by all subsequent stages
 # =============================================================================
 
 # -----------------------------------------------------------------------------
-# 项目信息 (6个)
+# Project Information (6 arguments)
 # -----------------------------------------------------------------------------
 ARG PROJECT_MAINTAINER
 ARG PROJECT_EMAIL
@@ -33,10 +33,11 @@ ARG PROJECT_VERSION
 ARG PROJECT_RELEASE_DATE
 
 # -----------------------------------------------------------------------------
-# 基础配置 (11个)
+# Base Configuration (12 arguments)
 # -----------------------------------------------------------------------------
 ARG PRODUCT_NAME
 ARG IMAGE_NAME
+ARG LATEST_IMAGE_TAG
 ARG CONTAINER_NAME
 ARG DEV_USERNAME
 ARG DEV_GROUP
@@ -48,23 +49,36 @@ ARG TIMEZONE
 ARG DEBIAN_FRONTEND
 
 # -----------------------------------------------------------------------------
-# 构建配置 (1个)
+# Build Configuration (1 argument)
 # -----------------------------------------------------------------------------
 ARG DOCKER_BUILDKIT
 
 # -----------------------------------------------------------------------------
-# 开发工具配置 (7个)
+# Development Tools Configuration (13 arguments)
 # -----------------------------------------------------------------------------
 ARG INSTALL_CUDA
 ARG INSTALL_OPENCV
 ARG INSTALL_HOST_CMAKE
 ARG INSTALL_MAN_DOC
-ARG INSTALL_TOOLCHAIN
 ARG INSTALL_DISTCC
 ARG NPM_USE_CHINA_MIRROR
+ARG INSTALL_TOOLCHAIN
+ARG CONAN_VERSION
+ARG CMAKE_FORMAT_VERSION
+ARG PRE_COMMIT_VERSION
+ARG CUDA_VERSION
+ARG OPENCV_VERSION
+ARG GCC_OFFLINE_PACKAGE
 
 # -----------------------------------------------------------------------------
-# 工作区配置 (16个)
+# Toolchain Offline Configuration (3 arguments)
+# -----------------------------------------------------------------------------
+ARG GCC_OFFLINE_VERSION
+ARG GCC_INSTALL_PATH
+ARG TOOLCHAIN_TARBALL_NAME  # Added from Serverside section for consistency
+
+# -----------------------------------------------------------------------------
+# Workspace Configuration (16 arguments)
 # -----------------------------------------------------------------------------
 ARG WORKSPACE_ROOT
 ARG WORKSPACE_1ST_SOURCE_SUBDIR
@@ -84,36 +98,39 @@ ARG WORKSPACE_ENABLE_REMOTE_DEBUG
 ARG WORKSPACE_DEBUG_PORT
 
 # -----------------------------------------------------------------------------
-# 注册表配置 (3个)
+# Registry Configuration (5 arguments)
 # -----------------------------------------------------------------------------
+ARG HAVE_GITLAB_SERVER
 ARG UBUNTU_SERVER_IP
 ARG UBUNTU_SERVER_PORT
+ARG HAVE_HARBOR_SERVER
 ARG REGISTRY_URL
 
 # -----------------------------------------------------------------------------
-# SDK配置 (4个)
+# SDK Configuration (5 arguments)
 # -----------------------------------------------------------------------------
+ARG INSTALL_SDK
 ARG SDK_INSTALL_PATH
 ARG SDK_GIT_REPO
 ARG SDK_GIT_KEY_FILE
 ARG SDK_GIT_DEFAULT_BRANCH
 
 # -----------------------------------------------------------------------------
-# Docker卷配置 (1个)
+# Docker Volumes Configuration (1 argument)
 # -----------------------------------------------------------------------------
 ARG VOLUMES_ROOT
 
 # -----------------------------------------------------------------------------
-# Samba配置 (5个)
+# Samba Configuration (5 arguments)
 # -----------------------------------------------------------------------------
 ARG SAMBA_PUBLIC_ACCOUNT_NAME
 ARG SAMBA_PUBLIC_ACCOUNT_PASSWORD
 ARG SAMBA_PRIVATE_ACCOUNT_NAME
 ARG SAMBA_PRIVATE_ACCOUNT_PASSWORD
-ARG ENABLE_VSC_INTEGRATION
+ARG ENABLE_VSC_INTEGRATION  # Moved here from a duplicate entry
 
 # -----------------------------------------------------------------------------
-# 容器运行时配置 (8个)
+# Container Runtime Configuration (8 arguments)
 # -----------------------------------------------------------------------------
 ARG ENABLE_SSH
 ARG CLIENT_SSH_PORT
@@ -125,7 +142,7 @@ ARG ENABLE_CORE_DUMPS
 ARG CORE_PATTERN
 
 # -----------------------------------------------------------------------------
-# 服务器端镜像和容器选项 (14个)
+# Serverside Image & Container Options (14 arguments)
 # -----------------------------------------------------------------------------
 ARG ENABLE_SERVERSIDE
 ARG DISTCC_GCC_11_ENABLE
@@ -136,32 +153,11 @@ ARG DISTCC_GCC_10_MAIN_PORT
 ARG DISTCC_GCC_10_STATS_PORT
 ARG DISTCC_LOG_LEVEL
 ARG DISTCC_LOG_DIR
-ARG TOOLCHAIN_TARBALL_NAME
 ARG PYTHON_VERSION
 ARG TOOLCHAIN_DIR
 ARG SERVERSIDE_IMAGE_NAME
 ARG SERVERSIDE_CONTAINER_NAME
-
-# -----------------------------------------------------------------------------
-# 工具版本配置 (8个)
-# -----------------------------------------------------------------------------
-ARG CONAN_VERSION
-ARG CMAKE_FORMAT_VERSION
-ARG PRE_COMMIT_VERSION
-ARG CUDA_VERSION
-ARG OPENCV_VERSION
-ARG GCC_OFFLINE_PACKAGE
-ARG GCC_OFFLINE_VERSION
-ARG GCC_INSTALL_PATH
-
-# # 环境变量设置 - 仅设置此阶段需要的变量
-# ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
-# ENV TIMEZONE=${TIMEZONE}
-# ENV DEV_USERNAME=${DEV_USERNAME}
-# ENV DEV_USER_PASSWORD=${DEV_USER_PASSWORD}
-# ENV DEV_UID=${DEV_UID}
-# ENV DEV_GID=${DEV_GID}
-# ENV DEV_USER_ROOT_PASSWORD=${DEV_USER_ROOT_PASSWORD}
+ARG TOOLCHAIN_TARBALL_NAME  # Already added in Toolchain Offline Configuration
 
 # Copy scripts
 COPY stage_1_base/scripts/setup_base.sh /tmp/
@@ -195,7 +191,7 @@ RUN echo -e "Stage 1st completed!\n"
 # Description: Development tools stage Dockerfile
 #              Installs development tools and utilities for embedded development
 #
-# Author: [Your Name]
+# Author: MrJamesLZAZ
 # Created: 2024-11-21
 # Last Modified: 2024-11-21
 #
@@ -309,7 +305,7 @@ RUN echo -e "\n========= Stage 2nd Complete =========\n\n"
 # Description: SDK installation stage Dockerfile
 #              Installs and configures embedded development SDK
 #
-# Author: [Your Name]
+# Author: MrJamesLZAZ
 # Created: 2024-11-21
 # Last Modified: 2024-11-28
 #
@@ -324,19 +320,8 @@ RUN echo -e "\n========= Stage 3rd =========\n\n"
 COPY ./stage_3_sdk/configs/ /tmp/configs/
 COPY ./stage_3_sdk/scripts/ /tmp/scripts/
 
-
 WORKDIR /tmp
-# RUN set -a && \
-#     # 在这里，所有ARG变量自动成为环境变量，不需要一个个export
-#     # 处理所有模板文件
-#     for template in $(find /tmp/configs -name "*_template") $(find /tmp/scripts -name "*_template"); do \
-#         output_file="${template%_template}" && \
-#         echo "Processing $template -> $output_file" && \
-#         envsubst < "$template" > "$output_file" && \
-#         chmod +x "$output_file"; \
-#     done && \
-#     # 关闭自动导出，但已导出的变量仍在环境中
-#     set +a
+
 RUN set -a && \
     # 创建一个临时文件，包含所有环境变量名称
     env | cut -d= -f1 > /tmp/env_vars.txt && \
@@ -361,10 +346,9 @@ RUN set -a && \
     rm -f /tmp/env_vars.txt && \
     set +a
 
-
 FROM stage_3rd_template-processor AS stage_3rd_sdk
 
-RUN ls -lha /tmp/
+RUN find /tmp/
 
 # Configuration and installation scripts
 # COPY configs/sdk_config.conf /tmp/
@@ -420,7 +404,7 @@ RUN echo -e "\n========= Stage 3rd Complete =========\n\n"
 # Description: Configuration stage Dockerfile
 #              Configures environment variables and system settings
 #
-# Author: [Your Name]
+# Author: MrJamesLZAZ
 # Created: 2024-11-21
 # Last Modified: 2024-11-28
 #
@@ -428,17 +412,16 @@ RUN echo -e "\n========= Stage 3rd Complete =========\n\n"
 # License: MIT
 ################################################################################
 
-
 FROM stage_3rd_sdk AS stage_4th_template-processor
 
 RUN echo -e "\n========= Stage 4th =========\n\n"
 
-RUN ls -lha /tmp/
+RUN find /tmp/
 
 COPY ./stage_4_config/configs/ /tmp/configs/
 COPY ./stage_4_config/scripts/ /tmp/scripts/
 
-RUN ls -lha /tmp/
+RUN find /tmp/
 
 WORKDIR /tmp
 RUN set -a && \
@@ -467,7 +450,7 @@ RUN set -a && \
 
 FROM stage_4th_template-processor AS stage_4th_config
 
-RUN ls -lha /tmp/
+RUN find /tmp/
 
 # Copy configuration scripts and templates
 COPY --from=stage_4th_template-processor /tmp/scripts/configure_env.sh /tmp/
@@ -493,7 +476,7 @@ RUN echo -e "\n========= Stage 4th Complete =========\n\n"
 # Description: Final stage Dockerfile for embedded development environment
 #              Integrates all previous stages and finalizes the setup
 #
-# Author: [Your Name]
+# Author: MrJamesLZAZ
 # Created: 2024-11-21
 # Last Modified: 2024-11-28
 #

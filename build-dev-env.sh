@@ -96,12 +96,11 @@ prompt_with_timeout() {
     fi
 
     # Build is optional, other steps are mandatory
-    if prompt_with_timeout "Build [ServerSide] images?" 10; then
+    if [ ${ENABLE_SERVERSIDE} = "true" ] && [ "$(prompt_with_timeout \"Build [ServerSide] images?\" 10)" ]; then
         _build_images_serverside || exit 1
     else
         echo "Build serverside image stages skipped."
     fi
-
 }
 
 _build_images_clientside() {
@@ -190,15 +189,17 @@ _build_images_serverside() {
 #   0 on success, 1 on failure
 ################################################################################
 _tag_single_image() {
-    local image_name="$1"
-    local source_tag="$2"
-    local target_tag="$3"
-    local full_source="${image_name}:${source_tag}"
-    local full_target="${REGISTRY_URL}/${image_name}:${target_tag}"
+    # local image_name="$1"
+    # local source_tag="$2"
+    # local target_tag="$3"
+    # local full_source="${image_name}:${source_tag}"
+    # local full_target="${REGISTRY_URL}/${image_name}:${target_tag}"
+    local source="${1}"
+    local target="${2}"
 
-    echo "Executing: docker tag ${full_source} ${full_target}"
-    if ! docker tag "${full_source}" "${full_target}"; then
-        echo "✗ Error: Failed to tag ${image_name} with ${target_tag}"
+    echo "Executing: docker tag ${source} ${target}"
+    if ! docker tag "${source}" "${target}"; then
+        echo "✗ Error: Failed to tag ${source} as ${target}"
         return 1
     fi
     return 0
@@ -211,20 +212,55 @@ _tag_single_image() {
 # Returns:
 #   0 on success, 1 on failure
 ################################################################################
-_tag_image() {
-    local tag="$1"
+_tag_image_onair() {
     local result=0
+    local tag_num="${PROJECT_VERSION}"
+    local tag_latest="latest"
+    local is_local="${1}"
+    local full_client_source="${IMAGE_NAME}:${tag_num}"
 
-    # Tag client image
-    if ! _tag_single_image "${IMAGE_NAME}" "${LATEST_IMAGE_TAG}" "${tag}"; then
-        echo "✗ Error: Failed to tag client image"
+    if [ ${is_local} = "false" ];then
+        # 1.1 Tag client image with version number
+        local full_target="${REGISTRY_URL}/${IMAGE_NAME}:${tag_num}"
+
+        if ! _tag_single_image "${full_client_source}" "${full_target}"; then
+            echo "✗ Error: Failed to tag client image ${full_client_source} as ${full_target}"
+            result=1
+        fi
+    fi
+
+    # 1.2 Tag client image as tag latest
+    if [ ${is_local} = "local" ];then
+        local full_target_latest="${IMAGE_NAME}:${tag_latest}"
+    else
+        local full_target_latest="${REGISTRY_URL}/${IMAGE_NAME}:${tag_latest}"
+    fi
+    if ! _tag_single_image "${full_client_source}" "${full_target_latest}"; then
+        echo "✗ Error: Failed to tag client image ${full_client_source} as ${full_target_latest}"
         result=1
     fi
 
-    # Tag server image if enabled
+
     if [[ "${ENABLE_SERVERSIDE}" == "true" ]]; then
-        if ! _tag_single_image "${SERVERSIDE_IMAGE_NAME}" "${PROJECT_VERSION}" "${tag}"; then
-            echo "✗ Error: Failed to tag server image"
+        local full_server_source="${SERVERSIDE_IMAGE_NAME}:${tag_num}"
+
+        # 2.1 Tag server image with version number
+        if [ ${is_local} = "false" ];then
+            local full_server_target="${REGISTRY_URL}/${SERVERSIDE_IMAGE_NAME}:${tag_num}"
+            if ! _tag_single_image "${full_server_source}" "${full_server_target}"; then
+                echo "✗ Error: Failed to tag server image ${full_server_source} as ${full_server_target}"
+                result=1
+            fi
+        fi
+
+        # 2.2 Tag server image as tag latest
+        if [ ${is_local} = "local" ];then
+            local full_server_target_latest="${SERVERSIDE_IMAGE_NAME}:${tag_latest}"
+        else
+            local full_server_target_latest="${REGISTRY_URL}/${SERVERSIDE_IMAGE_NAME}:${tag_latest}"
+        fi
+        if ! _tag_single_image "${full_server_source}" "${full_server_target_latest}"; then
+            echo "✗ Error: Failed to tag server image ${full_server_source} as ${full_server_target_latest}"
             result=1
         fi
     fi
@@ -245,14 +281,10 @@ _tag_image() {
 
         # Tag images
         echo "Tagging images..."
-        if ! _tag_image "${PROJECT_VERSION}"; then
-            echo "✗ Error: Failed to tag images with version ${PROJECT_VERSION}"
-            result=1
-        fi
-
-        if ! _tag_image "latest"; then
-            echo "✗ Error: Failed to tag images as latest"
-            result=1
+        if [ ${HAVE_HARBOR_SERVER} = "TRUE" ];then
+            _tag_image_onair "onair"
+        else
+            _tag_image_onair "local"
         fi
 
         echo "Done with tagging images."
@@ -265,8 +297,8 @@ _tag_image() {
 }
 
 5_push_images() {
-
-    if prompt_with_timeout "Push images to the registry?" 10; then
+    
+    if [ ${HAVE_HARBOR_SERVER} = "TRUE" ] && [ "$(prompt_with_timeout "Push images to the registry?" 10)" ]; then
         echo -e "\n=== 4. Pushing Images ==="
         local result=0
 

@@ -4,7 +4,7 @@
 # Description: SDK installation stage Dockerfile
 #              Installs and configures embedded development SDK
 #
-# Author: [Your Name]
+# Author: MrJamesLZAZ
 # Created: 2024-11-21
 # Last Modified: 2024-11-28
 #
