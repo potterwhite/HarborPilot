@@ -15,7 +15,7 @@
 ARG IMAGE_NAME=embedded-dev
 FROM ${IMAGE_NAME}:stage2
 
-# Build arguments
+# Build argumentsa
 ARG DEBIAN_FRONTEND
 ARG SDK_INSTALL_PATH
 ARG SDK_GIT_REPO

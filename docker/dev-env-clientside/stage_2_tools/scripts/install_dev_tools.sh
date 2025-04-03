@@ -4,7 +4,7 @@
 # Description: Main script for installing development tools
 #              Installs compilers, debuggers, and development utilities
 #
-# Author: MrJamesLZA
+# Author: MrJamesLZAZ
 # Created: 2024-11-21
 # Last Modified: 2024-11-27
 #

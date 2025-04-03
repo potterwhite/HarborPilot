@@ -72,7 +72,8 @@ func_install_system_utils() {
         cpio \
         unzip \
         rsync \
-        bsdextrautils
+        bsdextrautils \
+        gettext-base
 }
 
 ###############################################################################

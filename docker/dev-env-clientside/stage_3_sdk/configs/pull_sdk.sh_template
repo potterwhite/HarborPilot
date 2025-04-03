@@ -2,7 +2,7 @@
 ################################################################################
 # Script Name: pull_sdk.sh
 # Description: Pull SDK from git repository with safety checks
-# Author: @MrJamesLZA
+# Author: @MrJamesLZAZ
 # Date: 2024-11-28
 # Usage: ./pull_sdk.sh [-h|--help] [branch_name]
 # Note: This script is generated from template with environment variables

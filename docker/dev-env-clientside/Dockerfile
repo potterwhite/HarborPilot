@@ -285,7 +285,7 @@ RUN if [ "${INSTALL_OPENCV}" = "true" ]; then \
 RUN echo -e "\n\n##########################################################\n(5/5)Installing dev tools...\n##########################################################\n\n"; \
     chmod +x /tmp/install_dev_tools.sh && \
     /tmp/install_dev_tools.sh && \
-    echo -e "\n\n##########################################################\n(4/5)Dev Tools are installed, Done\n##########################################################\n\n";
+    echo -e "\n\n##########################################################\n(5/5)Dev Tools are installed, Done\n##########################################################\n\n";
 
 # Install gitlfs tracker, a diy git lfs tracker to help git operations
 RUN chmod +x /usr/local/bin/gitlfs_tracker.sh
@@ -298,3 +298,111 @@ RUN chmod +x /usr/local/bin/gitlfs_tracker.sh
 RUN rm -rf /tmp/offline_toolchain && \
     rm -f /tmp/install_*.sh && \
     rm -f /tmp/tool_versions.conf
+
+
+################################################################################
+# File: docker/stage_3_sdk/Dockerfile
+#
+# Description: SDK installation stage Dockerfile
+#              Installs and configures embedded development SDK
+#
+# Author: [Your Name]
+# Created: 2024-11-21
+# Last Modified: 2024-11-28
+#
+# Copyright (c) 2024 [Your Company/Name]
+# License: MIT
+################################################################################
+
+FROM stage_2nd_tools AS stage_3rd_template-processor
+
+COPY ./stage_3_sdk/configs/ /tmp/configs/
+COPY ./stage_3_sdk/scripts/ /tmp/scripts/
+
+
+WORKDIR /tmp
+# RUN set -a && \
+#     # 在这里，所有ARG变量自动成为环境变量，不需要一个个export
+#     # 处理所有模板文件
+#     for template in $(find /tmp/configs -name "*_template") $(find /tmp/scripts -name "*_template"); do \
+#         output_file="${template%_template}" && \
+#         echo "Processing $template -> $output_file" && \
+#         envsubst < "$template" > "$output_file" && \
+#         chmod +x "$output_file"; \
+#     done && \
+#     # 关闭自动导出，但已导出的变量仍在环境中
+#     set +a
+RUN set -a && \
+    # 创建一个临时文件，包含所有环境变量名称
+    env | cut -d= -f1 > /tmp/env_vars.txt && \
+    # 处理所有模板文件
+    for template in $(find /tmp/configs -name "*_template") $(find /tmp/scripts -name "*_template"); do \
+        output_file="${template%_template}" && \
+        echo "Processing $template -> $output_file" && \
+        cp "$template" "$output_file.tmp" && \
+        # 遍历所有环境变量并使用sed替换
+        while read var_name; do \
+            # 跳过一些特殊变量或内部变量
+            if [[ ! "$var_name" =~ ^(PWD|SHLVL|_|PATH|HOSTNAME|HOME|TERM)$ ]]; then \
+                var_value=$(eval echo \$$var_name) && \
+                # 使用sed替换变量，处理可能包含特殊字符的值
+                var_value_escaped=$(echo "$var_value" | sed 's/[\/&]/\\&/g') && \
+                sed -i "s|\${$var_name}|$var_value_escaped|g" "$output_file.tmp"; \
+            fi; \
+        done < /tmp/env_vars.txt && \
+        mv "$output_file.tmp" "$output_file" && \
+        chmod +x "$output_file"; \
+    done && \
+    rm -f /tmp/env_vars.txt && \
+    set +a
+
+
+FROM stage_3rd_template-processor AS stage_3rd_sdk
+
+# Configuration and installation scripts
+# COPY configs/sdk_config.conf /tmp/
+# COPY scripts/install_sdk.sh /tmp/
+
+# Copy processed git operation scripts
+#COPY configs/*.sh /usr/local/bin/
+COPY --from=stage_3rd_template-processor /tmp/configs/*.sh /usr/local/bin/
+COPY --from=stage_3rd_template-processor /tmp/configs/*.conf /tmp/
+COPY --from=stage_3rd_template-processor /tmp/scripts/install_sdk.sh /tmp/
+COPY --from=stage_3rd_template-processor /tmp/scripts/analyze_dir_structure.sh /usr/local/bin/
+
+# Git analysis script
+RUN chmod +x /usr/local/bin/analyze_dir_structure.sh
+
+# Verify the processed scripts
+RUN echo -e "\n\n----------------1st----------------" && \
+    ls -lha /usr/local/bin/verify_ssh_key.sh && \
+    cat /usr/local/bin/verify_ssh_key.sh
+
+RUN echo -e "\n\n----------------2nd----------------" && \
+    ls -lha /usr/local/bin/pull_sdk.sh && \
+    cat /usr/local/bin/pull_sdk.sh
+
+RUN echo -e "\n\n----------------3rd----------------" && \
+    ls -lha /usr/local/bin/push_sdk.sh && \
+    cat /usr/local/bin/push_sdk.sh
+
+RUN echo -e "\n\n----------------4th----------------" && \
+    ls -lha /usr/local/bin/version_of_dev_env.sh && \
+    cat /usr/local/bin/version_of_dev_env.sh
+
+RUN echo -e "\n\n----------------5th----------------" && \
+    ls -lha /tmp/sdk_config.conf && \
+    cat /tmp/sdk_config.conf
+
+RUN echo -e "\n\n----------------6th----------------" && \
+    ls -lha /tmp/install_sdk.sh && \
+    cat /tmp/install_sdk.sh
+
+# Install SDK
+# RUN /tmp/install_sdk.sh
+RUN /tmp/install_sdk.sh
+
+# Clean up
+RUN rm -rf /tmp/install_sdk.sh \
+           /tmp/sdk_config.conf
+

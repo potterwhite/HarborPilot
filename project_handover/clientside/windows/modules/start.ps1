@@ -6,7 +6,7 @@
 .NOTES
     File Name      : start.ps1
     Version        : 0.5.1
-    Author         : MrJamesLZA
+    Author         : MrJamesLZAZ
     Last Modified  : 2024-11-29
 #>
 

@@ -2,8 +2,8 @@
 ################################################################################
 # Script Name: install_sdk.sh
 # Description: Initialize SDK directory and Git repository
-# Author: @MrJamesLZA
-# Date: 2024-11-28
+# Author: @MrJamesLZAZ
+# Date: 2025-04-03
 ################################################################################
 
 set -e
@@ -18,8 +18,10 @@ func_load_env() {
 
     # Build tools to be linked
     BUILD_TOOLS=(
-        "cmake"
-        "ctest"
+        # no need to specific buildroot produced bins
+        # directly utilize apt-get install cmake
+        # "cmake"
+        # "ctest"
     )
     # "ninja"
     # "make"
@@ -173,12 +175,17 @@ main() {
     func_verify_env || exit 1
 
     # Execute installation steps
-    func_create_dirs || exit 1
-    func_init_git || exit 1
-    func_create_links || exit 1
-    func_verify_install || exit 1
+    if [ "${INSTALL_SDK}" = "true" ]; then
+        func_create_dirs || exit 1
+        func_init_git || exit 1
+        func_create_links || exit 1
+        func_verify_install || exit 1
 
-    echo "SDK installation completed successfully"
+        echo "SDK installation completed successfully"
+    else
+        echo "SDK installation skipped"
+    fi
+
     return 0
 }
 
