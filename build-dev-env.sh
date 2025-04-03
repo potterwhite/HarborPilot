@@ -297,7 +297,7 @@ _tag_image_onair() {
 }
 
 5_push_images() {
-    
+
     if [ ${HAVE_HARBOR_SERVER} = "TRUE" ] && [ "$(prompt_with_timeout "Push images to the registry?" 10)" ]; then
         echo -e "\n=== 4. Pushing Images ==="
         local result=0
@@ -392,13 +392,32 @@ _push_and_verify_image() {
         # 清理客户端镜像
         echo "Finding and removing intermediate images for ${IMAGE_NAME}"
         echo "Keeping final image ID: ${FINAL_IMAGE_ID}"
-        docker images | grep "${IMAGE_NAME}" | grep -v "${REGISTRY_URL}" | \
-        awk '{print $3}' | while read -r id; do
-            if [ "$id" != "$FINAL_IMAGE_ID" ]; then
-                echo "Removing image ID: $id"
-                docker rmi -f "$id" || true
-            fi
-        done
+        # docker images | grep "${IMAGE_NAME}" | grep -v "${REGISTRY_URL}" | \
+        # awk '{print $3}' | while read -r id; do
+        #     if [ "$id" != "$FINAL_IMAGE_ID" ]; then
+        #         echo "Removing image ID: $id"
+        #         docker rmi -f "$id" || true
+        #     fi
+        # done
+        if [[ "${USE_REGISTRY_FILTER}" == "true" && -n "${REGISTRY_URL}" ]]; then
+            # 有 REGISTRY_URL 时，排除 REGISTRY_URL 中的镜像
+            docker images | grep "${IMAGE_NAME}" | grep -v "${REGISTRY_URL}" | \
+            awk '{print $3}' | while read -r id; do
+                if [ "$id" != "${FINAL_IMAGE_ID}" ]; then
+                    echo "Removing image ID: $id"
+                    docker rmi -f "$id" || true
+                fi
+            done
+        else
+            # 无 REGISTRY_URL 或不使用过滤时，直接清理所有中间镜像
+            docker images | grep "${IMAGE_NAME}" | \
+            awk '{print $3}' | while read -r id; do
+                if [ "$id" != "${FINAL_IMAGE_ID}" ]; then
+                    echo "Removing image ID: $id"
+                    docker rmi -f "$id" || true
+                fi
+            done
+        fi
 
         # 清理服务端镜像
         if [[ "${ENABLE_SERVERSIDE}" == "true" ]]; then

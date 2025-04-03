@@ -8,16 +8,23 @@
 gen_environment_variables() {
     set -e
 
+    # 1st task: source .env to retrive all environments
     BUILD_SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
     BUILD_SCRIPT_DIR="$(dirname ${BUILD_SCRIPT_PATH})"
     ENV_PATH="${BUILD_SCRIPT_DIR}/../../.env"
-
     if [ -f ${ENV_PATH} ]; then
         source ${ENV_PATH}
         echo -e "Done source .env\n"
     else
         echo -e "\nNo ${ENV_PATH} exist, quit"
         exit 1
+    fi
+
+    # 2nd task: determine final image name for docker compose yaml
+    if [ "${HAVE_HARBOR_SERVER}" == "TRUE" ];then
+        FINAL_IMAGE_NAME="${FINAL_IMAGE_NAME}"
+    else
+        FINAL_IMAGE_NAME="${IMAGE_NAME}:latest"
     fi
 
     # Colors for output
@@ -56,7 +63,7 @@ check_docker_group() {
 #     local registry="${REGISTRY_URL}"
 
 #     while true; do
-#         # if docker manifest inspect --insecure "${REGISTRY_URL}/${IMAGE_NAME}:latest" >/dev/null 2>&1; then
+#         # if docker manifest inspect --insecure "${FINAL_IMAGE_NAME}" >/dev/null 2>&1; then
 #         #     print_msg "Already logged in to registry ${registry}" "${GREEN}"
 #         #     return 0
 #         # fi
@@ -99,12 +106,16 @@ check_docker_group() {
 #         fi
 #     done
 # }
+
 check_docker_login() {
-    print_msg "Do you want to login to a registry? [Y/n]: " "${YELLOW}"
-    read -r need_login
-    if [[ "$need_login" =~ ^[Nn]$ ]]; then
-        print_msg "Skipping registry login. Using local image if available." "${GREEN}"
-        return 0
+    # print_msg "Do you want to login to a registry? [Y/n]: " "${YELLOW}"
+    # read -r need_login
+    # while [[ "$need_login" =~ ^[Nn]$ ]]; do
+    #     print_msg "Skipping registry login. Using local image if available." "${GREEN}"
+    #     return 0
+    # done
+    if [  "${HAVE_HARBOR_SERVER}" == "FALSE" ];then
+        return 0;
     fi
 
     print_msg "Enter registry URL (leave empty for default: ${REGISTRY_URL}): " "${YELLOW}"
@@ -173,10 +184,10 @@ EOF
 }
 
 # image_exists() {
-#     docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^${REGISTRY_URL}/${IMAGE_NAME}:latest$"
+#     docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^${FINAL_IMAGE_NAME}$"
 # }
 image_exists() {
-    docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^${IMAGE_NAME}:latest$"
+    docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^${FINAL_IMAGE_NAME}$"
 }
 
 # Function to check if container exists
@@ -194,7 +205,7 @@ generate_compose_config() {
     cat << EOF > "${BUILD_SCRIPT_DIR}/docker-compose.yaml"
 services:
   dev-env:
-    image: ${REGISTRY_URL}/${IMAGE_NAME}:latest
+    image: ${FINAL_IMAGE_NAME}
     container_name: ${CONTAINER_NAME}
     hostname: ${CONTAINER_NAME}
     user: "${DEV_USERNAME}"
@@ -324,7 +335,7 @@ _start_container_without_prompt() {
     if ! container_exists; then
         print_msg "Creating new development environment..."
         generate_compose_config
-        (cd "${BUILD_SCRIPT_DIR}" && docker compose up -d)
+        (cd "${BUILD_SCRIPT_DIR}" && docker compose -p ${CONTAINER_NAME} up -d)
     else
         print_msg "Starting existing container..."
         docker start ${CONTAINER_NAME}
@@ -363,7 +374,7 @@ remove_dev_env_image() {
     # 2. 再处理镜像
     if image_exists "${IMAGE_NAME}"; then
         print_msg "Removing image..."
-        if ! docker rmi "${REGISTRY_URL}/${IMAGE_NAME}:latest"; then
+        if ! docker rmi "${FINAL_IMAGE_NAME}"; then
             print_msg "Failed to remove image" "${RED}"
             return 1
         fi
@@ -373,14 +384,14 @@ remove_dev_env_image() {
 # retrieve_latest_image() {
 #     # 3. 最后尝试拉取新镜像
 #     print_msg "Pulling latest image..."
-#     if ! docker pull "${REGISTRY_URL}/${IMAGE_NAME}:latest"; then
+#     if ! docker pull "${FINAL_IMAGE_NAME}"; then
 #         print_msg "Failed to pull new image" "${RED}"
 #         return 1
 #     fi
 # }
 retrieve_latest_image() {
     if image_exists; then
-        print_msg "Local image ${REGISTRY_URL}/${IMAGE_NAME}:latest already exists" "${GREEN}"
+        print_msg "Local image ${FINAL_IMAGE_NAME} already exists" "${GREEN}"
         print_msg "Do you want to pull the latest image anyway? [y/N]: " "${YELLOW}"
         read -r pull_anyway
         if [[ ! "$pull_anyway" =~ ^[Yy]$ ]]; then
@@ -388,10 +399,15 @@ retrieve_latest_image() {
         fi
     fi
 
-    print_msg "Pulling latest image from ${REGISTRY_URL}..." "${GREEN}"
-    if ! docker pull "${REGISTRY_URL}/${IMAGE_NAME}:latest"; then
-        print_msg "Failed to pull new image" "${RED}"
+    if [ "${HAVE_HARBOR_SERVER}" == "FALSE" ]; then
+        print_msg "\nYou do not have any registry server, so you cannot retrieve image online, please do restoration manually.\n" "${GREEN}"
         return 1
+    else
+        print_msg "Pulling latest image from ${REGISTRY_URL}..." "${GREEN}"
+        if ! docker pull "${FINAL_IMAGE_NAME}"; then
+            print_msg "Failed to pull new image" "${RED}"
+            return 1
+        fi
     fi
 }
 
