@@ -14,6 +14,8 @@
 
 FROM ubuntu:22.04 AS stage_1st_base
 
+RUN echo -e "\n========= Stage 1st =========\n\n"
+
 SHELL ["/bin/bash", "-c"]
 
 # =============================================================================
@@ -201,13 +203,13 @@ RUN echo -e "Stage 1st completed!\n"
 # License: MIT
 ################################################################################
 
-
 # ARG IMAGE_NAME=embedded-dev
 # ARG IMAGE_NAME=${IMAGE_NAME}
 # ENV IMAGE_NAME=${IMAGE_NAME}
 # Use stage 1 as base
 FROM stage_1st_base AS stage_2nd_tools
 
+RUN echo -e "\n========= Stage 2nd =========\n\n"
 
 ################################################################################
 # Copy scripts and configs
@@ -299,6 +301,7 @@ RUN rm -rf /tmp/offline_toolchain && \
     rm -f /tmp/install_*.sh && \
     rm -f /tmp/tool_versions.conf
 
+RUN echo -e "\n========= Stage 2nd Complete =========\n\n"
 
 ################################################################################
 # File: docker/stage_3_sdk/Dockerfile
@@ -315,6 +318,8 @@ RUN rm -rf /tmp/offline_toolchain && \
 ################################################################################
 
 FROM stage_2nd_tools AS stage_3rd_template-processor
+
+RUN echo -e "\n========= Stage 3rd =========\n\n"
 
 COPY ./stage_3_sdk/configs/ /tmp/configs/
 COPY ./stage_3_sdk/scripts/ /tmp/scripts/
@@ -358,6 +363,8 @@ RUN set -a && \
 
 
 FROM stage_3rd_template-processor AS stage_3rd_sdk
+
+RUN ls -lha /tmp/
 
 # Configuration and installation scripts
 # COPY configs/sdk_config.conf /tmp/
@@ -403,6 +410,180 @@ RUN echo -e "\n\n----------------6th----------------" && \
 RUN /tmp/install_sdk.sh
 
 # Clean up
-RUN rm -rf /tmp/install_sdk.sh \
-           /tmp/sdk_config.conf
+RUN rm -rf /tmp/*
 
+RUN echo -e "\n========= Stage 3rd Complete =========\n\n"
+
+################################################################################
+# File: docker/stage_4_config/Dockerfile
+#
+# Description: Configuration stage Dockerfile
+#              Configures environment variables and system settings
+#
+# Author: [Your Name]
+# Created: 2024-11-21
+# Last Modified: 2024-11-28
+#
+# Copyright (c) 2024 [Your Company/Name]
+# License: MIT
+################################################################################
+
+
+FROM stage_3rd_sdk AS stage_4th_template-processor
+
+RUN echo -e "\n========= Stage 4th =========\n\n"
+
+RUN ls -lha /tmp/
+
+COPY ./stage_4_config/configs/ /tmp/configs/
+COPY ./stage_4_config/scripts/ /tmp/scripts/
+
+RUN ls -lha /tmp/
+
+WORKDIR /tmp
+RUN set -a && \
+    # 创建一个临时文件，包含所有环境变量名称
+    env | cut -d= -f1 > /tmp/env_vars.txt && \
+    # 处理所有模板文件
+    for template in $(find /tmp/configs -name "*_template") $(find /tmp/scripts -name "*_template"); do \
+        output_file="${template%_template}" && \
+        echo "Processing $template -> $output_file" && \
+        cp "$template" "$output_file.tmp" && \
+        # 遍历所有环境变量并使用sed替换
+        while read var_name; do \
+            # 跳过一些特殊变量或内部变量
+            if [[ ! "$var_name" =~ ^(PWD|SHLVL|_|PATH|HOSTNAME|HOME|TERM)$ ]]; then \
+                var_value=$(eval echo \$$var_name) && \
+                # 使用sed替换变量，处理可能包含特殊字符的值
+                var_value_escaped=$(echo "$var_value" | sed 's/[\/&]/\\&/g') && \
+                sed -i "s|\${$var_name}|$var_value_escaped|g" "$output_file.tmp"; \
+            fi; \
+        done < /tmp/env_vars.txt && \
+        mv "$output_file.tmp" "$output_file" && \
+        chmod +x "$output_file"; \
+    done && \
+    rm -f /tmp/env_vars.txt && \
+    set +a
+
+FROM stage_4th_template-processor AS stage_4th_config
+
+RUN ls -lha /tmp/
+
+# Copy configuration scripts and templates
+COPY --from=stage_4th_template-processor /tmp/scripts/configure_env.sh /tmp/
+COPY --from=stage_4th_template-processor /tmp/configs/env_config.conf /tmp/
+
+# Configure environment
+RUN chmod +x /tmp/configure_env.sh && \
+    /tmp/configure_env.sh && \
+    rm -f /tmp/configure_env.sh /tmp/env_config.conf.template && \
+    # Update PATH in /etc/environment
+    sed -i 's/^session    required     pam_env.so$/session    required     pam_env.so readenv=1/g' /etc/pam.d/login && \
+    echo "source /etc/environment" >> /etc/bash.bashrc && \
+    chmod 644 /etc/environment
+
+# Clean up
+RUN rm -rf /tmp/*
+
+RUN echo -e "\n========= Stage 4th Complete =========\n\n"
+
+################################################################################
+# File: docker/stage_5_final/Dockerfile
+#
+# Description: Final stage Dockerfile for embedded development environment
+#              Integrates all previous stages and finalizes the setup
+#
+# Author: [Your Name]
+# Created: 2024-11-21
+# Last Modified: 2024-11-28
+#
+# Copyright (c) 2024 [Your Company/Name]
+# License: MIT
+################################################################################
+
+FROM stage_4th_config AS stage_5th_template-processor
+
+RUN echo -e "\n========= Stage 5th =========\n\n"
+
+COPY ./stage_5_final/configs/ /tmp/configs/
+COPY ./stage_5_final/scripts/ /tmp/scripts/
+
+WORKDIR /tmp
+RUN set -a && \
+    # 创建一个临时文件，包含所有环境变量名称
+    env | cut -d= -f1 > /tmp/env_vars.txt && \
+    # 处理所有模板文件
+    for template in $(find /tmp/configs -name "*_template") $(find /tmp/scripts -name "*_template"); do \
+        output_file="${template%_template}" && \
+        echo "Processing $template -> $output_file" && \
+        cp "$template" "$output_file.tmp" && \
+        # 遍历所有环境变量并使用sed替换
+        while read var_name; do \
+            # 跳过一些特殊变量或内部变量
+            if [[ ! "$var_name" =~ ^(PWD|SHLVL|_|PATH|HOSTNAME|HOME|TERM)$ ]]; then \
+                var_value=$(eval echo \$$var_name) && \
+                # 使用sed替换变量，处理可能包含特殊字符的值
+                var_value_escaped=$(echo "$var_value" | sed 's/[\/&]/\\&/g') && \
+                sed -i "s|\${$var_name}|$var_value_escaped|g" "$output_file.tmp"; \
+            fi; \
+        done < /tmp/env_vars.txt && \
+        mv "$output_file.tmp" "$output_file" && \
+        chmod +x "$output_file"; \
+    done && \
+    rm -f /tmp/env_vars.txt && \
+    set +a
+
+FROM stage_5th_template-processor AS stage_5th_final
+
+# Labels
+LABEL maintainer="${PROJECT_MAINTAINER} <${PROJECT_EMAIL}>"
+LABEL build_date=$BUILD_DATE
+LABEL version=$VERSION
+LABEL copyright="${PROJECT_COPYRIGHT}"
+LABEL license="${PROJECT_LICENSE}"
+LABEL released_date="${PROJECT_RELEASE_DATE}"
+
+# Copy configuration files
+COPY --from=stage_5th_template-processor /tmp/configs/workspace.conf /etc/workspace.conf
+COPY --from=stage_5th_template-processor /tmp/configs/entrypoint.conf /etc/entrypoint.conf
+
+# # Verify config files
+# RUN set -ex && \
+#     echo "=== Content of /etc/entrypoint.conf ===" && \
+#     cat /etc/entrypoint.conf && \
+#     echo "=== Content of /etc/workspace.conf ===" && \
+#     cat /etc/workspace.conf
+
+# Copy scripts
+COPY --from=stage_5th_template-processor /tmp/scripts/setup_workspace.sh /usr/local/bin/
+COPY --from=stage_5th_template-processor /tmp/scripts/entrypoint.sh /usr/local/bin/
+
+# Set execute permissions
+RUN chmod +x /usr/local/bin/setup_workspace.sh \
+    && chmod +x /usr/local/bin/entrypoint.sh
+
+# Setup workspace and permissions
+RUN set -ex && \
+    /usr/local/bin/setup_workspace.sh
+
+# Set working directory
+WORKDIR ${WORKSPACE_ROOT}
+
+# Set entrypoint
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["/bin/bash"]
+
+
+################################################################################
+# 1. Ensure bash is installed and set as default shell
+################################################################################
+
+RUN chsh -s /bin/bash ${DEV_USERNAME}
+
+# Set default shell for build commands
+SHELL ["/bin/bash", "-c"]
+
+# Clean up
+RUN rm -rf /tmp/*
+
+RUN echo -e "\n========= Stage 5th Complete =========\n\n"

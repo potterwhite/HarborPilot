@@ -320,8 +320,8 @@ retrieve_latest_image() {
 case "$1" in
     "start")
         gen_environment_variables
-        check_docker_group
-        check_docker_login
+        #check_docker_group
+        #check_docker_login
         start_dev_env
         ;;
     "stop")
