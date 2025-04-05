@@ -1,0 +1,58 @@
+#!/bin/bash
+################################################################################
+# Script Name: pull_sdk_by_repo.sh
+# Description: Pull SDK from multi small git repos with repo
+# Author: @MrJamesLZAZ
+# Date: 2024-11-28
+# Last Modified: 2025-06-10
+# Usage: pull_sdk_by_repo.sh
+#
+# Note: This script is generated from template with environment variables
+#
+################################################################################
+
+func_1_0_setup_env(){
+    set -e
+
+    SDK_DIR="${SDK_INSTALL_PATH}"
+}
+
+func_2_0_pull_repo(){
+    echo "Checking Git user configuration..."
+    if [ -z ${SDK_DIR} ];then
+        echo "fatal: the var of sdk installation directory is missing, exit anyway"
+        return -1
+    fi
+
+    if [ ! -d ${SDK_DIR} ];then
+        mkdir -p ${SDK_DIR}
+        sudo chown developer:developer ${SDK_DIR} -R
+        echo "Create sdk directory Successfully."
+    fi
+
+    cd ${SDK_DIR}
+
+#    repo init -u git@192.168.3.67:team_rv1126bp/my-final-manifest.git -b main --repo-url=http://192.168.3.67/team_rv1126bp/git-repo.git --no-clone-bundle
+    repo init -u git@192.168.3.67:team_rv1126bp/my-final-manifest.git -b main --no-clone-bundle || {
+        echo "fatal: 'repo init' command failed." >&2
+        return 1
+    }
+
+    repo sync -j8 || {
+        echo "fatal: 'repo sync' command failed." >&2
+        return 1
+    }
+
+    return 0
+}
+
+main(){
+    func_1_0_setup_env || exit 1
+    func_2_0_pull_repo || exit 1
+
+    echo
+    echo "Pull sdk by repo Successfully"
+    echo
+}
+
+main "$@"

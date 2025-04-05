@@ -6,7 +6,7 @@
 #
 # Author: MrJamesLZAZ
 # Created: 2024-11-21
-# Last Modified: 2024-11-27
+# Last Modified: 2025-06-10
 #
 # Copyright (c) 2024 Baytto
 # License: MIT
@@ -55,6 +55,11 @@ second_install_dev_tools() {
         lldb \
         cppcheck \
         minicom
+    # required by rv1126bp platform-kernel 6.1
+    apt-get install -y \
+        libmpc-dev \
+        libgmp-dev \
+        repo
 }
 
 ###############################################################################
@@ -181,6 +186,9 @@ fourth_install_doc_tools() {
         fi
         echo -e "\tMan documentation system installed successfully"
     fi
+
+    # required by rv1126bp - i18n
+    apt-get install -y gettext
 
     echo "Documentation tools installation completed"
 }
@@ -381,6 +389,8 @@ ninth_install_arm_toolchain() {
             g++-arm-linux-gnueabihf
     fi
 }
+
+
 
 
 ###############################################################################

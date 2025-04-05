@@ -28,6 +28,8 @@ func_1_1_setup_env(){
     UTILS_DIR="${LIBS_DIR}/v_utils"
     TOP_ROOT_DIR="$(dirname "${DOCKER_DIR}")"
     HANDOVER_DIR="${TOP_ROOT_DIR}/project_handover"
+    PLATFORM_ENV_PATH="${HANDOVER_DIR}/.env"
+    PLATFORM_INDEPENDENT_ENV_PATH="${HANDOVER_DIR}/.env-independent"
 
     echo "BUILD_SCRIPT_PATH: ${BUILD_SCRIPT_PATH}"
     echo "BUILD_SCRIPT_DIR: ${BUILD_SCRIPT_DIR}"
@@ -40,36 +42,56 @@ func_1_1_setup_env(){
     echo "UTILS_DIR: ${UTILS_DIR}"
     echo "TOP_ROOT_DIR: ${TOP_ROOT_DIR}"
     echo "HANDOVER_DIR: ${HANDOVER_DIR}"
+    echo "PLATFORM_INDEPENDENT_ENV_PATH: ${PLATFORM_INDEPENDENT_ENV_PATH}"
 
-    FILE_ENV_PATH="${HANDOVER_DIR}/.env"
-    echo "FILE_ENV_PATH: ${FILE_ENV_PATH}"
-    # Source .env file if exists, otherwise use defaults
-    if [ -f "${FILE_ENV_PATH}" ]; then
-        source "${FILE_ENV_PATH}"
+    # PLATFORM_INDEPENDENT_ENV_PATH
+    if [ -e "${PLATFORM_INDEPENDENT_ENV_PATH}" ] ; then
+        source "${PLATFORM_INDEPENDENT_ENV_PATH}"
     else
-        echo "Warning: .env not found, using defaults"
+        echo "Fatal: ${PLATFORM_INDEPENDENT_ENV_PATH} and not found, exit"
+        # exit 1
     fi
 
-    # # Default product type (can be overridden via command line)
-    # PRODUCT=${1:-$PRODUCT_TYPE}
-    # if [ -z "$PRODUCT" ]; then
-    #     PRODUCT="generic"
-    # fi
+    echo "PLATFORM_ENV_PATH: ${PLATFORM_ENV_PATH}"
+    # PLATFORM_ENV_PATH
+    if [ -e "${PLATFORM_ENV_PATH}" ] ; then
+        source "${PLATFORM_ENV_PATH}"
+    else
+        echo "Fatal: ${PLATFORM_ENV_PATH} and not found, using defaults"
+        # exit 1
+    fi
 
-    # # Define image name (example, adjust as needed)
-    # IMAGE_NAME=${IMAGE_NAME:-${PRODUCT}-dev-env}
+    BUILD_DATE="$(TZ=$TIMEZONE date +"%Y-%m-%dT%H:%M:%S%z")"
 
     # Collect all .env variables for build args
     # Note: Only include variables used in Dockerfile
-    BUILD_ARGS=()
-    while IFS='=' read -r name _; do
-        [[ -z "$name" || "$name" =~ ^# ]] && continue
-        # Skip if value is empty or not needed in Dockerfile
-        value=$(eval echo "\$$name")
-        if [ -n "$value" ]; then
-            BUILD_ARGS+=(--build-arg "$name=$value")
+    env_files=("${PLATFORM_INDEPENDENT_ENV_PATH}" "${PLATFORM_ENV_PATH}") # 替换为你的文件路径
+    for file in "${env_files[@]}"; do
+        if [ -f "$file" ]; then
+            while IFS='=' read -r name _; do
+                [[ -z "$name" || "$name" =~ ^# ]] && continue
+                value=$(eval echo "\$$name")
+                if [ -n "$value" ]; then
+                    BUILD_ARGS+=(--build-arg "$name=$value")
+                fi
+            done < "$file"
+        else
+            echo "警告：文件 $file 不存在，跳过"
         fi
-    done < "${FILE_ENV_PATH}"
+    done
+
+    BUILD_ARGS+=(--build-arg "BUILD_DATE=${BUILD_DATE}")
+
+    ################################
+    # BUILD_ARGS=()
+    # while IFS='=' read -r name _; do
+    #     [[ -z "$name" || "$name" =~ ^# ]] && continue
+    #     # Skip if value is empty or not needed in Dockerfile
+    #     value=$(eval echo "\$$name")
+    #     if [ -n "$value" ]; then
+    #         BUILD_ARGS+=(--build-arg "$name=$value")
+    #     fi
+    # done < "${FILE_ENV_PATH}"
 
     # Add additional build options
     BUILD_ARGS+=(

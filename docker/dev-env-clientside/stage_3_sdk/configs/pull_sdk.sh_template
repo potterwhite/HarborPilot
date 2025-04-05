@@ -4,6 +4,7 @@
 # Description: Pull SDK from git repository with safety checks
 # Author: @MrJamesLZAZ
 # Date: 2024-11-28
+# Last Modified: 2025-06-10
 # Usage: ./pull_sdk.sh [-h|--help] [branch_name]
 # Note: This script is generated from template with environment variables
 ################################################################################
@@ -65,6 +66,13 @@ EOF
 # 1. Check and configure Git user information if needed
 ################################################################################
 func_2_1_check_git_user() {
+    echo "Verifying git config..."
+    if ! /usr/local/bin/verify_git_config.sh; then
+        echo "Error: git config verification failed"
+        return 1
+    fi
+    return 0
+    ########################################
     echo "Checking Git user configuration..."
 
     # Check global git config first

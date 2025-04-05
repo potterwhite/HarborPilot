@@ -119,7 +119,11 @@ func_archive_client() {
     local platform="$1"
     local archive_name="project_handover_${DATE_STAMP}.tar.gz"
 
-    tar -czf "$archive_name" \
+    #
+    #   -h, --dereference
+    #          Follow symlinks; archive and dump the files they point to.
+    #
+    tar -chzf "$archive_name" \
         --transform 's,^,project_handover/,' \
         --exclude='volumes/*' \
         --exclude='!volumes/.gitkeep' \

@@ -1,0 +1,43 @@
+services:
+  dev-env:
+    image: 192.168.3.67:9000/team_rv1126bp/rv1126bp-dev-env:latest
+    container_name: rv1126bp
+    hostname: rv1126bp
+    user: "developer"
+    restart: unless-stopped
+    privileged: true
+    tty: true
+    stdin_open: true
+
+    volumes:
+      - /dev/ttyUSB0:/dev/ttyUSB0
+      - /dev/bus/usb:/dev/bus/usb
+      - "/mnt/2tb_wd_purpleSurveillance_hdd/Development/docker/DockerDevEnv/project_handover/clientside-rv1126bp/ubuntu/../volumes:/development"
+      - samba_public:/development/v_docs/usar-samba-public
+
+    ports:
+      - "2119:22"
+      - "2355:2345"
+
+    environment:
+      - TIMEZONE=Asia/Hong_Kong
+      - DISPLAY=:0
+      - WORKSPACE_ENABLE_REMOTE_DEBUG=true
+      - WORKSPACE_LOG_LEVEL=INFO
+
+    working_dir: /development
+
+    networks:
+      - dev-net
+
+networks:
+  dev-net:
+    driver: bridge
+
+volumes:
+  samba_public:
+    driver: local
+    driver_opts:
+      type: cifs
+      device: "//192.168.3.67/public"
+      o: "username=sambashare,password=sambashare,uid=1000,gid=1000,file_mode=0777,dir_mode=0777"

@@ -1,0 +1,2 @@
+export http_proxy=${HTTP_PROXY_IP}
+export https_proxy=${HTTPS_PROXY_IP}

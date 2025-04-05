@@ -6,7 +6,7 @@
 #
 # Author: MrJamesLZAZ
 # Created: 2024-11-21
-# Last Modified: 2024-11-21
+# Last Modified: 2025-06-10
 #
 # Copyright (c) 2024 [Your Company/Name]
 # License: MIT
@@ -52,6 +52,7 @@ ARG DEBIAN_FRONTEND
 # Build Configuration (1 argument)
 # -----------------------------------------------------------------------------
 ARG DOCKER_BUILDKIT
+ARG BUILD_DATE
 
 # -----------------------------------------------------------------------------
 # Development Tools Configuration (13 arguments)
@@ -158,6 +159,13 @@ ARG TOOLCHAIN_DIR
 ARG SERVERSIDE_IMAGE_NAME
 ARG SERVERSIDE_CONTAINER_NAME
 ARG TOOLCHAIN_TARBALL_NAME  # Already added in Toolchain Offline Configuration
+
+# -----------------------------------------------------------------------------
+# Proxy Configuration
+# -----------------------------------------------------------------------------
+ARG HAS_PROXY
+ARG HTTP_PROXY_IP
+ARG HTTPS_PROXY_IP
 
 # Copy scripts
 COPY stage_1_base/scripts/setup_base.sh /tmp/
@@ -411,7 +419,6 @@ RUN echo -e "\n========= Stage 3rd Complete =========\n\n"
 # Copyright (c) 2024 [Your Company/Name]
 # License: MIT
 ################################################################################
-
 FROM stage_3rd_sdk AS stage_4th_template-processor
 
 RUN echo -e "\n========= Stage 4th =========\n\n"
@@ -455,6 +462,7 @@ RUN find /tmp/
 # Copy configuration scripts and templates
 COPY --from=stage_4th_template-processor /tmp/scripts/configure_env.sh /tmp/
 COPY --from=stage_4th_template-processor /tmp/configs/env_config.conf /tmp/
+COPY --from=stage_4th_template-processor /tmp/configs/proxy.sh /etc/profile.d/
 
 # Configure environment
 RUN chmod +x /tmp/configure_env.sh && \
@@ -521,7 +529,7 @@ FROM stage_5th_template-processor AS stage_5th_final
 # Labels
 LABEL maintainer="${PROJECT_MAINTAINER} <${PROJECT_EMAIL}>"
 LABEL build_date=$BUILD_DATE
-LABEL version=$VERSION
+LABEL version="${PROJECT_VERSION}"
 LABEL copyright="${PROJECT_COPYRIGHT}"
 LABEL license="${PROJECT_LICENSE}"
 LABEL released_date="${PROJECT_RELEASE_DATE}"

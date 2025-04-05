@@ -6,7 +6,7 @@
 #
 # Author: @MrJamesLZAZ
 # created date: 2024-11-28
-# last modified: 2024-12-03
+# last modified: 2025-06-10
 ################################################################################
 
 # set -e
@@ -28,10 +28,25 @@ main() {
     # echo "BUILD_SCRIPT_PATH=${BUILD_SCRIPT_PATH}"
     BUILD_SCRIPT_DIR="$(dirname ${BUILD_SCRIPT_PATH})"
     # echo "BUILD_SCRIPT_DIR=${BUILD_SCRIPT_DIR}"
+    TOP_ROOT_DIR="${BUILD_SCRIPT_DIR}"
+    TOP_CONFIGS_DIR="${TOP_ROOT_DIR}/configs"
+    HANDOVER_DIR="${TOP_ROOT_DIR}/project_handover"
+    # src env means they are the original files
+    PLATFORM_ENV_SRC_DIR="${TOP_CONFIGS_DIR}/platforms"
+    PLATFORM_ENV_SRC_PATH="${PLATFORM_ENV_SRC_DIR}/.env"
+    PLATFORM_INDEPENDENT_ENV_SRC_DIR="${TOP_CONFIGS_DIR}/platform-independent"
+    PLATFORM_INDEPENDENT_ENV_SRC_PATH="${PLATFORM_INDEPENDENT_ENV_SRC_DIR}/common.env"
+    # dest env means destination files, which are used for
+    PLATFORM_ENV_DEST_PATH="${HANDOVER_DIR}/.env"
+    PLATFORM_INDEPENDENT_ENV_DEST_PATH="${HANDOVER_DIR}/.env-independent"
+    ##################################################################
+    1_specify_platform || exit 1
 
-    echo "Loading environment variables from project_handover/.env"
+    source ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}
+    echo "Loading environment variables from ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}"
 
-    source ${BUILD_SCRIPT_DIR}/project_handover/.env
+    source ${PLATFORM_ENV_DEST_PATH}
+    echo "Loading environment variables from ${PLATFORM_ENV_DEST_PATH}"
 
     2_build_images || exit 1
 
@@ -83,6 +98,75 @@ prompt_with_timeout() {
 
     echo -e "\nProceeding with default action..."
     return 0
+}
+
+1_specify_platform(){
+    TARGET_DIR="${PLATFORM_ENV_SRC_DIR}"
+    declare -a platforms_array=()
+
+    while IFS= read -r -d '' file_path; do
+        filename="$(basename ${file_path})"
+        basename="${filename%.env}"
+
+        if [ -n ${basename} ];then
+            platforms_array+=(${basename})
+        fi
+
+    done < <(find ${TARGET_DIR} -maxdepth 1  -type f -name "*.env" -print0)
+
+    # echo ${platforms_array}
+    #-------------------------------------------------------
+    if [ "${#platforms_array[@]}" == "0" ];then
+        echo "No platforms exists, return now"
+        return -1
+    fi
+    echo
+    echo "Now we have below platforms:"
+    i=0
+    for platform in ${platforms_array[@]}; do
+        ((i++))
+        echo -e "  [${i}].${platform}"
+    done
+
+    # echo ${platforms_array[1]}
+    #-------------------------------------------------------
+    read -p "Please type the index your choice(e.g. if you wanna choose ${platforms_array[0]}, you can type 1):" user_type
+
+    platform_number="$((${#platforms_array[@]}))"
+    # echo "platform_number=${platform_number}"
+    if [ ${user_type} -lt 1 ] || [ ${user_type} -gt ${platform_number} ];then
+        echo "$user_type is not valid, plase input from 1 to ${platform_number}"
+        return -1
+    fi
+
+    target_platform="${platforms_array[((${user_type}-1))]}"
+    echo ${target_platform}
+    cd ${TOP_ROOT_DIR}
+
+    # 1st. create configs/platforms/.env
+    if [ -e ${PLATFORM_ENV_DEST_PATH} ];then
+        rm -f ${PLATFORM_ENV_DEST_PATH}
+    fi
+    ln -sf "${PLATFORM_ENV_SRC_DIR}/${target_platform}.env" "${PLATFORM_ENV_DEST_PATH}"
+
+    # # 2nd. create project_handover/.env
+    # if [ -e "${HANDOVER_DIR}/.env" ];then
+    #     rm -f "${HANDOVER_DIR}/.env"
+    # fi
+    # ln -sf "${PLATFORM_ENV_SRC_DIR}/${target_platform}.env" "${HANDOVER_DIR}/.env"
+
+    # 3rd. create project_handover/common.env
+    if [ -e ${PLATFORM_INDEPENDENT_ENV_DEST_PATH} ];then
+        rm -f ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}
+    fi
+    ln -sf ${PLATFORM_INDEPENDENT_ENV_SRC_PATH} ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}
+
+    ls -lha ${PLATFORM_ENV_DEST_PATH}
+    ls -lha ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}
+
+    echo
+    echo "--- Setup env files (${target_platform}) Successfully ---"
+    echo
 }
 
 ################################################################################
@@ -164,7 +248,7 @@ _build_images_serverside() {
     echo "Getting final image ID for ${IMAGE_NAME}:${LATEST_IMAGE_TAG}"
     FINAL_IMAGE_ID=$(docker images ${IMAGE_NAME}:${LATEST_IMAGE_TAG} -q)
     if [ -z "$FINAL_IMAGE_ID" ]; then
-        echo "Error: Failed to get final image ID"
+        echo "Error: Failed to get final image ID-${IMAGE_NAME}:${LATEST_IMAGE_TAG}"
         return 1
     fi
     echo "Final image ID: ${FINAL_IMAGE_ID}"

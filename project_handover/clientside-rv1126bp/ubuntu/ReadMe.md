@@ -9,6 +9,7 @@ project_handover/
 ├── ReadMe.md          # 本使用指南
 └── ubuntu_only_entrance.sh # 仅ubuntu系统使用的入口脚本
 └── .env 配置文件，包含docker image和container的重要环境变量
+└── common.env 平台无关配置文件，包含DockerDevEnv的版本/版权信息等重要环境变量
 ```
 
 ## 2.0 快速开始 (Quick Start)
@@ -30,7 +31,8 @@ sudo apt-get update
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
 
-### 2.2 允许http协议的docker镜像仓库
+### 2.2 调整仓库配置
+#### 2.2.1 允许http协议的docker镜像仓库(本条废弃,请使用2.2.2)
 ```bash
 sudo mkdir -p /etc/docker
 sudo vim /etc/docker/daemon.json
@@ -40,6 +42,13 @@ sudo vim /etc/docker/daemon.json
 {
   "insecure-registries": ["192.168.3.67:9000"]
 }
+```
+
+#### 2.2.2 复制https证书
+```bash
+sudo mkdir -p /etc/docker/certs.d/192.168.3.67:9000
+sudo cp ./harbor.crt /etc/docker/certs.d/192.168.3.67:9000/ca.crt
+sudo systemctl restart docker
 ```
 
 ### 2.3 下载docker镜像

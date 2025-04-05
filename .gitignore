@@ -63,3 +63,8 @@ docker/dev-env-serverside/*
 # Ignore all files in .vscode directory
 .vscode/*
 
+**/project_handover_*.tar*
+configs/platforms/.env
+project_handover/.env
+project_handover/.env-independent
+

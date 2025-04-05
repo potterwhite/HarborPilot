@@ -1,0 +1,53 @@
+
+#!/bin/bash
+
+func_1_0_setup_env(){
+    echo "Setup env Successfully"
+}
+
+func_2_0_verify(){
+    echo "Checking Git user configuration..."
+
+    # Check global git config first
+    local git_name=$(git config --global user.name)
+    local git_email=$(git config --global user.email)
+
+    # If still not set, prompt user for input
+    if [ -z "$git_name" ]; then
+        echo "Git user name is not configured."
+        read -p "Please enter your name: " input_name
+        if [ -z "$input_name" ]; then
+            echo "Error: Name cannot be empty"
+            return 1
+        fi
+        git config --global user.name "$input_name"
+        echo "Git user name set to: $input_name"
+    fi
+
+    if [ -z "$git_email" ]; then
+        echo "Git user email is not configured."
+        read -p "Please enter your email: " input_email
+        if [ -z "$input_email" ] || ! echo "$input_email" | grep -qE '^[^@]+@[^@]+\.[^@]+$'; then
+            echo "Error: Invalid email format"
+            return 1
+        fi
+        git config --global user.email "$input_email"
+        echo "Git user email set to: $input_email"
+    fi
+
+    git config --global color.ui true
+
+    return 0
+}
+
+main(){
+    func_1_0_setup_env || exit 1
+    func_2_0_verify || exit 1
+
+    echo
+    echo "Verify Git config Successfully"
+    echo
+
+}
+
+main "$@"
