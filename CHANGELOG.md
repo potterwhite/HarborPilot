@@ -5,9 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [01.0.2] - 2025-06-11
+### Improved
+- Node.js from 18.18.2 to 22.16.0 for vulnerability detect of trivy in harbor
+- docker inspect method so that it can avoid server`s rejection:
+```
+unknown: current image with "Pending" status of vulnerability scanning cannot be pulled due to configured policy in 'Prevent images with vulnerability severity of "Critical" or higher from running.'
+```
+
 ## [01.0.1] - 2025-06-10
 ### Added
 - support for rv1126bp platform
+- n8.env and offline.env in configs
 - verify_git_config.sh in /usr/local/bin
 - pull_sdk_by_repo.sh in /usr/local/bin
 - proxy.sh in /etc/profile.d/
@@ -185,3 +195,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [01.0.0]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v01.0.0
 
 [01.0.1]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v01.0.1
+
+[01.0.2]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v01.0.2
+

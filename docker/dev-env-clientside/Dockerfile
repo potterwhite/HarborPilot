@@ -207,9 +207,6 @@ RUN echo -e "Stage 1st completed!\n"
 # License: MIT
 ################################################################################
 
-# ARG IMAGE_NAME=embedded-dev
-# ARG IMAGE_NAME=${IMAGE_NAME}
-# ENV IMAGE_NAME=${IMAGE_NAME}
 # Use stage 1 as base
 FROM stage_1st_base AS stage_2nd_tools
 

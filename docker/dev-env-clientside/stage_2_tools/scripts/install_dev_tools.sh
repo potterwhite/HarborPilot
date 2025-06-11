@@ -240,7 +240,103 @@ sixth_install_kernel_tools() {
 # Seventh: Install Node.js development environment
 # Description: Setup Node.js using nvm or direct install based on region
 ###############################################################################
+# ###############################################################################
+# # Seventh: Install Node.js development environment
+# # Description: Setup Node.js using nvm with support for China mirrors.
+# #              This version is robust for non-interactive Docker build environments.
+# ###############################################################################
+# seventh_install_nodejs() {
+#     echo -e "\n\n++++++omgomgomg\n\n"
+#     local NVM_VERSION="v0.39.7"
+#     local NODE_VERSION="lts/*" # Install latest Long-Term Support version
+
+#     apt-get install -y curl
+#     echo
+#     # --- Setup nvm download URL based on mirror configuration ---
+#     if [ "${NPM_USE_CHINA_MIRROR}" = "true" ]; then
+#         echo "UUUUUUsing China mirror for nvm installation..."
+#         # Using a reliable Gitee mirror for nvm
+#         export NVM_DOWNLOAD_URL="https://gitee.com/mirrors/nvm/raw/${NVM_VERSION}/install.sh"
+#     else
+#         echo "Using official source for nvm installation..."
+#         export NVM_DOWNLOAD_URL="https://raw.githubusercontent.com/nvm-sh/nvm/v${NVM_VERSION}/install.sh"
+#     fi
+
+#     # --- Install nvm and Node.js for both root and the dev user ---
+#     # The DEV_USERNAME should be passed as an environment variable to the script
+#     # for user in "root" "${DEV_USERNAME}"; do
+#     for user in "${DEV_USERNAME}"; do
+#         local user_home
+#         if [ "$user" = "root" ]; then
+#             user_home="/root"
+#         else
+#             user_home="/home/${user}"
+#         fi
+
+#         if [ ! -d "$user_home" ]; then
+#             echo "Warning: Home directory ${user_home} for user ${user} not found. Skipping."
+#             continue
+#         fi
+
+#         echo ">>> Setting up Node.js for user: ${user}"
+#         echo "NVM_DOWNLOAD_URL=${NVM_DOWNLOAD_URL}"
+
+#         # 1. Install nvm under the target user's home directory
+#         #    The `bash -c` ensures the script is run by bash
+#         curl -o- "${NVM_DOWNLOAD_URL}" | su - "${user}" -c "bash"
+
+#         # 2. Define NVM_DIR for the scripts below
+#         local NVM_DIR="${user_home}/.nvm"
+#         echo "NVM_DIR=${NVM_DIR}"
+
+#         # 3. Create the command string to be executed by the user's shell
+#         #    This is the key fix: We explicitly source nvm.sh before using nvm commands.
+#         local install_cmd="
+#             export NVM_DIR='${NVM_DIR}';
+#             [ -s \"\$NVM_DIR/nvm.sh\" ] && \. \"\$NVM_DIR/nvm.sh\";
+
+#             echo 'Installing Node.js ${NODE_VERSION}...';
+#             nvm install '${NODE_VERSION}';
+
+#             echo 'Setting default Node.js version...';
+#             nvm alias default '${NODE_VERSION}';
+
+#             if [ '${NPM_USE_CHINA_MIRROR}' = 'true' ]; then
+#                 echo 'Configuring npm to use China mirror...';
+#                 npm config set registry https://registry.npmmirror.com;
+#             fi
+#         "
+
+#         # Execute the installation command string as the target user
+#         su - "${user}" -c "bash -c '${install_cmd}'"
+
+#         # 4. Append nvm configuration to the user's .bashrc for future interactive sessions
+#         #    This part ensures that when a user logs in, nvm is available.
+#         tee -a "${user_home}/.bashrc" > /dev/null << EOF
+
+# # --- NVM Configuration ---
+# export NVM_DIR="\$HOME/.nvm"
+# if [ "${NPM_USE_CHINA_MIRROR}" = "true" ]; then
+#     export NVM_NODEJS_ORG_MIRROR=https://npmmirror.com/mirrors/node
+# fi
+# [ -s "\$NVM_DIR/nvm.sh" ] && \. "\$NVM_DIR/nvm.sh"  # This loads nvm
+# [ -s "\$NVM_DIR/bash_completion" ] && \. "\$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+# EOF
+
+#         # 5. Verification step
+#         if ! su - "${user}" -c "bash -c 'source ${user_home}/.nvm/nvm.sh && node --version'"; then
+#             echo "Critical: Failed to verify Node.js installation for user ${user}. Exiting..."
+#             return 1
+#         fi
+
+#     done
+
+#     echo "Node.js environment setup completed successfully."
+#     return 0
+# }
+
 seventh_install_nodejs() {
+    # apt-get install -y curl
     # 根据环境变量决定使用哪个安装方法
     if [ "${NPM_USE_CHINA_MIRROR}" = "true" ]; then
         echo "Using China mirror for Node.js installation..."
@@ -278,11 +374,14 @@ EOF
 }
 
 # 中国区安装方法（使用国内镜像）
+# _with_CVE_2024_29415
 seventh_install_nodejs_china() {
+
     echo "Installing Node.js using China mirrors..."
 
     # 安装nodejs直接从国内镜像
-    curl -fsSL https://npmmirror.com/mirrors/node/v18.18.2/node-v18.18.2-linux-x64.tar.gz -o /tmp/node.tar.gz
+    # curl -fsSL https://npmmirror.com/mirrors/node/v18.18.2/node-v18.18.2-linux-x64.tar.gz -o /tmp/node.tar.gz
+    curl -fsSL https://registry.npmmirror.com/-/binary/node/v22.16.0/node-v22.16.0-linux-x64.tar.gz -o /tmp/node.tar.gz
 
     # 创建安装目录
     mkdir -p /usr/local/lib/nodejs

@@ -124,6 +124,7 @@ func_2_1_build_docker_image(){
     # Build the Docker image
     echo "Building ${IMAGE_NAME}:${PROJECT_VERSION}..."
     docker build \
+        --no-cache \
         "${BUILD_ARGS[@]}" \
         -t "${IMAGE_NAME}:${PROJECT_VERSION}" \
         -f "${BUILD_SCRIPT_DIR}/Dockerfile" \

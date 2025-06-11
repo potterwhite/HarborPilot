@@ -427,6 +427,52 @@ _push_and_verify_single_image() {
     echo -e "\n##############################\nPushing ${image_name}:${tag} to registry...\n##############################"
     echo "Executing: docker push ${full_image_name}"
 
+    local push_output
+    push_output="$(docker push "${full_image_name}" 2>&1)"
+
+    if [ "${push_output}" == "" ]; then
+        echo "✗ Error: Failed to push ${image_name}:${tag}"
+        return 1
+    else
+        echo "✓ ${image_name}:${tag} pushed successfully"
+    fi
+
+    #############################################################
+    # verify the image on the server
+    #############################################################
+
+    # echo -e "\nExecuting: docker manifest inspect --insecure ${full_image_name}"
+    # if docker manifest inspect --insecure "${full_image_name}" >/dev/null 2>&1; then
+    echo -e "\nExecuting: docker manifest inspect ${full_image_name}"
+    # docker manifest inspect "${full_image_name}"
+    local digest
+    # digest=$(echo "${push_output}" | grep "digest:" | awk '{print $2}')
+    digest=$(echo "${push_output}" | grep "digest:" | awk '{print $3}' )
+    # echo "push_output=${push_output}"
+    # echo
+    # echo "start"
+    # echo $(echo "${push_output}" | grep "digest:" | awk "$(print $2)")
+    # echo "end"
+    # echo
+    echo "digest=${digest}"
+    docker inspect "${full_image_name}@${digest}" 2>&1 > /dev/null
+    if [ $? -eq 0 ]; then
+        echo "✓ ${image_name}:${tag} inspected successfully"
+        return 0
+    else
+        echo "✗ Error: Failed to verify ${image_name}:${tag}"
+        return 1
+    fi
+}
+
+_push_and_verify_single_image_old() {
+    local image_name="$1"
+    local tag="$2"
+    local full_image_name="${REGISTRY_URL}/${image_name}:${tag}"
+
+    echo -e "\n##############################\nPushing ${image_name}:${tag} to registry...\n##############################"
+    echo "Executing: docker push ${full_image_name}"
+
     if ! docker push "${full_image_name}"; then
         echo "✗ Error: Failed to push ${image_name}:${tag}"
         return 1
@@ -436,8 +482,11 @@ _push_and_verify_single_image() {
     # verify the image on the server
     #############################################################
 
-    echo -e "\nExecuting: docker manifest inspect --insecure ${full_image_name}"
-    if docker manifest inspect --insecure "${full_image_name}" >/dev/null 2>&1; then
+    # echo -e "\nExecuting: docker manifest inspect --insecure ${full_image_name}"
+    # if docker manifest inspect --insecure "${full_image_name}" >/dev/null 2>&1; then
+    echo -e "\nExecuting: docker manifest inspect ${full_image_name}"
+    docker manifest inspect "${full_image_name}"
+    if [ $? -eq 0 ]; then
         echo "✓ ${image_name}:${tag} pushed successfully"
         return 0
     else
@@ -473,7 +522,6 @@ _push_and_verify_image() {
 #   0 on success, 1 on failure
 ################################################################################
 6_cleanup_images() {
-
 
     if prompt_with_timeout "Clean all mid-stage images?" 10; then
         echo -e "\n=== 5. Cleaning Up Intermediate Images ==="
