@@ -6,11 +6,11 @@
 #
 # Author: @MrJamesLZAZ
 # created date: 2024-11-28
-# last modified: 2025-06-10
+# last modified: 2025-06-29
 ################################################################################
 
 # set -e
-if [ "${V}" == "1" ];then
+if [ "${V}" == "1" ]; then
     set -x
 fi
 
@@ -33,14 +33,21 @@ main() {
     HANDOVER_DIR="${TOP_ROOT_DIR}/project_handover"
     # src env means they are the original files
     PLATFORM_ENV_SRC_DIR="${TOP_CONFIGS_DIR}/platforms"
-    PLATFORM_ENV_SRC_PATH="${PLATFORM_ENV_SRC_DIR}/.env"
+    # PLATFORM_ENV_SRC_PATH="${PLATFORM_ENV_SRC_DIR}/.env"
     PLATFORM_INDEPENDENT_ENV_SRC_DIR="${TOP_CONFIGS_DIR}/platform-independent"
     PLATFORM_INDEPENDENT_ENV_SRC_PATH="${PLATFORM_INDEPENDENT_ENV_SRC_DIR}/common.env"
+    HANDOVER_CLIENTSIDE_SRC_DIR="${HANDOVER_DIR}"
     # dest env means destination files, which are used for
     PLATFORM_ENV_DEST_PATH="${HANDOVER_DIR}/.env"
     PLATFORM_INDEPENDENT_ENV_DEST_PATH="${HANDOVER_DIR}/.env-independent"
+    HANDOVER_CLIENTSIDE_DEST_PATH="${HANDOVER_DIR}/clientside"
     ##################################################################
-    1_specify_platform || exit 1
+    while true; do
+        1_specify_platform
+        if [ $? -eq 0 ]; then
+            break
+        fi
+    done
 
     source ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}
     echo "Loading environment variables from ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}"
@@ -60,7 +67,7 @@ main() {
 
     local duration=$SECONDS
     echo -e "\n=== Build Process Completed Successfully ==="
-    echo "Total execution time: $((duration/3600))h $((duration%3600/60))m $((duration%60))s"
+    echo "Total execution time: $((duration / 3600))h $((duration % 3600 / 60))m $((duration % 60))s"
 }
 
 ################################################################################
@@ -83,7 +90,7 @@ prompt_with_timeout() {
 
     trap 'echo -e "\nSkipping..."; return 1' SIGINT
 
-    for ((i=timeout; i>0; i--)); do
+    for ((i = timeout; i > 0; i--)); do
         echo -ne "\rStarting in $i seconds... "
         read -t 1 -n 1 input
         if [ $? -eq 0 ]; then
@@ -100,7 +107,7 @@ prompt_with_timeout() {
     return 0
 }
 
-1_specify_platform(){
+1_specify_platform() {
     TARGET_DIR="${PLATFORM_ENV_SRC_DIR}"
     declare -a platforms_array=()
 
@@ -108,17 +115,17 @@ prompt_with_timeout() {
         filename="$(basename ${file_path})"
         basename="${filename%.env}"
 
-        if [ -n ${basename} ];then
+        if [ -n ${basename} ]; then
             platforms_array+=(${basename})
         fi
 
-    done < <(find ${TARGET_DIR} -maxdepth 1  -type f -name "*.env" -print0)
+    done < <(find ${TARGET_DIR} -maxdepth 1 -type f -name "*.env" -print0)
 
     # echo ${platforms_array}
     #-------------------------------------------------------
-    if [ "${#platforms_array[@]}" == "0" ];then
+    if [ "${#platforms_array[@]}" == "0" ]; then
         echo "No platforms exists, return now"
-        return -1
+        return 1
     fi
     echo
     echo "Now we have below platforms:"
@@ -134,17 +141,23 @@ prompt_with_timeout() {
 
     platform_number="$((${#platforms_array[@]}))"
     # echo "platform_number=${platform_number}"
-    if [ ${user_type} -lt 1 ] || [ ${user_type} -gt ${platform_number} ];then
-        echo "$user_type is not valid, plase input from 1 to ${platform_number}"
-        return -1
+
+    if ! [[ "${user_type}" =~ ^[0-9]+$ ]]; then
+        echo "✗ Error: Invalid input. Please enter a number."
+        return 1 # 使用 1 而不是 -1，更符合 shell 习惯
     fi
 
-    target_platform="${platforms_array[((${user_type}-1))]}"
+    if [ ${user_type} -lt 1 ] || [ ${user_type} -gt ${platform_number} ]; then
+        echo "$user_type is not valid, plase input from 1 to ${platform_number}"
+        return 1
+    fi
+
+    target_platform="${platforms_array[((${user_type} - 1))]}"
     echo ${target_platform}
     cd ${TOP_ROOT_DIR}
 
     # 1st. create configs/platforms/.env
-    if [ -e ${PLATFORM_ENV_DEST_PATH} ];then
+    if [ -e ${PLATFORM_ENV_DEST_PATH} ]; then
         rm -f ${PLATFORM_ENV_DEST_PATH}
     fi
     ln -sf "${PLATFORM_ENV_SRC_DIR}/${target_platform}.env" "${PLATFORM_ENV_DEST_PATH}"
@@ -156,13 +169,20 @@ prompt_with_timeout() {
     # ln -sf "${PLATFORM_ENV_SRC_DIR}/${target_platform}.env" "${HANDOVER_DIR}/.env"
 
     # 3rd. create project_handover/common.env
-    if [ -e ${PLATFORM_INDEPENDENT_ENV_DEST_PATH} ];then
+    if [ -e ${PLATFORM_INDEPENDENT_ENV_DEST_PATH} ]; then
         rm -f ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}
     fi
     ln -sf ${PLATFORM_INDEPENDENT_ENV_SRC_PATH} ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}
 
     ls -lha ${PLATFORM_ENV_DEST_PATH}
     ls -lha ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}
+
+    # 4th. create project_handover/client soft link
+    if [ -e ${HANDOVER_CLIENTSIDE_DEST_PATH} ]; then
+        rm -f ${HANDOVER_CLIENTSIDE_DEST_PATH}
+    fi
+    ln -sf "${HANDOVER_CLIENTSIDE_SRC_DIR}/clientside-${target_platform}" "${HANDOVER_CLIENTSIDE_DEST_PATH}"
+    ls -lha ${HANDOVER_CLIENTSIDE_DEST_PATH}
 
     echo
     echo "--- Setup env files (${target_platform}) Successfully ---"
@@ -174,7 +194,7 @@ prompt_with_timeout() {
 # Returns:
 #   0 on success, 1 on failure
 ################################################################################
-2_build_images(){
+2_build_images() {
     # Build is optional, other steps are mandatory
     if prompt_with_timeout "Build [ClientSide] images?" 10; then
         _build_images_clientside || exit 1
@@ -183,7 +203,7 @@ prompt_with_timeout() {
     fi
 
     # Build is optional, other steps are mandatory
-    if [ "${ENABLE_SERVERSIDE}" == "true" ];then
+    if [ "${ENABLE_SERVERSIDE}" == "true" ]; then
         if prompt_with_timeout \"Build [ServerSide] images?\" 10; then
             _build_images_serverside || exit 1
         else
@@ -203,12 +223,10 @@ _build_images_clientside() {
         "Final image:stage_5_final"
     )
 
-
     if ! ${BUILD_SCRIPT_DIR}/docker/dev-env-clientside/build.sh; then
         echo "Error: Failed to build $name"
         return 1
     fi
-
 
     # for stage in "${stages[@]}"; do
     #     local name="${stage%%:*}"
@@ -219,7 +237,6 @@ _build_images_clientside() {
     #         return 1
     #     fi
     # done
-
 
     return 0
 }
@@ -233,7 +250,6 @@ _build_images_serverside() {
 
     return 0
 }
-
 
 ################################################################################
 # 3. Prepare version information and store final image ID
@@ -259,7 +275,7 @@ _build_images_serverside() {
         FINAL_SERVERSIDE_IMAGE_ID=$(docker images ${SERVERSIDE_IMAGE_NAME}:${PROJECT_VERSION} -q)
         if [ -z "$FINAL_SERVERSIDE_IMAGE_ID" ]; then
             echo "Warning: No existing serverside image found with ID, this is normal for first push"
-            FINAL_SERVERSIDE_IMAGE_ID="not_found"  # 设置一个默认值，避免后续清理时出错
+            FINAL_SERVERSIDE_IMAGE_ID="not_found" # 设置一个默认值，避免后续清理时出错
         else
             echo "Final serverside image ID: ${FINAL_SERVERSIDE_IMAGE_ID}"
         fi
@@ -308,7 +324,7 @@ _tag_image_onair() {
     local is_local="${1}"
     local full_client_source="${IMAGE_NAME}:${tag_num}"
 
-    if [ "${is_local}" != "local" ];then
+    if [ "${is_local}" != "local" ]; then
         # 1.1 Tag client image with version number
         local full_target="${REGISTRY_URL}/${IMAGE_NAME}:${tag_num}"
 
@@ -319,7 +335,7 @@ _tag_image_onair() {
     fi
 
     # 1.2 Tag client image as tag latest
-    if [ "${is_local}" == "local" ];then
+    if [ "${is_local}" == "local" ]; then
         local full_target_latest="${IMAGE_NAME}:${tag_latest}"
     else
         local full_target_latest="${REGISTRY_URL}/${IMAGE_NAME}:${tag_latest}"
@@ -329,12 +345,11 @@ _tag_image_onair() {
         result=1
     fi
 
-
     if [[ "${ENABLE_SERVERSIDE}" == "true" ]]; then
         local full_server_source="${SERVERSIDE_IMAGE_NAME}:${tag_num}"
 
         # 2.1 Tag server image with version number
-        if [ "${is_local}" != "local" ];then
+        if [ "${is_local}" != "local" ]; then
             local full_server_target="${REGISTRY_URL}/${SERVERSIDE_IMAGE_NAME}:${tag_num}"
             if ! _tag_single_image "${full_server_source}" "${full_server_target}"; then
                 echo "✗ Error: Failed to tag server image ${full_server_source} as ${full_server_target}"
@@ -343,7 +358,7 @@ _tag_image_onair() {
         fi
 
         # 2.2 Tag server image as tag latest
-        if [ "${is_local}" == "local" ];then
+        if [ "${is_local}" == "local" ]; then
             local full_server_target_latest="${SERVERSIDE_IMAGE_NAME}:${tag_latest}"
         else
             local full_server_target_latest="${REGISTRY_URL}/${SERVERSIDE_IMAGE_NAME}:${tag_latest}"
@@ -370,7 +385,7 @@ _tag_image_onair() {
 
         # Tag images
         echo "Tagging images..."
-        if [ "${HAVE_HARBOR_SERVER}" == "TRUE" ];then
+        if [ "${HAVE_HARBOR_SERVER}" == "TRUE" ]; then
             _tag_image_onair "onair"
         else
             _tag_image_onair "local"
@@ -388,7 +403,7 @@ _tag_image_onair() {
 5_push_images() {
     local result="0"
 
-    if [ "${HAVE_HARBOR_SERVER}" == "TRUE" ];then
+    if [ "${HAVE_HARBOR_SERVER}" == "TRUE" ]; then
         if prompt_with_timeout "Push images to the registry?" 10; then
             echo -e "\n=== 4. Pushing Images ==="
 
@@ -427,42 +442,78 @@ _push_and_verify_single_image() {
     echo -e "\n##############################\nPushing ${image_name}:${tag} to registry...\n##############################"
     echo "Executing: docker push ${full_image_name}"
 
-    local push_output
-    push_output="$(docker push "${full_image_name}" 2>&1)"
-
-    if [ "${push_output}" == "" ]; then
+    # 1st stage: push image
+    if docker push "${full_image_name}"; then
+        # 如果 docker push 成功（退出码为 0），则执行这里的代码
+        echo "✓ ${image_name}:${tag} pushed successfully"
+    else
+        # 如果 docker push 失败（退出码为非 0），则执行这里的代码
         echo "✗ Error: Failed to push ${image_name}:${tag}"
         return 1
-    else
-        echo "✓ ${image_name}:${tag} pushed successfully"
     fi
+    #------------------------------------
+    # local push_output
+    # push_output="$(docker push "${full_image_name}" 2>&1)"
+
+    # if [ "${push_output}" == "" ]; then
+    #     echo "✗ Error: Failed to push ${image_name}:${tag}"
+    #     return 1
+    # else
+    #     echo "✓ ${image_name}:${tag} pushed successfully"
+    # fi
 
     #############################################################
     # verify the image on the server
     #############################################################
 
-    # echo -e "\nExecuting: docker manifest inspect --insecure ${full_image_name}"
-    # if docker manifest inspect --insecure "${full_image_name}" >/dev/null 2>&1; then
     echo -e "\nExecuting: docker manifest inspect ${full_image_name}"
-    # docker manifest inspect "${full_image_name}"
-    local digest
-    # digest=$(echo "${push_output}" | grep "digest:" | awk '{print $2}')
-    digest=$(echo "${push_output}" | grep "digest:" | awk '{print $3}' )
-    # echo "push_output=${push_output}"
-    # echo
-    # echo "start"
-    # echo $(echo "${push_output}" | grep "digest:" | awk "$(print $2)")
-    # echo "end"
-    # echo
-    echo "digest=${digest}"
-    docker inspect "${full_image_name}@${digest}" 2>&1 > /dev/null
-    if [ $? -eq 0 ]; then
-        echo "✓ ${image_name}:${tag} inspected successfully"
-        return 0
-    else
-        echo "✗ Error: Failed to verify ${image_name}:${tag}"
+
+    # 2nd stage: manifest
+    local manifest_output
+    manifest_output=$(docker manifest inspect "${full_image_name}")
+
+    if [ $? -ne 0 ]; then
+        echo "✗ Error: Failed to inspect manifest for ${image_name}:${tag}. Is it really in the registry?"
+        echo "Inspect output: ${manifest_output}"
         return 1
     fi
+
+    # 3rd stage: verify manifest output
+    local digest=$(echo "${manifest_output}" | jq -r '.config.digest')
+    # local digest=$(echo "${manifest_output}" | grep -o 'sha256:[a-f0-9]*' | head -n 1)
+
+    if [ -z "${digest}" ]; then
+        echo "✗ Error: Could not extract digest for ${image_name}:${tag} from manifest."
+        echo "Digest output: ${digest}"
+        return 1
+    fi
+
+    echo "Digest found: ${digest}"
+    echo "✓ ${image_name}:${tag} inspected successfully, digest is ${digest}"
+
+    #-------------------------------------------
+    # # echo -e "\nExecuting: docker manifest inspect --insecure ${full_image_name}"
+    # # if docker manifest inspect --insecure "${full_image_name}" >/dev/null 2>&1; then
+    # echo -e "\nExecuting: docker manifest inspect ${full_image_name}"
+    # # docker manifest inspect "${full_image_name}"
+    # local digest
+    # # digest=$(echo "${push_output}" | grep "digest:" | awk '{print $2}')
+    # digest=$(echo "${push_output}" | grep "digest:" | awk '{print $3}' )
+    # # echo "push_output=${push_output}"
+    # # echo
+    # # echo "start"
+    # # echo $(echo "${push_output}" | grep "digest:" | awk "$(print $2)")
+    # # echo "end"
+    # # echo
+    # echo "digest=${digest}"
+    # docker inspect "${full_image_name}@${digest}" 2>&1 > /dev/null
+    # if [ $? -eq 0 ]; then
+    #     echo "✓ ${image_name}:${tag} inspected successfully"
+    #     return 0
+    # else
+    #     echo "✗ Error: Failed to verify ${image_name}:${tag}"
+    #     return 1
+    # fi
 }
 
 _push_and_verify_single_image_old() {
@@ -538,8 +589,8 @@ _push_and_verify_image() {
         # done
         if [[ "${USE_REGISTRY_FILTER}" == "true" && -n "${REGISTRY_URL}" ]]; then
             # 有 REGISTRY_URL 时，排除 REGISTRY_URL 中的镜像
-            docker images | grep "${IMAGE_NAME}" | grep -v "${REGISTRY_URL}" | \
-            awk '{print $3}' | while read -r id; do
+            docker images | grep "${IMAGE_NAME}" | grep -v "${REGISTRY_URL}" |
+                awk '{print $3}' | while read -r id; do
                 if [ "$id" != "${FINAL_IMAGE_ID}" ]; then
                     echo "Removing image ID: $id"
                     docker rmi -f "$id" || true
@@ -547,8 +598,8 @@ _push_and_verify_image() {
             done
         else
             # 无 REGISTRY_URL 或不使用过滤时，直接清理所有中间镜像
-            docker images | grep "${IMAGE_NAME}" | \
-            awk '{print $3}' | while read -r id; do
+            docker images | grep "${IMAGE_NAME}" |
+                awk '{print $3}' | while read -r id; do
                 if [ "$id" != "${FINAL_IMAGE_ID}" ]; then
                     echo "Removing image ID: $id"
                     docker rmi -f "$id" || true
@@ -560,8 +611,8 @@ _push_and_verify_image() {
         if [[ "${ENABLE_SERVERSIDE}" == "true" ]]; then
             echo "Finding and removing intermediate images for ${SERVERSIDE_IMAGE_NAME}"
             echo "Keeping final serverside image ID: ${FINAL_SERVERSIDE_IMAGE_ID}"
-            docker images | grep "${SERVERSIDE_IMAGE_NAME}" | grep -v "$ {REGISTRY_URL}" | \
-            awk '{print $3}' | while read -r id; do
+            docker images | grep "${SERVERSIDE_IMAGE_NAME}" | grep -v "$ {REGISTRY_URL}" |
+                awk '{print $3}' | while read -r id; do
                 if [ "$id" != "$FINAL_SERVERSIDE_IMAGE_ID" ]; then
                     echo "Removing serverside image ID: $id"
                     docker rmi -f "$id" || true

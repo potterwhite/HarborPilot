@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.1.2] - 2025-06-30
+### Added
+- support for rk3568 as new platform which is 3rd of all
+- Introduced `SDK_VERSION` and `SDK_RELEASE_DATE` in `configs/platform-independent/common.env` to separate the SDK version from the main project (image) version.
+
+### Improved
+- Corrected the logic in the `_push_and_verify_single_image()` function to properly display `docker push` progress instead of suppressing it.
+- Enhanced the `1_specify_platform()` function with robust input validation to prevent errors when non-numeric values are entered.
+
+
 ## [01.0.2] - 2025-06-11
 ### Improved
 - Node.js from 18.18.2 to 22.16.0 for vulnerability detect of trivy in harbor
@@ -197,4 +207,3 @@ unknown: current image with "Pending" status of vulnerability scanning cannot be
 [01.0.1]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v01.0.1
 
 [01.0.2]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v01.0.2
-
