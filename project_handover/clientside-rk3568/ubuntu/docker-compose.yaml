@@ -1,8 +1,8 @@
 services:
   dev-env:
-    image: 192.168.3.67:9000/team_n8/n8-dev-env:latest
-    container_name: n8
-    hostname: n8
+    image: 192.168.3.67:9000/team_rk3568/rk3568-dev-env:latest
+    container_name: rk3568
+    hostname: rk3568
     user: "developer"
     restart: unless-stopped
     privileged: true
@@ -12,12 +12,12 @@ services:
     volumes:
       - /dev/ttyUSB0:/dev/ttyUSB0
       - /dev/bus/usb:/dev/bus/usb
-      - "/mnt/2tb_wd_purpleSurveillance_hdd/Development/docker/DockerDevEnv/project_handover/clientside-n8/ubuntu/../volumes:/development/docker_volumes"
+      - "/mnt/2tb_wd_purpleSurveillance_hdd/Development/docker/DockerDevEnv/project_handover/clientside-rk3568/ubuntu/../volumes:/development"
       - samba_public:/development/v_docs/usar-samba-public
 
     ports:
-      - "2109:22"
-      - "2345:2345"
+      - "2129:22"
+      - "2365:2345"
 
     environment:
       - TIMEZONE=Asia/Hong_Kong
