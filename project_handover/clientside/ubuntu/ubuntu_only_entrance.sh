@@ -370,6 +370,7 @@ Example:
 EOF
 }
 
+
 # Function to generate docker-compose configuration
 3_3_generate_compose_config() {
     cat << EOF > "${BUILD_SCRIPT_DIR}/docker-compose.yaml"
@@ -384,8 +385,10 @@ services:
     tty: true
     stdin_open: true
 
-    volumes:
+    devices:
       - /dev/ttyUSB0:/dev/ttyUSB0
+
+    volumes:
       - /dev/bus/usb:/dev/bus/usb
       - "${BUILD_SCRIPT_DIR}/../volumes:${VOLUMES_ROOT}"
       - samba_public:${WORKSPACE_5TH_DOCS_SUBDIR}/usar-samba-public
@@ -418,6 +421,54 @@ volumes:
       o: "username=${SAMBA_PUBLIC_ACCOUNT_NAME},password=${SAMBA_PUBLIC_ACCOUNT_PASSWORD},uid=${DEV_UID},gid=${DEV_GID},file_mode=0777,dir_mode=0777"
 EOF
 }
+# # Function to generate docker-compose configuration
+# 3_3_generate_compose_config() {
+#     cat << EOF > "${BUILD_SCRIPT_DIR}/docker-compose.yaml"
+# services:
+#   dev-env:
+#     image: ${FINAL_IMAGE_NAME}
+#     container_name: ${CONTAINER_NAME}
+#     hostname: ${CONTAINER_NAME}
+#     user: "${DEV_USERNAME}"
+#     restart: unless-stopped
+#     privileged: true
+#     tty: true
+#     stdin_open: true
+
+#     volumes:
+#       - /dev/ttyUSB0:/dev/ttyUSB0
+#       - /dev/bus/usb:/dev/bus/usb
+#       - "${BUILD_SCRIPT_DIR}/../volumes:${VOLUMES_ROOT}"
+#       - samba_public:${WORKSPACE_5TH_DOCS_SUBDIR}/usar-samba-public
+
+#     ports:
+#       - "${CLIENT_SSH_PORT}:22"
+#       - "${GDB_PORT}:2345"
+
+#     environment:
+#       - TIMEZONE=${TIMEZONE}
+#       - DISPLAY=${DISPLAY}
+#       - WORKSPACE_ENABLE_REMOTE_DEBUG=${WORKSPACE_ENABLE_REMOTE_DEBUG}
+#       - WORKSPACE_LOG_LEVEL=${WORKSPACE_LOG_LEVEL}
+
+#     working_dir: ${WORKSPACE_ROOT}
+
+#     networks:
+#       - dev-net
+
+# networks:
+#   dev-net:
+#     driver: bridge
+
+# volumes:
+#   samba_public:
+#     driver: local
+#     driver_opts:
+#       type: cifs
+#       device: "//${UBUNTU_SERVER_IP}/public"
+#       o: "username=${SAMBA_PUBLIC_ACCOUNT_NAME},password=${SAMBA_PUBLIC_ACCOUNT_PASSWORD},uid=${DEV_UID},gid=${DEV_GID},file_mode=0777,dir_mode=0777"
+# EOF
+# }
 
 # Function to check if container is running
 3_4_container_running() {

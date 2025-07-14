@@ -36,11 +36,9 @@ main() {
     # PLATFORM_ENV_SRC_PATH="${PLATFORM_ENV_SRC_DIR}/.env"
     PLATFORM_INDEPENDENT_ENV_SRC_DIR="${TOP_CONFIGS_DIR}/platform-independent"
     PLATFORM_INDEPENDENT_ENV_SRC_PATH="${PLATFORM_INDEPENDENT_ENV_SRC_DIR}/common.env"
-    HANDOVER_CLIENTSIDE_SRC_DIR="${HANDOVER_DIR}"
     # dest env means destination files, which are used for
     PLATFORM_ENV_DEST_PATH="${HANDOVER_DIR}/.env"
     PLATFORM_INDEPENDENT_ENV_DEST_PATH="${HANDOVER_DIR}/.env-independent"
-    HANDOVER_CLIENTSIDE_DEST_PATH="${HANDOVER_DIR}/clientside"
     ##################################################################
     while true; do
         1_specify_platform
@@ -54,6 +52,8 @@ main() {
 
     source ${PLATFORM_ENV_DEST_PATH}
     echo "Loading environment variables from ${PLATFORM_ENV_DEST_PATH}"
+
+    1_1_setup_volume_soft_link || exit 1
 
     2_build_images || exit 1
 
@@ -177,16 +177,29 @@ prompt_with_timeout() {
     ls -lha ${PLATFORM_ENV_DEST_PATH}
     ls -lha ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}
 
-    # 4th. create project_handover/client soft link
-    if [ -e ${HANDOVER_CLIENTSIDE_DEST_PATH} ]; then
-        rm -f ${HANDOVER_CLIENTSIDE_DEST_PATH}
-    fi
-    ln -sf "${HANDOVER_CLIENTSIDE_SRC_DIR}/clientside-${target_platform}" "${HANDOVER_CLIENTSIDE_DEST_PATH}"
-    ls -lha ${HANDOVER_CLIENTSIDE_DEST_PATH}
+    # # 4th. create project_handover/client soft link
+    # if [ -e ${HANDOVER_CLIENTSIDE_DEST_PATH} ]; then
+    #     rm -f ${HANDOVER_CLIENTSIDE_DEST_PATH}
+    # fi
+    # ln -sf "${HANDOVER_CLIENTSIDE_SRC_DIR}/clientside-${target_platform}" "${HANDOVER_CLIENTSIDE_DEST_PATH}"
+    # ls -lha ${HANDOVER_CLIENTSIDE_DEST_PATH}
 
     echo
     echo "--- Setup env files (${target_platform}) Successfully ---"
     echo
+}
+
+1_1_setup_volume_soft_link(){
+    VOLUME_SRC_DIR="${HOST_VOLUME_DIR}"
+    VOLUME_DEST_DIR="${HANDOVER_DIR}/clientside/volumes"
+
+    if [ ! -d ${VOLUME_SRC_DIR} ]; then
+        echo "fault: VOLUME_SRC_DIR=${VOLUME_SRC_DIR}, it is not exist"
+        exit 1
+    fi
+
+    ln -nsf ${VOLUME_SRC_DIR} ${VOLUME_DEST_DIR}
+    ls -lha ${VOLUME_DEST_DIR}
 }
 
 ################################################################################
