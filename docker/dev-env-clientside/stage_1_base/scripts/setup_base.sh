@@ -8,13 +8,20 @@
 #
 # Author: MrJamesLZAZ
 # Created: 2024-11-21
-# Last Modified: 2024-12-26
+# Last Modified: 2025-07-14
 #
 # Copyright (c) 2024 [Your Company/Name]
 # License: MIT
 ################################################################################
 
 set -e
+
+func_install_universe_repo() {
+    echo "Enabling universe repository"
+    apt-get update
+    apt-get install -y software-properties-common
+    add-apt-repository universe
+}
 
 ###############################################################################
 # Function: func_install_system_core
@@ -72,8 +79,15 @@ func_install_system_utils() {
         cpio \
         unzip \
         rsync \
-        bsdextrautils \
         gettext-base
+
+    echo "OS_VERSION = ${OS_VERSION}"
+    if [ "${OS_VERSION}" != "20.04" ]; then
+        apt-get install -y \
+            bsdextrautils
+
+        echo "install bsdextrautils"
+    fi
 }
 
 ###############################################################################
@@ -149,7 +163,7 @@ func_create_user() {
     echo "root:$DEV_USER_ROOT_PASSWORD" | chpasswd
 
     # Configure sudo access
-    echo $DEV_USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$DEV_USERNAME
+    echo $DEV_USERNAME ALL=\(root\) NOPASSWD:ALL >/etc/sudoers.d/$DEV_USERNAME
     chmod 0440 /etc/sudoers.d/$DEV_USERNAME
 }
 
@@ -209,6 +223,7 @@ main() {
     local args="$@"
     echo "Starting system setup with arguments: ${args}"
 
+    func_install_universe_repo
     func_install_essential_packages
     func_setup_locale
     func_create_user

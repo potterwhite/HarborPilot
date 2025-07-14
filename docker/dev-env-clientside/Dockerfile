@@ -6,13 +6,14 @@
 #
 # Author: MrJamesLZAZ
 # Created: 2024-11-21
-# Last Modified: 2025-06-10
+# Last Modified: 2025-07-14
 #
 # Copyright (c) 2024 [Your Company/Name]
 # License: MIT
 ################################################################################
+ARG OS_VERSION=22.04
 
-FROM ubuntu:22.04 AS stage_1st_base
+FROM ubuntu:${OS_VERSION} AS stage_1st_base
 
 RUN echo -e "\n========= Stage 1st =========\n\n"
 
@@ -36,6 +37,7 @@ ARG PROJECT_RELEASE_DATE
 # Base Configuration (12 arguments)
 # -----------------------------------------------------------------------------
 ARG PRODUCT_NAME
+ARG OS_VERSION
 ARG IMAGE_NAME
 ARG LATEST_IMAGE_TAG
 ARG CONTAINER_NAME

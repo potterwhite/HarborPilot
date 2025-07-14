@@ -6,9 +6,9 @@
 #
 # Author: MrJamesLZAZ
 # Created: 2024-11-21
-# Last Modified: 2025-06-10
+# Last Modified: 2025-07-14
 #
-# Copyright (c) 2024 Baytto
+# Copyright (c) 2024
 # License: MIT
 ################################################################################
 
@@ -55,11 +55,20 @@ second_install_dev_tools() {
         lldb \
         cppcheck \
         minicom
+
     # required by rv1126bp platform-kernel 6.1
     apt-get install -y \
         libmpc-dev \
-        libgmp-dev \
-        repo
+        libgmp-dev
+
+    echo "OS_VERSION = ${OS_VERSION}"
+    if [ "${OS_VERSION}" != "20.04" ]; then
+        apt-get install -y \
+            repo
+
+        echo "install repo"
+    fi
+
 }
 
 ###############################################################################
