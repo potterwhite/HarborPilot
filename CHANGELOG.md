@@ -5,8 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-07-26
+### Added
+- support for rv1126 as 4th platform
 
-## [1.1.2] - 2025-06-30
+## [1.2.1] - 2025-07-14
+### Fixed:
+- Corrected the `volumes:/dev/ttyUSB0:/dev/ttyUSB0` entry in docker-compose.yml to prevent the creation of a directory instead of a special file when `/dev/ttyUSB0` is missing (e.g., when no serial cable is plugged in).
+
+### Major Improvements:
+- Restructured `project_handover` to eliminate multiple `clientside-${platform-name}` instances. Now uses a single platform with a volume soft link pointing to different directories based on the current platform. The volume directory can be configured via the `${HOST_VOLUME_DIR}` environment variable in the platform's `.env` file.
+
+
+## [1.1.0] - 2025-06-30
 ### Added
 - support for rk3568 as new platform which is 3rd of all
 - Introduced `SDK_VERSION` and `SDK_RELEASE_DATE` in `configs/platform-independent/common.env` to separate the SDK version from the main project (image) version.
@@ -207,3 +218,7 @@ unknown: current image with "Pending" status of vulnerability scanning cannot be
 [01.0.1]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v01.0.1
 
 [01.0.2]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v01.0.2
+
+[1.2.1]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v1.2.1
+
+[1.3.0]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v1.3.0
