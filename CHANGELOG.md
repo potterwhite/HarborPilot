@@ -5,10 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.2] - 2025-07-31
+### Fixed
+- volumes dir not tracking the real path of "project_handover/clientside/volumes". Replaced soft symbolic link with realpath to ensure the container mounts the correct directory.
+
+Example: Before, a symlink like `/app/volumes -> /wrong/path` caused mounting issues. Now, using realpath resolves to the actual directory `/correct/path`, fixing the container's volume mount.
 
 ## [1.3.1] - 2025-07-29
-### Added
-- fixed rv1126`s port map conflict with n8
+### Fixed
+- rv1126`s port map conflict with n8
 
 ## [1.3.0] - 2025-07-26
 ### Added
@@ -229,3 +234,5 @@ unknown: current image with "Pending" status of vulnerability scanning cannot be
 [1.3.0]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v1.3.0
 
 [1.3.1]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v1.3.1
+
+[1.3.2]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v1.3.2

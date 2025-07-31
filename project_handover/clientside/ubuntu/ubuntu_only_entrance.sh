@@ -373,6 +373,11 @@ EOF
 
 # Function to generate docker-compose configuration
 3_3_generate_compose_config() {
+    # fix volumes dir not shift dynamically problem
+    # jul31.2025
+    local VOLUMES_DIR="$(realpath "${BUILD_SCRIPT_DIR}/../volumes")"
+    echo "VOLUMES_DIR=${VOLUMES_DIR}"
+
     cat << EOF > "${BUILD_SCRIPT_DIR}/docker-compose.yaml"
 services:
   dev-env:
@@ -390,7 +395,7 @@ services:
 
     volumes:
       - /dev/bus/usb:/dev/bus/usb
-      - "${BUILD_SCRIPT_DIR}/../volumes:${VOLUMES_ROOT}"
+      - "${VOLUMES_DIR}:${VOLUMES_ROOT}"
       - samba_public:${WORKSPACE_5TH_DOCS_SUBDIR}/usar-samba-public
 
     ports:
