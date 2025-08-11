@@ -88,9 +88,117 @@ Host container_n8
 ```
 
 ### 2.6 拉取sdk的代码
-    ```bash
-    pull_sdk.sh
-    ```
+#### a-使用git管理的代码库
+```bash
+pull_sdk.sh
+```
+
+#### b-使用repo(python)管理的代码库
+
+**复制下面这段代码到container中执行:**
+```bash
+sudo bash -c "
+#------------------------------------------------------------------------------
+# --- CONFIGURATION ---
+# All user-configurable variables are defined here for easy modification.
+#------------------------------------------------------------------------------
+
+# 1. The manifest URL for your project's source code.
+REPO_MANIFEST_URL='ssh://git@192.168.3.67/team_rk3568/rk356x-manifests.git'
+
+# 2. The download URL for the 'repo' tool itself. Using a mirror is recommended.
+REPO_TOOL_URL='https://mirrors.tuna.tsinghua.edu.cn/git/git-repo'
+
+# 3. The local directory path where the SDK will be downloaded.
+SDK_ROOT_PATH='/development/sdk'
+
+# 4. The non-root user who will own the files and run repo commands.
+TARGET_USER='developer'
+
+# 5. The number of parallel jobs for 'repo sync'.
+SYNC_JOBS=4
+
+#------------------------------------------------------------------------------
+# --- EXECUTION LOGIC ---
+# Do not modify below this line unless you know what you are doing.
+#------------------------------------------------------------------------------
+
+  SCRIPT_PATH=\"/tmp/setup_sdk.sh\"
+
+  tee \"\${SCRIPT_PATH}\" <<'EOF'
+#!/bin/bash
+set -e
+
+# These variables are passed in as arguments from the parent script.
+ARG_REPO_MANIFEST_URL=\"\$1\"
+ARG_REPO_TOOL_URL=\"\$2\"
+ARG_SDK_ROOT_PATH=\"\$3\"
+ARG_TARGET_USER=\"\$4\"
+ARG_SYNC_JOBS=\"\$5\"
+
+echo '--- (1/3) Running as root: Installing repo tool ---'
+REPO_PATH=\"/usr/local/bin/repo\"
+if [ ! -e \${REPO_PATH} ];then
+  echo \"Downloading repo tool from \${ARG_REPO_TOOL_URL}...\"
+  curl -L \"\${ARG_REPO_TOOL_URL}\" > \${REPO_PATH}
+else
+  echo \"\${REPO_PATH} already exists.\"
+fi
+chmod a+x \${REPO_PATH}
+echo \"Repo tool is ready at \${REPO_PATH}\"
+echo
+
+echo '--- (2/3) Creating SDK directory and setting ownership ---'
+mkdir -p \"\${ARG_SDK_ROOT_PATH}\"
+chown \"\${ARG_TARGET_USER}:\${ARG_TARGET_USER}\" \"\${ARG_SDK_ROOT_PATH}\" -R
+echo \"Directory \${ARG_SDK_ROOT_PATH} is ready for user \${ARG_TARGET_USER}.\"
+echo
+
+echo '--- (3/3) Switching to user developer to run repo commands... ---'
+sudo -u \"\${ARG_TARGET_USER}\" bash -c \"
+  set -e
+
+  echo 'Verifying user git and ssh config...'
+  verify_git_config.sh
+  verify_ssh_key.sh
+
+  cd \\\"\${ARG_SDK_ROOT_PATH}\\\"
+
+  if [ -d .repo ]; then
+    echo 'Directory .repo already exists. Skipping repo init/sync.'
+  else
+    echo 'Running repo init...'
+    # --- HERE IS THE FIX: Added --depth=1 to reduce server load ---
+    repo init --depth=1 -u \\\"\${ARG_REPO_MANIFEST_URL}\\\" --repo-url \\\"\${ARG_REPO_TOOL_URL}\\\" --no-repo-verify
+
+    echo \\\"Running repo sync with \${ARG_SYNC_JOBS} jobs...\\\"
+    repo sync -j\${ARG_SYNC_JOBS}
+  fi
+\"
+echo
+echo '--- SDK setup process completed successfully! ---'
+
+EOF
+
+  chmod +x \"\${SCRIPT_PATH}\"
+
+  echo
+  echo \"--- Executing the setup script now... ---\"
+  echo \"-------------------------------------------\"
+
+  # Execute the script, passing the configuration variables as arguments.
+  \"\${SCRIPT_PATH}\" \"\${REPO_MANIFEST_URL}\" \"\${REPO_TOOL_URL}\" \"\${SDK_ROOT_PATH}\" \"\${TARGET_USER}\" \"\${SYNC_JOBS}\"
+
+  echo \"-------------------------------------------\"
+  echo \"--- Script execution finished. Cleaning up... ---\"
+
+  rm \"\${SCRIPT_PATH}\"
+
+  echo \"--- Cleanup complete. Done. ---\"
+"
+```
+
+**具体使用哪一种方式,请咨询管理员或sdk开发者**
 
 
 ## 3.0 开发方式(Development Method)
