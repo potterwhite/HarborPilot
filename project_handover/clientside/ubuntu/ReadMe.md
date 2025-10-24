@@ -12,7 +12,7 @@ project_handover/
 ```
 
 ## 2.0 快速开始 (Quick Start)
-### 2.1 安装docker
+### 2.1 [On Host]安装docker
 ```bash
 # Add Docker's official GPG key:
 sudo apt-get update
@@ -31,7 +31,7 @@ sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plug
 ```
 
 ### 2.2 调整仓库配置
-#### 2.2.1 允许http协议的docker镜像仓库(本条废弃,请使用2.2.2)
+#### 2.2.1 [On Host]~~允许http协议的docker镜像仓库(因服务器已启用https,故本条废弃,请使用2.2.2)~~
 ```bash
 sudo mkdir -p /etc/docker
 sudo vim /etc/docker/daemon.json
@@ -43,17 +43,17 @@ sudo vim /etc/docker/daemon.json
 }
 ```
 
-#### 2.2.2 复制https证书
+#### 2.2.2 [On Host]复制https证书
 ```bash
 sudo mkdir -p /etc/docker/certs.d/192.168.3.67:9000
 sudo cp ./harbor.crt /etc/docker/certs.d/192.168.3.67:9000/ca.crt
 sudo systemctl restart docker
 ```
 
-### 2.3 下载docker镜像
-- 2.3.1 [Host下]联络管理员获得为您预备的Harbor系统的帐号密码（以下载docker镜像）
+### 2.3 [On Host]创建Container
+- 2.3.1 **联络管理员获得为您预备的Harbor系统的帐号密码**
 
-- 2.3.2 [Host下]
+- 2.3.2 [Host下]登陆Harbor
     ```bash
     docker login 192.168.3.67:9000
     ```
@@ -61,33 +61,48 @@ sudo systemctl restart docker
 
 - 2.3.3 [Host下]创建&进入您的容器Container
     ```bash
-    ./ubuntu_only_entrance.sh
+    ./ubuntu_only_entrance.sh start
     ```
+    该命令还支持包括-h在内的总共6种参数,可以自行查看
 
-## 2.4 配置ssh
+## *2.4 [On Host][可选]配置ssh*
+本配置是为了在host上方便登陆container,或使用IDE远程打开container中的文件时使用,若不配置,也可以登陆,只需要每次输入ip/user name/port即可.
+
 ```bash
 vim ~/.ssh/config
 ```
 
-添加到文件末尾
+- 添加到文件末尾
+- **记得"Port 2109"是n8专属的端口号, 当前使用的端口号得到project_handover tarball里面的.env下去寻找,目标字段是:"CLIENT_SSH_PORT"**
 ```bash
-Host container_n8
+Host container_${PRODUCT_NAME in .env}
         Hostname 127.0.0.1
-        Port 2109
+        Port ${CLIENT_SSH_PORT in .env}
         StrictHostKeyChecking no
         UserKnownHostsFile /dev/null
-        User developer
+        User ${DEV_USERNAME in .env}
 ```
 
-### 2.5 上传您的ssh key到您的gitlab帐号
+### 2.5 [On Host]上传您的ssh key到您的Gitlab帐号
 
-- 2.5.1 [Host下]联络管理员获得sdk 在内部服务器上的具有对git仓库访问权限的帐号和密码
-- 2.5.2 [Host下]您需要使用步骤2.2.1得到的账户和密码登陆内部gitlab服务器（参步骤2.2），上传您的ssh key（gitlab已完全禁止密码方式操作git仓库）
+- 2.5.1 联络管理员获得对Gitlab仓库具有访问权限的帐号和密码
+- 2.5.2 获得账户后, 打开Gitlab地址
 ```bash
     http://192.168.3.67
 ```
+- 2.5.3 上传您的ssh key(Gitlab已完全禁止密码方式操作git仓库)
 
-### 2.6 拉取sdk的代码
+### 2.6 [On Host]进入您的container
+- 2.6.1 在您的PC上进入container的控制台
+  ```bash
+  ssh container_${PRODUCT_NAME in .env}
+  # 或者
+  #./ubuntu_only_entrance.sh start
+  ```
+
+### 2.7 [On Container]拉取sdk的代码
+**当前sdk的repository有两种管理方式,因此就对应两种拉取方式. 而具体使用哪一种方式pull repo,请咨询管理员或sdk开发者**
+
 #### a-使用git管理的代码库
 ```bash
 pull_sdk.sh
@@ -168,8 +183,7 @@ sudo -u \"\${ARG_TARGET_USER}\" bash -c \"
     echo 'Directory .repo already exists. Skipping repo init/sync.'
   else
     echo 'Running repo init...'
-    # --- HERE IS THE FIX: Added --depth=1 to reduce server load ---
-    repo init --depth=1 -u \\\"\${ARG_REPO_MANIFEST_URL}\\\" --repo-url \\\"\${ARG_REPO_TOOL_URL}\\\" --no-repo-verify
+    repo init -u \\\"\${ARG_REPO_MANIFEST_URL}\\\" --repo-url \\\"\${ARG_REPO_TOOL_URL}\\\" --no-repo-verify
 
     echo \\\"Running repo sync with \${ARG_SYNC_JOBS} jobs...\\\"
     repo sync -j\${ARG_SYNC_JOBS}
@@ -198,28 +212,32 @@ EOF
 "
 ```
 
-**具体使用哪一种方式,请咨询管理员或sdk开发者**
-
+### 2.8 [On Host]记得修改您的账户密码
 
 ## 3.0 开发方式(Development Method)
-### 3.1 建议开发方式
+### 3.1 第一种:docker bind mount
+- 3.1.1 [Host下]您可以将Qt的项目代码放在挂载的volumes文件夹里
+
+  这个文件夹在容器中被挂载为在 *${VOLUMES_ROOT in .env}*
+  而在host上, volumes就在您project_handover解压目录下的clientside子目录中
+
+- 3.1.2 [Host下]打开Qt Creator，编写代码
+- 3.1.3 [`Container下`]用默认的`qmake`来生成Makefile,并`make`编译代码，获得二进制文件
+- 3.1.4 [Host下]之后您就可以开始您的开发了
+
+### 3.2 第二种:ssh协议
 - 透过ssh连接，直接将container内部的代码挂载到host上进行编辑
 ```bash
-mkdir -p ${HOME}/volumes/n8
-sshfs container_n8:/development ${HOME}/volumes/n8
-cd ${HOME}/volumes/n8
+mkdir -p ${HOME}/volumes/${PRODUCT_NAME in .env}
+sshfs container_${PRODUCT_NAME in .env}:/development ${HOME}/volumes/${PRODUCT_NAME in .env}
+cd ${HOME}/volumes/${PRODUCT_NAME in .env}
 nautilus . &
 ```
-
-### 3.2 第二种开发方式
-- 3.2.1 [Host下]您可以将Qt的项目代码放在该目录下的volumes文件夹里，这个文件夹在容器中被挂载为/development/docker_volumes
-- 3.2.2 [Host下]打开Qt Creator，编写代码
-- 3.2.3 [`Container下`]用默认的`qmake`来生成Makefile,并`make`编译代码，获得二进制文件
-- 3.2.4 [Host下]之后您就可以开始您的开发了
 
 ## 4.0 若干信息备注
 - 4.1 服务器地址 (Server Address):
     - 公司内部机房
+
 - 4.2 访问方式 (Access Method):
     - `192.168.3.67`
 
@@ -230,6 +248,6 @@ nautilus . &
     - 邮箱 (Email): `[baytoo_e_corp@hotmail.com]`
 
 - 4.5 版本信息 (Version Information)
-    - 版本号 (Version): `[v0.7.0]`
-    - 最后更新 (Last Released): `[2025-02-24]`
+    - 版本号 (Version): `[v1.3.4]`
+    - 最后更新 (Last Released): `[2025-08-14]`
 
