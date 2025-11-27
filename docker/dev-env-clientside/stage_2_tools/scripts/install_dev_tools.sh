@@ -56,19 +56,25 @@ second_install_dev_tools() {
         cppcheck \
         minicom
 
-    # required by rv1126bp platform-kernel 6.1
-    apt-get install -y \
-        libmpc-dev \
-        libgmp-dev
+    if [ ${PRODUCT_NAME} == "rv1126bp" ];then
+        # required by rv1126bp platform-kernel 6.1
+        apt-get install -y \
+            libmpc-dev \
+            libgmp-dev
+    fi
 
     echo "OS_VERSION = ${OS_VERSION}"
     if [ "${OS_VERSION}" != "20.04" ]; then
-        apt-get install -y \
-            repo
-
-        echo "install repo"
+        apt-get install -y repo 
+    else
+        # -----------------------------------------
+        # add libicu for rk3568 build process of the sdk
+        # date: nov27.2025
+        # author: James
+        # -----------------------------------------
+        apt-get install -y libicu-dev
     fi
-
+    echo "install repo"
 }
 
 ###############################################################################
