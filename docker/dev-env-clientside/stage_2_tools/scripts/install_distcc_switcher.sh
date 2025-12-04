@@ -69,8 +69,8 @@ lv2_func_setup_environment() {
     # Distcc behavior control
     #------------------------------------------------------------------------------
     # Performance settings
-    RW_BAYTTO_INTERNAL_SERVER_URL="${DISTCC_PORT:+${UBUNTU_SERVER_IP:+${UBUNTU_SERVER_IP}:${DISTCC_PORT}}}"
-    RW_DISTCC_HOSTS="\${RW_BAYTTO_INTERNAL_SERVER_URL:-localhost/2}"
+    RW_INTERNAL_SERVER_URL="${DISTCC_PORT:+${UBUNTU_SERVER_IP:+${UBUNTU_SERVER_IP}:${DISTCC_PORT}}}"
+    RW_DISTCC_HOSTS="\${RW_INTERNAL_SERVER_URL:-localhost/2}"
     RW_DISTCC_PATH="\${PATH}"
 
     RW_CROSS_TOOLCHAIN_DIR="${SDK_INSTALL_PATH:+${SDK_INSTALL_PATH}/prebuilts/gcc/linux-x86/aarch64/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin}"

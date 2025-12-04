@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2025-12-04
+- add rk3568-ubuntu22 as fifth platform
+
 ## [1.3.5] - 2025-11-27
 - add libicu-dev for rk3568
 
@@ -206,48 +209,50 @@ unknown: current image with "Pending" status of vulnerability scanning cannot be
 - Secure environment variable handling
 - Minimized container attack surface
 
-[0.5.0]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.0
+[0.5.0]: https://github.com/potterwhite/HarborPilot/releases/tag/v0.5.0
 
-[0.5.1]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.1
+[0.5.1]: https://github.com/potterwhite/HarborPilot/releases/tag/v0.5.1
 
-[0.5.3]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.3
+[0.5.3]: https://github.com/potterwhite/HarborPilot/releases/tag/v0.5.3
 
-[0.5.4]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.4
+[0.5.4]: https://github.com/potterwhite/HarborPilot/releases/tag/v0.5.4
 
-[0.5.5]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.5
+[0.5.5]: https://github.com/potterwhite/HarborPilot/releases/tag/v0.5.5
 
-[0.5.6]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.6
+[0.5.6]: https://github.com/potterwhite/HarborPilot/releases/tag/v0.5.6
 
-[0.5.7]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.6
+[0.5.7]: https://github.com/potterwhite/HarborPilot/releases/tag/v0.5.6
 
-[0.5.7.1]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.7.1
+[0.5.7.1]: https://github.com/potterwhite/HarborPilot/releases/tag/v0.5.7.1
 
-[0.5.8]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.8
+[0.5.8]: https://github.com/potterwhite/HarborPilot/releases/tag/v0.5.8
 
-[0.5.9]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.5.9
+[0.5.9]: https://github.com/potterwhite/HarborPilot/releases/tag/v0.5.9
 
-[0.6.1]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.6.1
+[0.6.1]: https://github.com/potterwhite/HarborPilot/releases/tag/v0.6.1
 
-[0.6.2]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.6.2
+[0.6.2]: https://github.com/potterwhite/HarborPilot/releases/tag/v0.6.2
 
-[0.7.0]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v0.7.0
+[0.7.0]: https://github.com/potterwhite/HarborPilot/releases/tag/v0.7.0
 
-[01.0.0]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v01.0.0
+[01.0.0]: https://github.com/potterwhite/HarborPilot/releases/tag/v01.0.0
 
-[01.0.1]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v01.0.1
+[01.0.1]: https://github.com/potterwhite/HarborPilot/releases/tag/v01.0.1
 
-[01.0.2]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v01.0.2
+[01.0.2]: https://github.com/potterwhite/HarborPilot/releases/tag/v01.0.2
 
-[1.2.1]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v1.2.1
+[1.2.1]: https://github.com/potterwhite/HarborPilot/releases/tag/v1.2.1
 
-[1.3.0]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v1.3.0
+[1.3.0]: https://github.com/potterwhite/HarborPilot/releases/tag/v1.3.0
 
-[1.3.1]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v1.3.1
+[1.3.1]: https://github.com/potterwhite/HarborPilot/releases/tag/v1.3.1
 
-[1.3.2]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v1.3.2
+[1.3.2]: https://github.com/potterwhite/HarborPilot/releases/tag/v1.3.2
 
-[1.3.3]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v1.3.3
+[1.3.3]: https://github.com/potterwhite/HarborPilot/releases/tag/v1.3.3
 
-[1.3.4]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v1.3.4
+[1.3.4]: https://github.com/potterwhite/HarborPilot/releases/tag/v1.3.4
 
-[1.3.5]: https://github.com/potterwhite/DockerDevEnvTemplate/releases/tag/v1.3.5
+[1.3.5]: https://github.com/potterwhite/HarborPilot/releases/tag/v1.3.5
+
+[1.4.0]: https://github.com/potterwhite/HarborPilot/releases/tag/v1.4.0

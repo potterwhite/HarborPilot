@@ -9,3 +9,6 @@
 
 # Port No. of rv1126 is n8`s num plus 30.
 #   e.g. n8-port-2145 and rv1126-port-2175
+
+# Port No. of rk3568-ubuntu22 is n8`s num plus 40.
+#   e.g. n8-port-2145 and rk3568-ubuntu22-port-2185
