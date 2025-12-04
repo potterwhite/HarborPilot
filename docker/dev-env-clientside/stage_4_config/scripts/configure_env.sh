@@ -4,7 +4,7 @@
 # Description: Environment configuration script
 #              Sets up environment variables and user configurations
 #
-# Author: MrJamesLZAZ
+# Author: PotterWhite
 # Created: 2024-11-21
 # Last Modified: 2024-11-21
 #

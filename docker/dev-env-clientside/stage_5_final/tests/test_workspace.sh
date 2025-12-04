@@ -4,7 +4,7 @@
 # Description: Test script for workspace setup verification
 #              Validates workspace directory structure and permissions
 #
-# Author: MrJamesLZAZ
+# Author: PotterWhite
 # Created: 2024-11-21
 # Last Modified: 2024-11-21
 #

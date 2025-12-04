@@ -4,7 +4,7 @@
 # Description: OpenCV installation script
 #              Installs OpenCV and its dependencies
 #
-# Author: MrJamesLZAZ
+# Author: PotterWhite
 # Created: 2024-11-21
 # Last Modified: 2024-11-21
 #

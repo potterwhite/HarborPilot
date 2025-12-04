@@ -12,9 +12,9 @@
 #       Finally, it will prompt the user to commit and push the changes.
 #
 #
-# Created by: @MrJamesLZAZ.1811783168@qq.com
+# Created by: @PotterWhite.themanuknowwhom@outlook.com
 # Created at: 2024-11-27
-# Modified by: @MrJamesLZAZ.1811783168@qq.com
+# Modified by: @PotterWhite.themanuknowwhom@outlook.com
 # Modified at: 2024-11-27
 ###############################################################################
 

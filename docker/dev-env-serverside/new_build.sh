@@ -371,7 +371,7 @@ func_2_6_pull_toolchains_prepration(){
 ################################################################################
 # Script Name: ${TEMP_PULL_TOOLCHAIN_SCRIPT_FILE}
 # Description: Pull Toolchains from git repository with safety checks
-# Author: @MrJamesLZAZ
+# Author: @PotterWhite
 # Date: 2025-02-14
 # Usage: ${TEMP_PULL_TOOLCHAIN_SCRIPT_FILE} [-h|--help] [branch_name]
 # Note: This script is generated from template with environment variables
@@ -628,7 +628,7 @@ func_2_7_verify_sshkey_script_preparation() {
 ################################################################################
 # Script Name: ${TEMP_VERIFY_SSH_KEY_SCRIPT_FILE}
 # Description: Verify and initialize SSH keys for repository access
-# Author: @MrJamesLZAZ
+# Author: @PotterWhite
 # Date: 2025-02-14
 # Usage: source ${TEMP_VERIFY_SSH_KEY_SCRIPT_FILE}
 # Returns: 0 on success, 1 on failure

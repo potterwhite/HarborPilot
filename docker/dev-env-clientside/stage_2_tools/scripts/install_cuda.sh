@@ -4,7 +4,7 @@
 # Description: CUDA installation script
 #              Installs CUDA toolkit and dependencies
 #
-# Author: MrJamesLZAZ
+# Author: PotterWhite
 # Created: 2024-11-21
 # Last Modified: 2024-11-21
 #

@@ -4,7 +4,7 @@
 # Description: Base stage Dockerfile for embedded development environment
 #              Sets up the fundamental Ubuntu system with essential packages
 #
-# Author: MrJamesLZAZ
+# Author: PotterWhite
 # Created: 2024-11-21
 # Last Modified: 2025-07-14
 #
@@ -201,7 +201,7 @@ RUN echo -e "Stage 1st completed!\n"
 # Description: Development tools stage Dockerfile
 #              Installs development tools and utilities for embedded development
 #
-# Author: MrJamesLZAZ
+# Author: PotterWhite
 # Created: 2024-11-21
 # Last Modified: 2024-11-21
 #
@@ -312,7 +312,7 @@ RUN echo -e "\n========= Stage 2nd Complete =========\n\n"
 # Description: SDK installation stage Dockerfile
 #              Installs and configures embedded development SDK
 #
-# Author: MrJamesLZAZ
+# Author: PotterWhite
 # Created: 2024-11-21
 # Last Modified: 2024-11-28
 #
@@ -411,7 +411,7 @@ RUN echo -e "\n========= Stage 3rd Complete =========\n\n"
 # Description: Configuration stage Dockerfile
 #              Configures environment variables and system settings
 #
-# Author: MrJamesLZAZ
+# Author: PotterWhite
 # Created: 2024-11-21
 # Last Modified: 2024-11-28
 #
@@ -483,7 +483,7 @@ RUN echo -e "\n========= Stage 4th Complete =========\n\n"
 # Description: Final stage Dockerfile for embedded development environment
 #              Integrates all previous stages and finalizes the setup
 #
-# Author: MrJamesLZAZ
+# Author: PotterWhite
 # Created: 2024-11-21
 # Last Modified: 2024-11-28
 #

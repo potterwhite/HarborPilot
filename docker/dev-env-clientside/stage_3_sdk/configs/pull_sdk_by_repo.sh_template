@@ -2,7 +2,7 @@
 ################################################################################
 # Script Name: pull_sdk_by_repo.sh
 # Description: Pull SDK from multi small git repos with repo
-# Author: @MrJamesLZAZ
+# Author: @PotterWhite
 # Date: 2024-11-28
 # Last Modified: 2025-06-10
 # Usage: pull_sdk_by_repo.sh

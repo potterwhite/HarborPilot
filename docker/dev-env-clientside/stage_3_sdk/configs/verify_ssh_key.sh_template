@@ -2,7 +2,7 @@
 ################################################################################
 # Script Name: verify_ssh_key.sh
 # Description: Verify and initialize SSH keys for SDK repository access
-# Author: @MrJamesLZAZ
+# Author: @PotterWhite
 # Date: 2024-11-28
 # Usage: source verify_ssh_key.sh
 # Returns: 0 on success, 1 on failure

@@ -5,7 +5,7 @@
 # Description: Build script for the embedded development environment
 #              Builds Docker image for all stages and products
 #
-# Author: MrJamesLZAZ
+# Author: PotterWhite
 # Created: 2024-11-21
 # Last Modified: 2025-02-21
 #

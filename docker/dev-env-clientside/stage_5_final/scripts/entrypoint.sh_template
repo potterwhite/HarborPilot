@@ -6,7 +6,7 @@
 # Description: Container entrypoint script
 #              Handles container initialization and startup procedures
 #
-# Author: MrJamesLZAZ
+# Author: PotterWhite
 # Created: 2024-11-21
 # Last Modified: 2024-11-21
 #

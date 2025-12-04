@@ -4,7 +4,7 @@
 # Description: Build multi-stage Docker image and push to registry
 # Usage: ./build-dev-env.sh
 #
-# Author: @MrJamesLZAZ
+# Author: @PotterWhite
 # created date: 2024-11-28
 # last modified: 2025-06-29
 ################################################################################

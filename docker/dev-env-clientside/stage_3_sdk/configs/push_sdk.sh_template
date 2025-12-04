@@ -2,7 +2,7 @@
 ################################################################################
 # Script Name: push_sdk.sh
 # Description: Push SDK changes to git repository with safety checks
-# Author: @MrJamesLZAZ
+# Author: @PotterWhite
 # Date: 2024-11-28
 # Usage: ./push_sdk.sh [-h|--help] [branch_name] [commit_message]
 # Note: This script is generated from template with environment variables
