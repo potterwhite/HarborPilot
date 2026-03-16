@@ -396,7 +396,6 @@ services:
     volumes:
       - /dev/bus/usb:/dev/bus/usb
       - "${VOLUMES_DIR}:${VOLUMES_ROOT}"
-      - samba_public:${WORKSPACE_5TH_DOCS_SUBDIR}/usar-samba-public
 
     ports:
       - "${CLIENT_SSH_PORT}:22"
@@ -407,6 +406,18 @@ services:
       - DISPLAY=${DISPLAY}
       - WORKSPACE_ENABLE_REMOTE_DEBUG=${WORKSPACE_ENABLE_REMOTE_DEBUG}
       - WORKSPACE_LOG_LEVEL=${WORKSPACE_LOG_LEVEL}
+
+      # ** NVIDIA **
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+
+    deploy:
+        resources:
+            reservations:
+            devices:
+                - driver: nvidia
+                  count: all
+                  capabilities: [gpu]
 
     working_dir: ${WORKSPACE_ROOT}
 
