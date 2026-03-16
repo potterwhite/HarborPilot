@@ -144,7 +144,7 @@ prompt_with_timeout() {
 
     if ! [[ "${user_type}" =~ ^[0-9]+$ ]]; then
         echo "✗ Error: Invalid input. Please enter a number."
-        return 1 # 使用 1 而不是 -1，更符合 shell 习惯
+        return 1
     fi
 
     if [ ${user_type} -lt 1 ] || [ ${user_type} -gt ${platform_number} ]; then
@@ -282,13 +282,13 @@ _build_images_serverside() {
     fi
     echo "Final image ID: ${FINAL_IMAGE_ID}"
 
-    # 添加服务端镜像ID获取
+    # Get serverside image ID
     if [[ "${ENABLE_SERVERSIDE}" == "true" ]]; then
         echo "Getting serverside image ID for ${SERVERSIDE_IMAGE_NAME}:${PROJECT_VERSION}"
         FINAL_SERVERSIDE_IMAGE_ID=$(docker images ${SERVERSIDE_IMAGE_NAME}:${PROJECT_VERSION} -q)
         if [ -z "$FINAL_SERVERSIDE_IMAGE_ID" ]; then
             echo "Warning: No existing serverside image found with ID, this is normal for first push"
-            FINAL_SERVERSIDE_IMAGE_ID="not_found" # 设置一个默认值，避免后续清理时出错
+            FINAL_SERVERSIDE_IMAGE_ID="not_found"
         else
             echo "Final serverside image ID: ${FINAL_SERVERSIDE_IMAGE_ID}"
         fi
@@ -457,10 +457,8 @@ _push_and_verify_single_image() {
 
     # 1st stage: push image
     if docker push "${full_image_name}"; then
-        # 如果 docker push 成功（退出码为 0），则执行这里的代码
         echo "✓ ${image_name}:${tag} pushed successfully"
     else
-        # 如果 docker push 失败（退出码为非 0），则执行这里的代码
         echo "✗ Error: Failed to push ${image_name}:${tag}"
         return 1
     fi
@@ -563,13 +561,13 @@ _push_and_verify_image() {
     local tag="$1"
     local result=0
 
-    # 推送客户端镜像
+    # Push client image
     if ! _push_and_verify_single_image "${IMAGE_NAME}" "${tag}"; then
         echo "✗ Error: Failed to push/verify client image"
         result=1
     fi
 
-    # 如果启用了服务端，推送服务端镜像
+    # Push server image if enabled
     if [[ "${ENABLE_SERVERSIDE}" == "true" ]]; then
         if ! _push_and_verify_single_image "${SERVERSIDE_IMAGE_NAME}" "${tag}"; then
             echo "✗ Error: Failed to push/verify server image"
@@ -590,49 +588,43 @@ _push_and_verify_image() {
     if prompt_with_timeout "Clean all mid-stage images?" 10; then
         echo -e "\n=== 5. Cleaning Up Intermediate Images ==="
 
-        # 清理客户端镜像
+        # Cleanup client images
         echo "Finding and removing intermediate images for ${IMAGE_NAME}"
         echo "Keeping final image ID: ${FINAL_IMAGE_ID}"
-        # docker images | grep "${IMAGE_NAME}" | grep -v "${REGISTRY_URL}" | \
-        # awk '{print $3}' | while read -r id; do
-        #     if [ "$id" != "$FINAL_IMAGE_ID" ]; then
-        #         echo "Removing image ID: $id"
-        #         docker rmi -f "$id" || true
-        #     fi
-        # done
+
+        local final_id="${FINAL_IMAGE_ID}"
         if [[ "${USE_REGISTRY_FILTER}" == "true" && -n "${REGISTRY_URL}" ]]; then
-            # 有 REGISTRY_URL 时，排除 REGISTRY_URL 中的镜像
-            docker images | grep "${IMAGE_NAME}" | grep -v "${REGISTRY_URL}" |
-                awk '{print $3}' | while read -r id; do
-                if [ "$id" != "${FINAL_IMAGE_ID}" ]; then
+            docker images --format '{{.Repository}}:{{.Tag}} {{.ID}}' | grep "${IMAGE_NAME}" | grep -v "${REGISTRY_URL}" |
+                awk '{print $2}' | sort -u | while read -r id; do
+                if [ "$id" != "${final_id}" ] && [ -n "$id" ]; then
                     echo "Removing image ID: $id"
-                    docker rmi -f "$id" || true
+                    docker rmi -f "$id" 2>/dev/null || true
                 fi
             done
         else
-            # 无 REGISTRY_URL 或不使用过滤时，直接清理所有中间镜像
-            docker images | grep "${IMAGE_NAME}" |
-                awk '{print $3}' | while read -r id; do
-                if [ "$id" != "${FINAL_IMAGE_ID}" ]; then
+            docker images --format '{{.Repository}}:{{.Tag}} {{.ID}}' | grep "${IMAGE_NAME}" |
+                awk '{print $2}' | sort -u | while read -r id; do
+                if [ "$id" != "${final_id}" ] && [ -n "$id" ]; then
                     echo "Removing image ID: $id"
-                    docker rmi -f "$id" || true
+                    docker rmi -f "$id" 2>/dev/null || true
                 fi
             done
         fi
 
-        # 清理服务端镜像
+        # Cleanup serverside images
         if [[ "${ENABLE_SERVERSIDE}" == "true" ]]; then
             echo "Finding and removing intermediate images for ${SERVERSIDE_IMAGE_NAME}"
             echo "Keeping final serverside image ID: ${FINAL_SERVERSIDE_IMAGE_ID}"
-            docker images | grep "${SERVERSIDE_IMAGE_NAME}" | grep -v "$ {REGISTRY_URL}" |
-                awk '{print $3}' | while read -r id; do
-                if [ "$id" != "$FINAL_SERVERSIDE_IMAGE_ID" ]; then
+            local server_final_id="${FINAL_SERVERSIDE_IMAGE_ID}"
+            docker images --format '{{.Repository}}:{{.Tag}} {{.ID}}' | grep "${SERVERSIDE_IMAGE_NAME}" | grep -v "${REGISTRY_URL}" |
+                awk '{print $2}' | sort -u | while read -r id; do
+                if [ "$id" != "${server_final_id}" ] && [ -n "$id" ]; then
                     echo "Removing serverside image ID: $id"
-                    docker rmi -f "$id" || true
+                    docker rmi -f "$id" 2>/dev/null || true
                 fi
             done
         fi
-    fi # end of if [ prompt_with_timeout "Clean all mid-stage images?" 10 ];then
+    fi
 
     return 0
 }

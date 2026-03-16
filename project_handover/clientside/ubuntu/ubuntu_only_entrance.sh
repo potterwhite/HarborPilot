@@ -376,7 +376,26 @@ EOF
     # fix volumes dir not shift dynamically problem
     # jul31.2025
     local VOLUMES_DIR="$(realpath "${BUILD_SCRIPT_DIR}/../volumes")"
-    echo "VOLUMES_DIR=${VOLUMES_DIR}"
+    # echo "VOLUMES_DIR=${VOLUMES_DIR}"
+
+    # using nvidia gpu or not
+    local tmp_use="${USE_NVIDIA_GPU,,:-false}"
+    local COMPOSE_GPU_SETTING=""
+    if [ x"${tmp_use}" == x"true" ];then
+        COMPOSE_GPU_SETTING=$(cat << 'GPU_EOF'
+    deploy:
+        resources:
+            reservations:
+                devices:
+                    - driver: nvidia
+                      count: all
+                      capabilities: [gpu]
+GPU_EOF
+)
+        echo "NVIDIA GPU Support: ENABLED"
+    else
+        echo "NVIDIA GPU Support: DISABLED"
+    fi
 
     cat << EOF > "${BUILD_SCRIPT_DIR}/docker-compose.yaml"
 services:
@@ -411,14 +430,7 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
 
-    deploy:
-        resources:
-            reservations:
-            devices:
-                - driver: nvidia
-                  count: all
-                  capabilities: [gpu]
-
+${COMPOSE_GPU_SETTING}
     working_dir: ${WORKSPACE_ROOT}
 
     networks:
