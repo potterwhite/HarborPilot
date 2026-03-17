@@ -383,6 +383,7 @@ EOF
     local COMPOSE_GPU_SETTING=""
     if [ x"${tmp_use}" == x"true" ];then
         COMPOSE_GPU_SETTING=$(cat << 'GPU_EOF'
+    shm_size: 8g
     deploy:
         resources:
             reservations:
