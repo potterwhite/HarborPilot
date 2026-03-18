@@ -7,10 +7,19 @@
 #
 # Author: PotterWhite
 # Created: 2024-11-21
-# Last Modified: 2025-02-21
+# Last Modified: 2026-03-18
 #
 # Copyright (c) 2024 [Your Company/Name]
 # License: MIT
+#
+# Three-Layer Config Loading Order:
+#   Layer 1: configs/defaults/*.env  — global defaults (all platforms inherit)
+#   Layer 2: configs/platform-independent/common.env  — project constants
+#   Layer 3: configs/platforms/<platform>.env  — platform-specific overrides
+#
+# The .env and .env-independent symlinks in project_handover/ still work as
+# before; build.sh now also loads all defaults first so platform files only
+# need to declare what differs.
 ################################################################################
 
 func_1_1_setup_env(){
@@ -27,50 +36,106 @@ func_1_1_setup_env(){
     SCRIPT_DIR="${LIBS_DIR}/iv_scripts"
     UTILS_DIR="${LIBS_DIR}/v_utils"
     TOP_ROOT_DIR="$(dirname "${DOCKER_DIR}")"
+    CONFIGS_DIR="${TOP_ROOT_DIR}/configs"
+    DEFAULTS_DIR="${CONFIGS_DIR}/defaults"
     HANDOVER_DIR="${TOP_ROOT_DIR}/project_handover"
     PLATFORM_ENV_PATH="${HANDOVER_DIR}/.env"
     PLATFORM_INDEPENDENT_ENV_PATH="${HANDOVER_DIR}/.env-independent"
 
     echo "BUILD_SCRIPT_PATH: ${BUILD_SCRIPT_PATH}"
-    echo "BUILD_SCRIPT_DIR: ${BUILD_SCRIPT_DIR}"
-    echo "CLIENTSIDE_DIR: ${CLIENTSIDE_DIR}"
-    echo "DOCKER_DIR: ${DOCKER_DIR}"
-    echo "LIBS_DIR: ${LIBS_DIR}"
-    echo "PRODUCT_SPECIFIC_DIR: ${PRODUCT_SPECIFIC_DIR}"
-    echo "CONFIG_DIR: ${CONFIG_DIR}"
-    echo "SCRIPT_DIR: ${SCRIPT_DIR}"
-    echo "UTILS_DIR: ${UTILS_DIR}"
-    echo "TOP_ROOT_DIR: ${TOP_ROOT_DIR}"
-    echo "HANDOVER_DIR: ${HANDOVER_DIR}"
-    echo "PLATFORM_INDEPENDENT_ENV_PATH: ${PLATFORM_INDEPENDENT_ENV_PATH}"
+    echo "BUILD_SCRIPT_DIR:  ${BUILD_SCRIPT_DIR}"
+    echo "TOP_ROOT_DIR:      ${TOP_ROOT_DIR}"
+    echo "CONFIGS_DIR:       ${CONFIGS_DIR}"
+    echo "DEFAULTS_DIR:      ${DEFAULTS_DIR}"
+    echo "HANDOVER_DIR:      ${HANDOVER_DIR}"
 
-    # PLATFORM_INDEPENDENT_ENV_PATH
-    if [ -e "${PLATFORM_INDEPENDENT_ENV_PATH}" ] ; then
+    # ------------------------------------------------------------------
+    # Layer 1: Global defaults — source every file under configs/defaults/
+    #          Order: base → build → tools → workspace → registry → sdk
+    #                 → volumes → samba → runtime → serverside → proxy
+    # ------------------------------------------------------------------
+    echo "--- Layer 1: Loading defaults ---"
+    for defaults_file in \
+        "${DEFAULTS_DIR}/base.env" \
+        "${DEFAULTS_DIR}/build.env" \
+        "${DEFAULTS_DIR}/tools.env" \
+        "${DEFAULTS_DIR}/workspace.env" \
+        "${DEFAULTS_DIR}/registry.env" \
+        "${DEFAULTS_DIR}/sdk.env" \
+        "${DEFAULTS_DIR}/volumes.env" \
+        "${DEFAULTS_DIR}/samba.env" \
+        "${DEFAULTS_DIR}/runtime.env" \
+        "${DEFAULTS_DIR}/serverside.env" \
+        "${DEFAULTS_DIR}/proxy.env"
+    do
+        if [ -f "${defaults_file}" ]; then
+            echo "  source ${defaults_file}"
+            source "${defaults_file}"
+        else
+            echo "  Warning: defaults file not found, skipping: ${defaults_file}"
+        fi
+    done
+
+    # ------------------------------------------------------------------
+    # Layer 2: Project constants (version, maintainer, etc.)
+    # ------------------------------------------------------------------
+    echo "--- Layer 2: Loading platform-independent common.env ---"
+    echo "  PLATFORM_INDEPENDENT_ENV_PATH: ${PLATFORM_INDEPENDENT_ENV_PATH}"
+    if [ -e "${PLATFORM_INDEPENDENT_ENV_PATH}" ]; then
         source "${PLATFORM_INDEPENDENT_ENV_PATH}"
     else
-        echo "Fatal: ${PLATFORM_INDEPENDENT_ENV_PATH} and not found, exit"
-        # exit 1
+        echo "Fatal: ${PLATFORM_INDEPENDENT_ENV_PATH} not found, exit"
+        exit 1
     fi
 
-    echo "PLATFORM_ENV_PATH: ${PLATFORM_ENV_PATH}"
-    # PLATFORM_ENV_PATH
-    if [ -e "${PLATFORM_ENV_PATH}" ] ; then
+    # ------------------------------------------------------------------
+    # Layer 3: Platform-specific overrides (only what differs from defaults)
+    # ------------------------------------------------------------------
+    echo "--- Layer 3: Loading platform overrides ---"
+    echo "  PLATFORM_ENV_PATH: ${PLATFORM_ENV_PATH}"
+    if [ -e "${PLATFORM_ENV_PATH}" ]; then
         source "${PLATFORM_ENV_PATH}"
     else
-        echo "Fatal: ${PLATFORM_ENV_PATH} and not found, using defaults"
-        # exit 1
+        echo "Fatal: ${PLATFORM_ENV_PATH} not found, exit"
+        exit 1
     fi
 
     BUILD_DATE="$(TZ=$TIMEZONE date +"%Y-%m-%dT%H:%M:%S%z")"
 
-    # Collect all .env variables for build args
-    # Note: Only include variables used in Dockerfile
-    env_files=("${PLATFORM_INDEPENDENT_ENV_PATH}" "${PLATFORM_ENV_PATH}") # 替换为你的文件路径
-    for file in "${env_files[@]}"; do
+    # ------------------------------------------------------------------
+    # Collect final (post-override) variable values as Docker build args.
+    # We scan all three layers' files to get the superset of variable names,
+    # then read each variable's current (resolved) value from the environment.
+    # ------------------------------------------------------------------
+    BUILD_ARGS=()
+    declare -A _seen_vars  # deduplicate variable names
+
+    all_env_files=(
+        "${DEFAULTS_DIR}/base.env"
+        "${DEFAULTS_DIR}/build.env"
+        "${DEFAULTS_DIR}/tools.env"
+        "${DEFAULTS_DIR}/workspace.env"
+        "${DEFAULTS_DIR}/registry.env"
+        "${DEFAULTS_DIR}/sdk.env"
+        "${DEFAULTS_DIR}/volumes.env"
+        "${DEFAULTS_DIR}/samba.env"
+        "${DEFAULTS_DIR}/runtime.env"
+        "${DEFAULTS_DIR}/serverside.env"
+        "${DEFAULTS_DIR}/proxy.env"
+        "${PLATFORM_INDEPENDENT_ENV_PATH}"
+        "${PLATFORM_ENV_PATH}"
+    )
+
+    for file in "${all_env_files[@]}"; do
         if [ -f "$file" ]; then
             while IFS='=' read -r name _; do
-                [[ -z "$name" || "$name" =~ ^# ]] && continue
-                value=$(eval echo "\$$name")
+                # Skip blank lines, comments, and already-seen vars
+                [[ -z "$name" || "$name" =~ ^[[:space:]]*# ]] && continue
+                name="${name%%[[:space:]]*}"  # strip trailing whitespace
+                [[ -z "$name" ]] && continue
+                [[ -n "${_seen_vars[$name]+set}" ]] && continue
+                _seen_vars[$name]=1
+                value=$(eval echo "\$$name" 2>/dev/null || true)
                 if [ -n "$value" ]; then
                     BUILD_ARGS+=(--build-arg "$name=$value")
                 fi
@@ -81,17 +146,6 @@ func_1_1_setup_env(){
     done
 
     BUILD_ARGS+=(--build-arg "BUILD_DATE=${BUILD_DATE}")
-
-    ################################
-    # BUILD_ARGS=()
-    # while IFS='=' read -r name _; do
-    #     [[ -z "$name" || "$name" =~ ^# ]] && continue
-    #     # Skip if value is empty or not needed in Dockerfile
-    #     value=$(eval echo "\$$name")
-    #     if [ -n "$value" ]; then
-    #         BUILD_ARGS+=(--build-arg "$name=$value")
-    #     fi
-    # done < "${FILE_ENV_PATH}"
 
     # Add additional build options
     BUILD_ARGS+=(

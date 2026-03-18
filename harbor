@@ -416,9 +416,10 @@ _tag_image_onair() {
 5_push_images() {
     local result="0"
 
+    echo -e "\n=== 4. Pushing Images ==="
+
     if [ "${HAVE_HARBOR_SERVER}" == "TRUE" ]; then
         if prompt_with_timeout "Push images to the registry?" 10; then
-            echo -e "\n=== 4. Pushing Images ==="
 
             # Push images only if tagging was successful
             echo "Pushing images..."
@@ -435,6 +436,8 @@ _tag_image_onair() {
         else
             echo "Push stages skipped."
         fi
+    else
+        echo -e "\n**[Skip]Because of HAVE_HARBOR_SERVER is not \"TRUE\"=${HAVE_HARBOR_SERVER}!, the image pushing has been Skipped.**"
     fi
 
     return ${result}
