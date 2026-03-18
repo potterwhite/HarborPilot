@@ -47,11 +47,40 @@ main() {
         fi
     done
 
-    source ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}
-    echo "Loading environment variables from ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}"
+    # ------------------------------------------------------------------
+    # Layer 1: Global defaults — must be sourced FIRST so later layers
+    #          can override individual values
+    # ------------------------------------------------------------------
+    DEFAULTS_DIR="${TOP_CONFIGS_DIR}/defaults"
+    for defaults_file in \
+        "${DEFAULTS_DIR}/01_base.env" \
+        "${DEFAULTS_DIR}/02_build.env" \
+        "${DEFAULTS_DIR}/03_tools.env" \
+        "${DEFAULTS_DIR}/04_workspace.env" \
+        "${DEFAULTS_DIR}/05_registry.env" \
+        "${DEFAULTS_DIR}/06_sdk.env" \
+        "${DEFAULTS_DIR}/07_volumes.env" \
+        "${DEFAULTS_DIR}/08_samba.env" \
+        "${DEFAULTS_DIR}/09_runtime.env" \
+        "${DEFAULTS_DIR}/10_serverside.env" \
+        "${DEFAULTS_DIR}/11_proxy.env"
+    do
+        if [ -f "${defaults_file}" ]; then
+            source "${defaults_file}"
+        else
+            echo "Warning: defaults file not found, skipping: ${defaults_file}"
+        fi
+    done
 
-    source ${PLATFORM_ENV_DEST_PATH}
+    # Layer 2: Project constants (version, maintainer …)
+    echo "Loading environment variables from ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}"
+    source ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}
+
+    # Layer 3: Platform-specific overrides (only what differs from defaults)
     echo "Loading environment variables from ${PLATFORM_ENV_DEST_PATH}"
+    source ${PLATFORM_ENV_DEST_PATH}
+
+    0_check_registry_login || exit 1
 
     1_1_setup_volume_soft_link || exit 1
 
@@ -68,6 +97,8 @@ main() {
     local duration=$SECONDS
     echo -e "\n=== Build Process Completed Successfully ==="
     echo "Total execution time: $((duration / 3600))h $((duration % 3600 / 60))m $((duration % 60))s"
+
+    _print_next_steps
 }
 
 ################################################################################
@@ -107,7 +138,94 @@ prompt_with_timeout() {
     return 0
 }
 
-1_specify_platform() {
+################################################################################
+# 0. Pre-flight: verify docker registry login
+# If HAVE_HARBOR_SERVER is TRUE, ensure the user is authenticated to the
+# registry before we waste time building an image we cannot push.
+# Returns:
+#   0 if login is not required, or login is already valid
+#   1 if user failed / declined to login
+################################################################################
+0_check_registry_login() {
+    if [ "${HAVE_HARBOR_SERVER}" != "TRUE" ]; then
+        echo "[Registry] HAVE_HARBOR_SERVER is not TRUE — skipping login check."
+        return 0
+    fi
+
+    echo -e "\n[Registry] Checking Docker login status for ${REGISTRY_URL%%/*} ..."
+
+    # docker login stores credentials; a quick 'docker login --password-stdin'
+    # with an empty string fails fast without creds — so we use a catalog probe.
+    # Simplest reliable check: attempt to inspect any token by calling
+    # 'docker system info' is not helpful here, so we rely on the stored
+    # credentials file check + a registry ping.
+    local registry_host="${UBUNTU_SERVER_IP}:${UBUNTU_SERVER_PORT}"
+
+    # Check if credentials exist in docker config
+    if docker login "${registry_host}" --username "" --password "" 2>&1 | grep -q "Authenticating with existing credentials"; then
+        echo "[Registry] Already authenticated to ${registry_host}."
+        return 0
+    fi
+
+    # Credentials either missing or invalid — ask user to login now
+    echo ""
+    echo "  ╔══════════════════════════════════════════════════════════════════╗"
+    echo "  ║  ACTION REQUIRED: Docker registry login                         ║"
+    echo "  ║                                                                  ║"
+    echo "  ║  You must log in to the Harbor registry before building,         ║"
+    echo "  ║  otherwise the push step will fail.                              ║"
+    echo "  ║                                                                  ║"
+    echo "  ║  Registry: ${registry_host}"
+    echo "  ║                                                                  ║"
+    echo "  ║  Run:  docker login ${registry_host}                             ║"
+    echo "  ╚══════════════════════════════════════════════════════════════════╝"
+    echo ""
+    read -p "  Press ENTER to run 'docker login ${registry_host}' now, or Ctrl+C to abort: "
+
+    if docker login "${registry_host}"; then
+        echo "[Registry] Login successful."
+        return 0
+    else
+        echo "[Registry] Login failed. Aborting build."
+        return 1
+    fi
+}
+
+################################################################################
+# Print next steps after a successful build
+################################################################################
+_print_next_steps() {
+    local clientside_script="${BUILD_SCRIPT_DIR}/project_handover/clientside/ubuntu/ubuntu_only_entrance.sh"
+
+    echo ""
+    echo "  ╔══════════════════════════════════════════════════════════════════╗"
+    echo "  ║                  BUILD COMPLETE — NEXT STEPS                    ║"
+    echo "  ╠══════════════════════════════════════════════════════════════════╣"
+    echo "  ║                                                                  ║"
+    echo "  ║  Image  : ${IMAGE_NAME}:${PROJECT_VERSION}"
+    echo "  ║  Platform: ${PRODUCT_NAME}"
+    echo "  ║                                                                  ║"
+    echo "  ║  To start your development container (Ubuntu host):              ║"
+    echo "  ║                                                                  ║"
+    echo "  ║    ${clientside_script}"
+    echo "  ║                                                                  ║"
+    echo "  ║  Supported commands:                                             ║"
+    echo "  ║    start     — create and start the container                    ║"
+    echo "  ║    stop      — stop the running container                        ║"
+    echo "  ║    restart   — restart the container                             ║"
+    echo "  ║    recreate  — remove and recreate the container                 ║"
+    echo "  ║    remove    — stop and remove the container                     ║"
+    echo "  ║                                                                  ║"
+    echo "  ║  Example:                                                        ║"
+    echo "  ║    ./project_handover/clientside/ubuntu/ubuntu_only_entrance.sh start"
+    echo "  ║                                                                  ║"
+    echo "  ╠══════════════════════════════════════════════════════════════════╣"
+    echo "  ║  ⚠  DEPRECATED (no longer maintained):                          ║"
+    echo "  ║     • Serverside (distcc) — serverside_only_entrance.sh         ║"
+    echo "  ║     • Windows client      — windows support has been dropped    ║"
+    echo "  ╚══════════════════════════════════════════════════════════════════╝"
+    echo ""
+}
     TARGET_DIR="${PLATFORM_ENV_SRC_DIR}"
     declare -a platforms_array=()
 
@@ -144,7 +262,7 @@ prompt_with_timeout() {
 
     if ! [[ "${user_type}" =~ ^[0-9]+$ ]]; then
         echo "✗ Error: Invalid input. Please enter a number."
-        return 1 # 使用 1 而不是 -1，更符合 shell 习惯
+        return 1
     fi
 
     if [ ${user_type} -lt 1 ] || [ ${user_type} -gt ${platform_number} ]; then
@@ -282,13 +400,13 @@ _build_images_serverside() {
     fi
     echo "Final image ID: ${FINAL_IMAGE_ID}"
 
-    # 添加服务端镜像ID获取
+    # Get serverside image ID
     if [[ "${ENABLE_SERVERSIDE}" == "true" ]]; then
         echo "Getting serverside image ID for ${SERVERSIDE_IMAGE_NAME}:${PROJECT_VERSION}"
         FINAL_SERVERSIDE_IMAGE_ID=$(docker images ${SERVERSIDE_IMAGE_NAME}:${PROJECT_VERSION} -q)
         if [ -z "$FINAL_SERVERSIDE_IMAGE_ID" ]; then
             echo "Warning: No existing serverside image found with ID, this is normal for first push"
-            FINAL_SERVERSIDE_IMAGE_ID="not_found" # 设置一个默认值，避免后续清理时出错
+            FINAL_SERVERSIDE_IMAGE_ID="not_found"
         else
             echo "Final serverside image ID: ${FINAL_SERVERSIDE_IMAGE_ID}"
         fi
@@ -416,9 +534,10 @@ _tag_image_onair() {
 5_push_images() {
     local result="0"
 
+    echo -e "\n=== 4. Pushing Images ==="
+
     if [ "${HAVE_HARBOR_SERVER}" == "TRUE" ]; then
         if prompt_with_timeout "Push images to the registry?" 10; then
-            echo -e "\n=== 4. Pushing Images ==="
 
             # Push images only if tagging was successful
             echo "Pushing images..."
@@ -435,6 +554,8 @@ _tag_image_onair() {
         else
             echo "Push stages skipped."
         fi
+    else
+        echo -e "\n**[Skip]Because of HAVE_HARBOR_SERVER is not \"TRUE\"=${HAVE_HARBOR_SERVER}!, the image pushing has been Skipped.**"
     fi
 
     return ${result}
@@ -457,10 +578,8 @@ _push_and_verify_single_image() {
 
     # 1st stage: push image
     if docker push "${full_image_name}"; then
-        # 如果 docker push 成功（退出码为 0），则执行这里的代码
         echo "✓ ${image_name}:${tag} pushed successfully"
     else
-        # 如果 docker push 失败（退出码为非 0），则执行这里的代码
         echo "✗ Error: Failed to push ${image_name}:${tag}"
         return 1
     fi
@@ -563,13 +682,13 @@ _push_and_verify_image() {
     local tag="$1"
     local result=0
 
-    # 推送客户端镜像
+    # Push client image
     if ! _push_and_verify_single_image "${IMAGE_NAME}" "${tag}"; then
         echo "✗ Error: Failed to push/verify client image"
         result=1
     fi
 
-    # 如果启用了服务端，推送服务端镜像
+    # Push server image if enabled
     if [[ "${ENABLE_SERVERSIDE}" == "true" ]]; then
         if ! _push_and_verify_single_image "${SERVERSIDE_IMAGE_NAME}" "${tag}"; then
             echo "✗ Error: Failed to push/verify server image"
@@ -590,49 +709,43 @@ _push_and_verify_image() {
     if prompt_with_timeout "Clean all mid-stage images?" 10; then
         echo -e "\n=== 5. Cleaning Up Intermediate Images ==="
 
-        # 清理客户端镜像
+        # Cleanup client images
         echo "Finding and removing intermediate images for ${IMAGE_NAME}"
         echo "Keeping final image ID: ${FINAL_IMAGE_ID}"
-        # docker images | grep "${IMAGE_NAME}" | grep -v "${REGISTRY_URL}" | \
-        # awk '{print $3}' | while read -r id; do
-        #     if [ "$id" != "$FINAL_IMAGE_ID" ]; then
-        #         echo "Removing image ID: $id"
-        #         docker rmi -f "$id" || true
-        #     fi
-        # done
+
+        local final_id="${FINAL_IMAGE_ID}"
         if [[ "${USE_REGISTRY_FILTER}" == "true" && -n "${REGISTRY_URL}" ]]; then
-            # 有 REGISTRY_URL 时，排除 REGISTRY_URL 中的镜像
-            docker images | grep "${IMAGE_NAME}" | grep -v "${REGISTRY_URL}" |
-                awk '{print $3}' | while read -r id; do
-                if [ "$id" != "${FINAL_IMAGE_ID}" ]; then
+            docker images --format '{{.Repository}}:{{.Tag}} {{.ID}}' | grep "${IMAGE_NAME}" | grep -v "${REGISTRY_URL}" |
+                awk '{print $2}' | sort -u | while read -r id; do
+                if [ "$id" != "${final_id}" ] && [ -n "$id" ]; then
                     echo "Removing image ID: $id"
-                    docker rmi -f "$id" || true
+                    docker rmi -f "$id" 2>/dev/null || true
                 fi
             done
         else
-            # 无 REGISTRY_URL 或不使用过滤时，直接清理所有中间镜像
-            docker images | grep "${IMAGE_NAME}" |
-                awk '{print $3}' | while read -r id; do
-                if [ "$id" != "${FINAL_IMAGE_ID}" ]; then
+            docker images --format '{{.Repository}}:{{.Tag}} {{.ID}}' | grep "${IMAGE_NAME}" |
+                awk '{print $2}' | sort -u | while read -r id; do
+                if [ "$id" != "${final_id}" ] && [ -n "$id" ]; then
                     echo "Removing image ID: $id"
-                    docker rmi -f "$id" || true
+                    docker rmi -f "$id" 2>/dev/null || true
                 fi
             done
         fi
 
-        # 清理服务端镜像
+        # Cleanup serverside images
         if [[ "${ENABLE_SERVERSIDE}" == "true" ]]; then
             echo "Finding and removing intermediate images for ${SERVERSIDE_IMAGE_NAME}"
             echo "Keeping final serverside image ID: ${FINAL_SERVERSIDE_IMAGE_ID}"
-            docker images | grep "${SERVERSIDE_IMAGE_NAME}" | grep -v "$ {REGISTRY_URL}" |
-                awk '{print $3}' | while read -r id; do
-                if [ "$id" != "$FINAL_SERVERSIDE_IMAGE_ID" ]; then
+            local server_final_id="${FINAL_SERVERSIDE_IMAGE_ID}"
+            docker images --format '{{.Repository}}:{{.Tag}} {{.ID}}' | grep "${SERVERSIDE_IMAGE_NAME}" | grep -v "${REGISTRY_URL}" |
+                awk '{print $2}' | sort -u | while read -r id; do
+                if [ "$id" != "${server_final_id}" ] && [ -n "$id" ]; then
                     echo "Removing serverside image ID: $id"
-                    docker rmi -f "$id" || true
+                    docker rmi -f "$id" 2>/dev/null || true
                 fi
             done
         fi
-    fi # end of if [ prompt_with_timeout "Clean all mid-stage images?" 10 ];then
+    fi
 
     return 0
 }

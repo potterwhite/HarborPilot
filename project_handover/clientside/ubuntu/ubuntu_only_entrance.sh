@@ -1,5 +1,27 @@
 #!/bin/bash
 
+# Copyright (c) 2026 Potter White
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+#!/bin/bash
+
 ################################################################################
 # File: 2_1_start_dev_env.sh
 # Description: Development environment management script
@@ -15,10 +37,41 @@ fi
 #############################################################################
 1_0_gen_environment_variables() {
 
-    # 1st task: source .env to retrive all environments
+    # 1st task: source env files in three-layer order to retrieve all environments
     BUILD_SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
     BUILD_SCRIPT_DIR="$(dirname ${BUILD_SCRIPT_PATH})"
     ENV_PATH="${BUILD_SCRIPT_DIR}/../../.env"
+    ENV_INDEPENDENT_PATH="${BUILD_SCRIPT_DIR}/../../.env-independent"
+    TOP_ROOT_DIR="$(readlink -f "${BUILD_SCRIPT_DIR}/../../")"
+    DEFAULTS_DIR="${TOP_ROOT_DIR}/configs/defaults"
+
+    # Layer 1: Global defaults
+    for defaults_file in \
+        "${DEFAULTS_DIR}/01_base.env" \
+        "${DEFAULTS_DIR}/02_build.env" \
+        "${DEFAULTS_DIR}/03_tools.env" \
+        "${DEFAULTS_DIR}/04_workspace.env" \
+        "${DEFAULTS_DIR}/05_registry.env" \
+        "${DEFAULTS_DIR}/06_sdk.env" \
+        "${DEFAULTS_DIR}/07_volumes.env" \
+        "${DEFAULTS_DIR}/08_samba.env" \
+        "${DEFAULTS_DIR}/09_runtime.env" \
+        "${DEFAULTS_DIR}/10_serverside.env" \
+        "${DEFAULTS_DIR}/11_proxy.env"
+    do
+        if [ -f "${defaults_file}" ]; then
+            source "${defaults_file}"
+        else
+            echo "Warning: defaults file not found, skipping: ${defaults_file}"
+        fi
+    done
+
+    # Layer 2: Project constants
+    if [ -f "${ENV_INDEPENDENT_PATH}" ]; then
+        source "${ENV_INDEPENDENT_PATH}"
+    fi
+
+    # Layer 3: Platform-specific overrides
     if [ -f ${ENV_PATH} ]; then
         source ${ENV_PATH}
         echo -e "Done source .env\n"
@@ -376,7 +429,27 @@ EOF
     # fix volumes dir not shift dynamically problem
     # jul31.2025
     local VOLUMES_DIR="$(realpath "${BUILD_SCRIPT_DIR}/../volumes")"
-    echo "VOLUMES_DIR=${VOLUMES_DIR}"
+    # echo "VOLUMES_DIR=${VOLUMES_DIR}"
+
+    # using nvidia gpu or not
+    local tmp_use="${USE_NVIDIA_GPU,,:-false}"
+    local COMPOSE_GPU_SETTING=""
+    if [ x"${tmp_use}" == x"true" ];then
+        COMPOSE_GPU_SETTING=$(cat << 'GPU_EOF'
+    shm_size: 8g
+    deploy:
+        resources:
+            reservations:
+                devices:
+                    - driver: nvidia
+                      count: all
+                      capabilities: [gpu]
+GPU_EOF
+)
+        echo "NVIDIA GPU Support: ENABLED"
+    else
+        echo "NVIDIA GPU Support: DISABLED"
+    fi
 
     cat << EOF > "${BUILD_SCRIPT_DIR}/docker-compose.yaml"
 services:
@@ -396,7 +469,6 @@ services:
     volumes:
       - /dev/bus/usb:/dev/bus/usb
       - "${VOLUMES_DIR}:${VOLUMES_ROOT}"
-      - samba_public:${WORKSPACE_5TH_DOCS_SUBDIR}/usar-samba-public
 
     ports:
       - "${CLIENT_SSH_PORT}:22"
@@ -408,6 +480,11 @@ services:
       - WORKSPACE_ENABLE_REMOTE_DEBUG=${WORKSPACE_ENABLE_REMOTE_DEBUG}
       - WORKSPACE_LOG_LEVEL=${WORKSPACE_LOG_LEVEL}
 
+      # ** NVIDIA **
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+
+${COMPOSE_GPU_SETTING}
     working_dir: ${WORKSPACE_ROOT}
 
     networks:

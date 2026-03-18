@@ -461,7 +461,18 @@ RUN find /tmp/
 # Copy configuration scripts and templates
 COPY --from=stage_4th_template-processor /tmp/scripts/configure_env.sh /tmp/
 COPY --from=stage_4th_template-processor /tmp/configs/env_config.conf /tmp/
-COPY --from=stage_4th_template-processor /tmp/configs/proxy.sh /etc/profile.d/
+
+# Conditionally install proxy configuration based on HAS_PROXY flag.
+# ARG must be re-declared in this stage to be accessible in RUN commands,
+# even though it was already declared in stage_1st_base.
+ARG HAS_PROXY
+RUN if [ "${HAS_PROXY}" = "true" ]; then \
+        cp /tmp/configs/proxy.sh /etc/profile.d/proxy.sh && \
+        chmod 644 /etc/profile.d/proxy.sh && \
+        echo "Proxy configuration installed (HAS_PROXY=true)."; \
+    else \
+        echo "Proxy configuration skipped (HAS_PROXY=${HAS_PROXY})."; \
+    fi
 
 # Configure environment
 RUN chmod +x /tmp/configure_env.sh && \

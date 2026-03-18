@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Copyright (c) 2026 Potter White
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,26 +18,22 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-#! /bin/bash
+on:
+  push:
+    branches:
+      - main
 
-# Function: Create directory with proper permissions
-lib_fileopts_create_directory() {
-    local dir_path="$1"
-    local dir_owner="$2"
-    local dir_perms="$3"
+permissions:
+  contents: write
+  pull-requests: write
 
-    echo "Creating directory: ${dir_path}"
-    if [ -z "${dir_path}" ]; then
-        echo "ERROR: Directory path is empty"
-        exit 1
-    fi
+name: release-please
 
-    echo "Parameters:"
-    echo "  Path: ${dir_path}"
-    echo "  Owner: ${dir_owner}"
-    echo "  Permissions: ${dir_perms}"
-
-    mkdir -p "${dir_path}"
-    chown "${dir_owner}:${dir_owner}" "${dir_path}"
-    chmod "${dir_perms}" "${dir_path}"
-}
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

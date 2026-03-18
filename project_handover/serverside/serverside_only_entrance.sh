@@ -1,5 +1,27 @@
 #!/bin/bash
 
+# Copyright (c) 2026 Potter White
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+#!/bin/bash
+
 # #########################
 # # Force to run as root
 # #########################
@@ -18,12 +40,38 @@ func_1_1_setup_environment_variables() {
     BUILD_SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
     BUILD_SCRIPT_DIR="$(dirname ${BUILD_SCRIPT_PATH})"
     ENV_PATH="${BUILD_SCRIPT_DIR}/../.env"
+    ENV_INDEPENDENT_PATH="${BUILD_SCRIPT_DIR}/../.env-independent"
+    TOP_ROOT_DIR="$(readlink -f "${BUILD_SCRIPT_DIR}/../")"
+    DEFAULTS_DIR="${TOP_ROOT_DIR}/configs/defaults"
 
-    # echo -e "BUILD_SCRIPT_PATH=${BUILD_SCRIPT_PATH}\n"
-    # echo -e "ENV_PATH=${ENV_PATH}\n"
+    # Layer 1: Global defaults
+    for defaults_file in \
+        "${DEFAULTS_DIR}/01_base.env" \
+        "${DEFAULTS_DIR}/02_build.env" \
+        "${DEFAULTS_DIR}/03_tools.env" \
+        "${DEFAULTS_DIR}/04_workspace.env" \
+        "${DEFAULTS_DIR}/05_registry.env" \
+        "${DEFAULTS_DIR}/06_sdk.env" \
+        "${DEFAULTS_DIR}/07_volumes.env" \
+        "${DEFAULTS_DIR}/08_samba.env" \
+        "${DEFAULTS_DIR}/09_runtime.env" \
+        "${DEFAULTS_DIR}/10_serverside.env" \
+        "${DEFAULTS_DIR}/11_proxy.env"
+    do
+        if [ -f "${defaults_file}" ]; then
+            source "${defaults_file}"
+        else
+            echo "Warning: defaults file not found, skipping: ${defaults_file}"
+        fi
+    done
 
+    # Layer 2: Project constants
+    if [ -f "${ENV_INDEPENDENT_PATH}" ]; then
+        source "${ENV_INDEPENDENT_PATH}"
+    fi
+
+    # Layer 3: Platform-specific overrides
     if [ -f ${ENV_PATH} ];then
-        # cat ${ENV_PATH}
         source ${ENV_PATH}
         echo -e "Done source .env\n"
     else
