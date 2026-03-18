@@ -4,7 +4,7 @@
 </div>
 
 <p align="center">
-  <img src="doc/assets/banner.png" alt="HarborPilot Banner" width="100%"/>
+  <img src="doc/assets/dark-background.png" alt="HarborPilot Banner" width="100%"/>
 </p>
 
 <p align="center">
