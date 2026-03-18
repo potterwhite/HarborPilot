@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1](https://github.com/potterwhite/HarborPilot/compare/v1.6.0...v1.6.1) (2026-03-18)
+
+
+### 🐛 Fixed
+
+* **build:** abort on SIGINT and harden CI versioning pipeline ([#5](https://github.com/potterwhite/HarborPilot/issues/5)) ([a268ac8](https://github.com/potterwhite/HarborPilot/commit/a268ac82e72d557d7c137f2c21951aa6f3cb4cae))
+
+* **build:** replace faulty interactive `docker login` probe with a passive `~/.docker/config.json` credential check — eliminates spurious authentication prompts when already logged in
+* **config:** correct `package-name` in `release-please-config.json` from `ArcForge` to `HarborPilot`
+
+### ⚙️CI
+
+* extract top-level `VERSION` variable in `common.env` so release-please can bump it automatically via `extra-files`, removing the need for manual version edits
+* clear `PROJECT_RELEASE_DATE` — the CI pipeline now writes the date at release time instead of committing a static value 
+
+---
+
 ## [1.6.0](https://github.com/potterwhite/HarborPilot/compare/v1.5.0...v1.6.0) (2026-03-18)
 
 
