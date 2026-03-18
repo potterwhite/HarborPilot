@@ -47,11 +47,38 @@ main() {
         fi
     done
 
-    source ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}
-    echo "Loading environment variables from ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}"
+    # ------------------------------------------------------------------
+    # Layer 1: Global defaults — must be sourced FIRST so later layers
+    #          can override individual values
+    # ------------------------------------------------------------------
+    DEFAULTS_DIR="${TOP_CONFIGS_DIR}/defaults"
+    for defaults_file in \
+        "${DEFAULTS_DIR}/base.env" \
+        "${DEFAULTS_DIR}/build.env" \
+        "${DEFAULTS_DIR}/tools.env" \
+        "${DEFAULTS_DIR}/workspace.env" \
+        "${DEFAULTS_DIR}/registry.env" \
+        "${DEFAULTS_DIR}/sdk.env" \
+        "${DEFAULTS_DIR}/volumes.env" \
+        "${DEFAULTS_DIR}/samba.env" \
+        "${DEFAULTS_DIR}/runtime.env" \
+        "${DEFAULTS_DIR}/serverside.env" \
+        "${DEFAULTS_DIR}/proxy.env"
+    do
+        if [ -f "${defaults_file}" ]; then
+            source "${defaults_file}"
+        else
+            echo "Warning: defaults file not found, skipping: ${defaults_file}"
+        fi
+    done
 
-    source ${PLATFORM_ENV_DEST_PATH}
+    # Layer 2: Project constants (version, maintainer …)
+    echo "Loading environment variables from ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}"
+    source ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}
+
+    # Layer 3: Platform-specific overrides (only what differs from defaults)
     echo "Loading environment variables from ${PLATFORM_ENV_DEST_PATH}"
+    source ${PLATFORM_ENV_DEST_PATH}
 
     1_1_setup_volume_soft_link || exit 1
 

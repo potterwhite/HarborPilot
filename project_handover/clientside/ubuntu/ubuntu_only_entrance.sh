@@ -15,10 +15,41 @@ fi
 #############################################################################
 1_0_gen_environment_variables() {
 
-    # 1st task: source .env to retrive all environments
+    # 1st task: source env files in three-layer order to retrieve all environments
     BUILD_SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
     BUILD_SCRIPT_DIR="$(dirname ${BUILD_SCRIPT_PATH})"
     ENV_PATH="${BUILD_SCRIPT_DIR}/../../.env"
+    ENV_INDEPENDENT_PATH="${BUILD_SCRIPT_DIR}/../../.env-independent"
+    TOP_ROOT_DIR="$(readlink -f "${BUILD_SCRIPT_DIR}/../../")"
+    DEFAULTS_DIR="${TOP_ROOT_DIR}/configs/defaults"
+
+    # Layer 1: Global defaults
+    for defaults_file in \
+        "${DEFAULTS_DIR}/base.env" \
+        "${DEFAULTS_DIR}/build.env" \
+        "${DEFAULTS_DIR}/tools.env" \
+        "${DEFAULTS_DIR}/workspace.env" \
+        "${DEFAULTS_DIR}/registry.env" \
+        "${DEFAULTS_DIR}/sdk.env" \
+        "${DEFAULTS_DIR}/volumes.env" \
+        "${DEFAULTS_DIR}/samba.env" \
+        "${DEFAULTS_DIR}/runtime.env" \
+        "${DEFAULTS_DIR}/serverside.env" \
+        "${DEFAULTS_DIR}/proxy.env"
+    do
+        if [ -f "${defaults_file}" ]; then
+            source "${defaults_file}"
+        else
+            echo "Warning: defaults file not found, skipping: ${defaults_file}"
+        fi
+    done
+
+    # Layer 2: Project constants
+    if [ -f "${ENV_INDEPENDENT_PATH}" ]; then
+        source "${ENV_INDEPENDENT_PATH}"
+    fi
+
+    # Layer 3: Platform-specific overrides
     if [ -f ${ENV_PATH} ]; then
         source ${ENV_PATH}
         echo -e "Done source .env\n"
