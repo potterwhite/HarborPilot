@@ -7,10 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.5.0](https://github.com/potterwhite/HarborPilot/compare/v1.4.0...v1.5.0) (2026-03-18)
 
-
 ### ✨ Added
-
 * complete redesign with layered config system and RK3588s support ([#1](https://github.com/potterwhite/HarborPilot/issues/1)) ([847b184](https://github.com/potterwhite/HarborPilot/commit/847b184aa85842d70504dab22fa635f04c87db69))
+- Layered config system with 11 domain-scoped default files (configs/defaults/*.env)
+- RK3588s platform support (configs/platforms/rk3588s.env)
+- Release-please automation for automatic versioning and changelog
+- License check GitHub Actions workflow
+- Chinese documentation: README, Quick Start, Config Layers
+
+### 🐛 Fixed
+- Platform config inheritance issues (now uses layered approach)
+
+### ⚡ Improved
+- Renamed build-dev-env.sh to harbor for better UX
+- Simplified platform configs (~20 lines each vs 150+ lines)
+- README comprehensive rewrite with better structure
+
+### 📚 Documentation
+- Complete README overhaul with features table
+- Quick start guide (doc/quick_start.md, doc/quick_start_cn.md)
+- Config layers documentation (doc/config_layers.md, doc/config_layers_cn.md)
+
+### Miscellaneous
+- Remove legacy n8.env and harbor-cert.pem
+
+
+---
+
 
 ## [1.4.0] - 2025-12-04
 - add rk3568-ubuntu22 as fifth platform
