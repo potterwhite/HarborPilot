@@ -9,7 +9,8 @@
 
 <p align="center">
   <a href="https://github.com/potterwhite/HarborPilot/releases">
-    <img src="https://img.shields.io/badge/版本-1.5.0-blue?style=flat-square" alt="version"/>
+    <!-- <img src="https://img.shields.io/badge/版本-1.5.0-blue?style=flat-square" alt="version"/> -->
+    <img src="https://img.shields.io/github/v/release/potterwhite/HarborPilot?color=blue&label=version">
   </a>
   <img src="https://img.shields.io/badge/许可证-MIT-green?style=flat-square" alt="License"/>
   <img src="https://img.shields.io/badge/宿主机-Ubuntu-orange?style=flat-square" alt="Host Platform"/>
