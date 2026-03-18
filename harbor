@@ -80,6 +80,8 @@ main() {
     echo "Loading environment variables from ${PLATFORM_ENV_DEST_PATH}"
     source ${PLATFORM_ENV_DEST_PATH}
 
+    0_check_registry_login || exit 1
+
     1_1_setup_volume_soft_link || exit 1
 
     2_build_images || exit 1
@@ -95,6 +97,8 @@ main() {
     local duration=$SECONDS
     echo -e "\n=== Build Process Completed Successfully ==="
     echo "Total execution time: $((duration / 3600))h $((duration % 3600 / 60))m $((duration % 60))s"
+
+    _print_next_steps
 }
 
 ################################################################################
@@ -134,7 +138,94 @@ prompt_with_timeout() {
     return 0
 }
 
-1_specify_platform() {
+################################################################################
+# 0. Pre-flight: verify docker registry login
+# If HAVE_HARBOR_SERVER is TRUE, ensure the user is authenticated to the
+# registry before we waste time building an image we cannot push.
+# Returns:
+#   0 if login is not required, or login is already valid
+#   1 if user failed / declined to login
+################################################################################
+0_check_registry_login() {
+    if [ "${HAVE_HARBOR_SERVER}" != "TRUE" ]; then
+        echo "[Registry] HAVE_HARBOR_SERVER is not TRUE — skipping login check."
+        return 0
+    fi
+
+    echo -e "\n[Registry] Checking Docker login status for ${REGISTRY_URL%%/*} ..."
+
+    # docker login stores credentials; a quick 'docker login --password-stdin'
+    # with an empty string fails fast without creds — so we use a catalog probe.
+    # Simplest reliable check: attempt to inspect any token by calling
+    # 'docker system info' is not helpful here, so we rely on the stored
+    # credentials file check + a registry ping.
+    local registry_host="${UBUNTU_SERVER_IP}:${UBUNTU_SERVER_PORT}"
+
+    # Check if credentials exist in docker config
+    if docker login "${registry_host}" --username "" --password "" 2>&1 | grep -q "Authenticating with existing credentials"; then
+        echo "[Registry] Already authenticated to ${registry_host}."
+        return 0
+    fi
+
+    # Credentials either missing or invalid — ask user to login now
+    echo ""
+    echo "  ╔══════════════════════════════════════════════════════════════════╗"
+    echo "  ║  ACTION REQUIRED: Docker registry login                         ║"
+    echo "  ║                                                                  ║"
+    echo "  ║  You must log in to the Harbor registry before building,         ║"
+    echo "  ║  otherwise the push step will fail.                              ║"
+    echo "  ║                                                                  ║"
+    echo "  ║  Registry: ${registry_host}"
+    echo "  ║                                                                  ║"
+    echo "  ║  Run:  docker login ${registry_host}                             ║"
+    echo "  ╚══════════════════════════════════════════════════════════════════╝"
+    echo ""
+    read -p "  Press ENTER to run 'docker login ${registry_host}' now, or Ctrl+C to abort: "
+
+    if docker login "${registry_host}"; then
+        echo "[Registry] Login successful."
+        return 0
+    else
+        echo "[Registry] Login failed. Aborting build."
+        return 1
+    fi
+}
+
+################################################################################
+# Print next steps after a successful build
+################################################################################
+_print_next_steps() {
+    local clientside_script="${BUILD_SCRIPT_DIR}/project_handover/clientside/ubuntu/ubuntu_only_entrance.sh"
+
+    echo ""
+    echo "  ╔══════════════════════════════════════════════════════════════════╗"
+    echo "  ║                  BUILD COMPLETE — NEXT STEPS                    ║"
+    echo "  ╠══════════════════════════════════════════════════════════════════╣"
+    echo "  ║                                                                  ║"
+    echo "  ║  Image  : ${IMAGE_NAME}:${PROJECT_VERSION}"
+    echo "  ║  Platform: ${PRODUCT_NAME}"
+    echo "  ║                                                                  ║"
+    echo "  ║  To start your development container (Ubuntu host):              ║"
+    echo "  ║                                                                  ║"
+    echo "  ║    ${clientside_script}"
+    echo "  ║                                                                  ║"
+    echo "  ║  Supported commands:                                             ║"
+    echo "  ║    start     — create and start the container                    ║"
+    echo "  ║    stop      — stop the running container                        ║"
+    echo "  ║    restart   — restart the container                             ║"
+    echo "  ║    recreate  — remove and recreate the container                 ║"
+    echo "  ║    remove    — stop and remove the container                     ║"
+    echo "  ║                                                                  ║"
+    echo "  ║  Example:                                                        ║"
+    echo "  ║    ./project_handover/clientside/ubuntu/ubuntu_only_entrance.sh start"
+    echo "  ║                                                                  ║"
+    echo "  ╠══════════════════════════════════════════════════════════════════╣"
+    echo "  ║  ⚠  DEPRECATED (no longer maintained):                          ║"
+    echo "  ║     • Serverside (distcc) — serverside_only_entrance.sh         ║"
+    echo "  ║     • Windows client      — windows support has been dropped    ║"
+    echo "  ╚══════════════════════════════════════════════════════════════════╝"
+    echo ""
+}
     TARGET_DIR="${PLATFORM_ENV_SRC_DIR}"
     declare -a platforms_array=()
 
