@@ -2,10 +2,13 @@
   "packages": {
     ".": {
       "release-type": "simple",
-      "package-name": "ArcForge",
+      "package-name": "HarborPilot",
       "changelog-path": "CHANGELOG.md",
       "include-component-in-tag": false,
       "bump-minor-pre-major": true,
+      "extra-files": [
+        "configs/platform-independent/common.env"
+      ],
       "changelog-sections": [
         {"type": "feat", "section": "✨ Added", "hidden": false},
         {"type": "fix", "section": "🐛 Fixed", "hidden": false},
