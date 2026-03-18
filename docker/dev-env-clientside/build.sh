@@ -56,17 +56,17 @@ func_1_1_setup_env(){
     # ------------------------------------------------------------------
     echo "--- Layer 1: Loading defaults ---"
     for defaults_file in \
-        "${DEFAULTS_DIR}/base.env" \
-        "${DEFAULTS_DIR}/build.env" \
-        "${DEFAULTS_DIR}/tools.env" \
-        "${DEFAULTS_DIR}/workspace.env" \
-        "${DEFAULTS_DIR}/registry.env" \
-        "${DEFAULTS_DIR}/sdk.env" \
-        "${DEFAULTS_DIR}/volumes.env" \
-        "${DEFAULTS_DIR}/samba.env" \
-        "${DEFAULTS_DIR}/runtime.env" \
-        "${DEFAULTS_DIR}/serverside.env" \
-        "${DEFAULTS_DIR}/proxy.env"
+        "${DEFAULTS_DIR}/01_base.env" \
+        "${DEFAULTS_DIR}/02_build.env" \
+        "${DEFAULTS_DIR}/03_tools.env" \
+        "${DEFAULTS_DIR}/04_workspace.env" \
+        "${DEFAULTS_DIR}/05_registry.env" \
+        "${DEFAULTS_DIR}/06_sdk.env" \
+        "${DEFAULTS_DIR}/07_volumes.env" \
+        "${DEFAULTS_DIR}/08_samba.env" \
+        "${DEFAULTS_DIR}/09_runtime.env" \
+        "${DEFAULTS_DIR}/10_serverside.env" \
+        "${DEFAULTS_DIR}/11_proxy.env"
     do
         if [ -f "${defaults_file}" ]; then
             echo "  source ${defaults_file}"
@@ -111,17 +111,17 @@ func_1_1_setup_env(){
     declare -A _seen_vars  # deduplicate variable names
 
     all_env_files=(
-        "${DEFAULTS_DIR}/base.env"
-        "${DEFAULTS_DIR}/build.env"
-        "${DEFAULTS_DIR}/tools.env"
-        "${DEFAULTS_DIR}/workspace.env"
-        "${DEFAULTS_DIR}/registry.env"
-        "${DEFAULTS_DIR}/sdk.env"
-        "${DEFAULTS_DIR}/volumes.env"
-        "${DEFAULTS_DIR}/samba.env"
-        "${DEFAULTS_DIR}/runtime.env"
-        "${DEFAULTS_DIR}/serverside.env"
-        "${DEFAULTS_DIR}/proxy.env"
+        "${DEFAULTS_DIR}/01_base.env"
+        "${DEFAULTS_DIR}/02_build.env"
+        "${DEFAULTS_DIR}/03_tools.env"
+        "${DEFAULTS_DIR}/04_workspace.env"
+        "${DEFAULTS_DIR}/05_registry.env"
+        "${DEFAULTS_DIR}/06_sdk.env"
+        "${DEFAULTS_DIR}/07_volumes.env"
+        "${DEFAULTS_DIR}/08_samba.env"
+        "${DEFAULTS_DIR}/09_runtime.env"
+        "${DEFAULTS_DIR}/10_serverside.env"
+        "${DEFAULTS_DIR}/11_proxy.env"
         "${PLATFORM_INDEPENDENT_ENV_PATH}"
         "${PLATFORM_ENV_PATH}"
     )

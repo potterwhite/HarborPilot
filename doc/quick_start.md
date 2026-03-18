@@ -1,5 +1,7 @@
 # Quick Start Guide
 
+> **Related:** [中文版 →](quick_start_cn.md)
+
 This guide walks you through setting up HarborPilot from scratch on a fresh Ubuntu host — from installing Docker all the way to having your development container running.
 
 > **Platform Support**
