@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0](https://github.com/potterwhite/HarborPilot/compare/v1.6.2...v1.7.0) (2026-03-18)
+
+
+### ✨ Added
+
+* auto-write PROJECT_RELEASE_DATE on release ([#9](https://github.com/potterwhite/HarborPilot/issues/9)) ([5a4850e](https://github.com/potterwhite/HarborPilot/commit/5a4850e96837cc5285fa88a3eb91169fda35ae6c))
+
 ## [1.6.2](https://github.com/potterwhite/HarborPilot/compare/v1.6.1...v1.6.2) (2026-03-18)
 
 
