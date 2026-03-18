@@ -117,14 +117,28 @@ prompt_with_timeout() {
     echo -e "${message}"
     echo -e "--------------------"
 
-    echo "Default: Yes (Press 'n' to skip, any other key to continue, Ctrl+C or Esc to cancel)"
+    echo "Default: Yes (Press 'n' to skip, any other key to continue, Ctrl+C or Esc to abort all)"
 
-    trap 'echo -e "\nSkipping..."; return 1' SIGINT
+    # Ctrl+C should abort the entire script, not just skip this step.
+    # We temporarily override SIGINT only during the read loop, then restore it.
+    local _user_aborted=0
+    trap '_user_aborted=1' SIGINT
 
     for ((i = timeout; i > 0; i--)); do
         echo -ne "\rStarting in $i seconds... "
         read -t 1 -n 1 input
-        if [ $? -eq 0 ]; then
+        local _read_rc=$?
+
+        if [ "${_user_aborted}" -eq 1 ]; then
+            # Restore default SIGINT and propagate the abort upward
+            trap - SIGINT
+            echo -e "\nAborted by user — exiting."
+            kill -INT $$
+            return 1   # unreachable, but keeps shellcheck happy
+        fi
+
+        if [ ${_read_rc} -eq 0 ]; then
+            trap - SIGINT
             echo -e "\n"
             if [[ "${input,,}" == "n" || "${input}" == $'\e' ]]; then
                 return 1
@@ -134,6 +148,7 @@ prompt_with_timeout() {
         fi
     done
 
+    trap - SIGINT
     echo -e "\nProceeding with default action..."
     return 0
 }
@@ -154,16 +169,19 @@ prompt_with_timeout() {
 
     echo -e "\n[Registry] Checking Docker login status for ${REGISTRY_URL%%/*} ..."
 
-    # docker login stores credentials; a quick 'docker login --password-stdin'
-    # with an empty string fails fast without creds — so we use a catalog probe.
-    # Simplest reliable check: attempt to inspect any token by calling
-    # 'docker system info' is not helpful here, so we rely on the stored
-    # credentials file check + a registry ping.
     local registry_host="${UBUNTU_SERVER_IP}:${UBUNTU_SERVER_PORT}"
 
-    # Check if credentials exist in docker config
-    if docker login "${registry_host}" --username "" --password "" 2>&1 | grep -q "Authenticating with existing credentials"; then
-        echo "[Registry] Already authenticated to ${registry_host}."
+    # ------------------------------------------------------------------
+    # Passive credential check — reads config.json only, no network call.
+    # docker login writes an entry under .auths (plain creds) or registers
+    # the host under .credHelpers (credential-helper mode); docker logout
+    # removes it.  Either key present means the user has logged in.
+    # ------------------------------------------------------------------
+    local docker_config="${DOCKER_CONFIG:-${HOME}/.docker}/config.json"
+
+    if [ -f "${docker_config}" ] && \
+       grep -qF "\"${registry_host}\"" "${docker_config}" 2>/dev/null; then
+        echo "[Registry] Already logged in to ${registry_host}."
         return 0
     fi
 
@@ -226,6 +244,8 @@ _print_next_steps() {
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
     echo ""
 }
+
+1_specify_platform() {
     TARGET_DIR="${PLATFORM_ENV_SRC_DIR}"
     declare -a platforms_array=()
 
@@ -389,8 +409,8 @@ _build_images_serverside() {
 ################################################################################
 3_prepare_version_info() {
     echo -e "\n=== 2. Preparing Version Information ==="
-    echo "Using version: ${PROJECT_VERSION:-v0.6.1}"
-    VERSION="${PROJECT_VERSION:-v0.6.1}"
+    echo "Using version: ${PROJECT_VERSION:-1.6.0}"
+    VERSION="${PROJECT_VERSION:-1.6.0}"
 
     echo "Getting final image ID for ${IMAGE_NAME}:${LATEST_IMAGE_TAG}"
     FINAL_IMAGE_ID=$(docker images ${IMAGE_NAME}:${LATEST_IMAGE_TAG} -q)
