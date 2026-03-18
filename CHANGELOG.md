@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0](https://github.com/potterwhite/HarborPilot/compare/v1.5.0...v1.6.0) (2026-03-18)
+
+
+### ✨ Added
+
+* complete redesign with layered config system and RK3588s support ([#1](https://github.com/potterwhite/HarborPilot/issues/1)) ([847b184](https://github.com/potterwhite/HarborPilot/commit/847b184aa85842d70504dab22fa635f04c87db69))
+
 ## [1.5.0](https://github.com/potterwhite/HarborPilot/compare/v1.4.0...v1.5.0) (2026-03-18)
 
 ### ✨ Added
