@@ -42,7 +42,7 @@ fi
     BUILD_SCRIPT_DIR="$(dirname ${BUILD_SCRIPT_PATH})"
     ENV_PATH="${BUILD_SCRIPT_DIR}/../../.env"
     ENV_INDEPENDENT_PATH="${BUILD_SCRIPT_DIR}/../../.env-independent"
-    TOP_ROOT_DIR="$(readlink -f "${BUILD_SCRIPT_DIR}/../../")"
+    TOP_ROOT_DIR="$(readlink -f "${BUILD_SCRIPT_DIR}/../../..")"
     DEFAULTS_DIR="${TOP_ROOT_DIR}/configs/defaults"
 
     # Layer 1: Global defaults
