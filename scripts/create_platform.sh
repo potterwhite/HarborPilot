@@ -2,10 +2,40 @@
 ################################################################################
 # File: scripts/create_platform.sh
 #
-# Description: Interactive wizard for creating a new platform configuration.
+# Description: Wizard for creating a new platform configuration.
+#
+#   Interactive mode (default):
+#     ./scripts/create_platform.sh
+#
+#   Non-interactive mode (AI-friendly / CI-friendly):
+#     ./scripts/create_platform.sh --non-interactive \
+#         --name <platform_name> \
+#         --os <ubuntu|debian> \
+#         --os-version <22.04|24.04|...> \
+#         --harbor-ip <ip> \
+#         [--harbor-port <port>]         # default: 9000
+#         [--host-volume-dir <path>]     # default: auto
+#         [--gitlab-ip <ip>]             # enables GitLab (optional)
+#         [--gitlab-port <port>]         # default: 80
+#         [--sdk-branch <branch>]        # default: main
+#         [--nvidia]                     # enable NVIDIA GPU
+#         [--port-slot <n>]              # default: auto-assigned
+#         [--proxy-http <url>]           # enables proxy (optional)
+#         [--proxy-https <url>]          # default: same as --proxy-http
+#         [--install-cuda]               # enable CUDA
+#         [--install-opencv]             # enable OpenCV
+#         [--npm-china-mirror]           # use npmmirror.com
+#
+#   Example (for AI agent or CI):
+#     ./scripts/create_platform.sh --non-interactive \
+#         --name rk3568-debian12 \
+#         --os debian \
+#         --os-version 12 \
+#         --harbor-ip 192.168.3.68 \
+#         --port-slot 3
+#
 #              Scans existing platforms for used PORT_SLOTs, auto-assigns the
-#              next available slot, prompts for platform-specific values, and
-#              generates a complete .env file.
+#              next available slot, and generates a complete .env file.
 #
 #              Called from the `harbor` script — not intended for direct use.
 #
@@ -381,5 +411,203 @@ ENVEOF
     return 0
 }
 
+# ─── Non-interactive mode ────────────────────────────────────────────────────
+
+create_platform_noninteractive() {
+    # ── Parse arguments ──────────────────────────────────────────────────────
+    local platform_name="" os_distro="ubuntu" os_version=""
+    local harbor_ip="" harbor_port="9000"
+    local host_volume_dir=""
+    local have_gitlab="FALSE" gitlab_ip="" gitlab_port="80"
+    local sdk_branch="main"
+    local use_nvidia="false"
+    local port_slot=""
+    local has_proxy="false" http_proxy_url="" https_proxy_url=""
+    local install_cuda="false" install_opencv="false"
+    local npm_china_mirror="false"
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --name)            platform_name="$2";    shift 2 ;;
+            --os)              os_distro="${2,,}";    shift 2 ;;
+            --os-version)      os_version="$2";       shift 2 ;;
+            --harbor-ip)       harbor_ip="$2";        shift 2 ;;
+            --harbor-port)     harbor_port="$2";      shift 2 ;;
+            --host-volume-dir) host_volume_dir="$2";  shift 2 ;;
+            --gitlab-ip)       have_gitlab="TRUE"; gitlab_ip="$2"; shift 2 ;;
+            --gitlab-port)     gitlab_port="$2";      shift 2 ;;
+            --sdk-branch)      sdk_branch="$2";       shift 2 ;;
+            --nvidia)          use_nvidia="true";     shift ;;
+            --port-slot)       port_slot="$2";        shift 2 ;;
+            --proxy-http)      has_proxy="true"; http_proxy_url="$2"; shift 2 ;;
+            --proxy-https)     https_proxy_url="$2";  shift 2 ;;
+            --install-cuda)    install_cuda="true";   shift ;;
+            --install-opencv)  install_opencv="true"; shift ;;
+            --npm-china-mirror) npm_china_mirror="true"; shift ;;
+            *) echo "Unknown argument: $1" >&2; exit 1 ;;
+        esac
+    done
+
+    # ── Validate required fields ─────────────────────────────────────────────
+    local errors=0
+    [[ -z "${platform_name}" ]] && { echo "ERROR: --name is required" >&2; ((errors++)); }
+    [[ -z "${os_version}" ]]    && { echo "ERROR: --os-version is required" >&2; ((errors++)); }
+    [[ -z "${harbor_ip}" ]]     && { echo "ERROR: --harbor-ip is required" >&2; ((errors++)); }
+    [[ $errors -gt 0 ]] && exit 1
+
+    if [[ ! "${platform_name}" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        echo "ERROR: Platform name '${platform_name}' contains invalid characters" >&2
+        exit 1
+    fi
+
+    if [[ -f "${PLATFORMS_DIR}/${platform_name}.env" ]]; then
+        echo "ERROR: Platform '${platform_name}' already exists at ${PLATFORMS_DIR}/${platform_name}.env" >&2
+        exit 1
+    fi
+
+    # ── Auto-assign PORT_SLOT if not specified ────────────────────────────────
+    if [[ -z "${port_slot}" ]]; then
+        port_slot=$(_next_available_slot)
+        echo "INFO: Auto-assigned PORT_SLOT=${port_slot}"
+    fi
+
+    if ! [[ "${port_slot}" =~ ^[0-9]+$ ]]; then
+        echo "ERROR: PORT_SLOT must be a non-negative integer" >&2
+        exit 1
+    fi
+
+    # ── Default host volume dir ───────────────────────────────────────────────
+    if [[ -z "${host_volume_dir}" ]]; then
+        host_volume_dir="/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/volumes/${platform_name}"
+    fi
+
+    # ── Default HTTPS proxy = HTTP proxy if not set ───────────────────────────
+    if [[ "${has_proxy}" == "true" && -z "${https_proxy_url}" ]]; then
+        https_proxy_url="${http_proxy_url}"
+    fi
+
+    # ── Calculate ports ───────────────────────────────────────────────────────
+    local offset=$(( port_slot * _PORT_STEP ))
+    local calc_ssh=$(( _PORT_BASE_CLIENT_SSH + offset ))
+    local calc_gdb=$(( _PORT_BASE_GDB + offset ))
+
+    # ── Build conditional blocks ──────────────────────────────────────────────
+    local gitlab_block
+    if [[ "${have_gitlab}" == "TRUE" ]]; then
+        gitlab_block="HAVE_GITLAB_SERVER=\"TRUE\"
+GITLAB_SERVER_IP=\"${gitlab_ip}\"
+GITLAB_SERVER_PORT=\"${gitlab_port}\""
+    else
+        gitlab_block="HAVE_GITLAB_SERVER=\"FALSE\""
+    fi
+
+    local proxy_block
+    if [[ "${has_proxy}" == "true" ]]; then
+        proxy_block="HAS_PROXY=\"true\"
+HTTP_PROXY_IP=\"${http_proxy_url}\"
+HTTPS_PROXY_IP=\"${https_proxy_url}\""
+    else
+        proxy_block="HAS_PROXY=\"false\""
+    fi
+
+    local tools_overrides=""
+    [[ "${install_cuda}" == "true" ]]         && tools_overrides+=$'\nINSTALL_CUDA="true"'
+    [[ "${install_opencv}" == "true" ]]       && tools_overrides+=$'\nINSTALL_OPENCV="true"'
+    [[ "${npm_china_mirror}" == "true" ]]     && tools_overrides+=$'\nNPM_USE_CHINA_MIRROR="true"'
+
+    # ── Print summary ─────────────────────────────────────────────────────────
+    echo ""
+    echo "  [non-interactive] Creating platform: ${platform_name}"
+    echo "  OS:              ${os_distro} ${os_version}"
+    echo "  PORT_SLOT:       ${port_slot} → SSH=${calc_ssh}, GDB=${calc_gdb}"
+    echo "  Harbor:          ${harbor_ip}:${harbor_port}"
+    echo "  Volume:          ${host_volume_dir}"
+    [[ "${have_gitlab}" == "TRUE" ]] && echo "  GitLab:          ${gitlab_ip}:${gitlab_port}"
+    echo ""
+
+    # ── Generate .env file ────────────────────────────────────────────────────
+    local output_file="${PLATFORMS_DIR}/${platform_name}.env"
+
+    cat > "${output_file}" << ENVEOF
+################################################################################
+# File: configs/platforms/${platform_name}.env
+#
+# Description: Platform-specific overrides for ${platform_name} (${os_distro} ${os_version}).
+#              Only values that DIFFER from configs/defaults/*.env are listed.
+#              All other settings are inherited from the defaults layer.
+#
+# Generated: $(date +%Y-%m-%d) by create_platform.sh --non-interactive
+#
+# Copyright (c) 2024 [PotterWhite]
+# License: MIT
+#
+# Port: PORT_SLOT=${port_slot}
+#   → CLIENT_SSH_PORT=${calc_ssh}, GDB_PORT=${calc_gdb} (auto-calculated)
+#
+################################################################################
+
+# =============================================================================
+# Platform Identity  [REQUIRED — no defaults]
+# =============================================================================
+PRODUCT_NAME="${platform_name}"
+OS_DISTRIBUTION="${os_distro}"
+OS_VERSION="${os_version}"
+
+# Derived from PRODUCT_NAME (keep in sync)
+IMAGE_NAME="\${PRODUCT_NAME}-dev-env"
+LATEST_IMAGE_TAG=\${PROJECT_VERSION}
+CONTAINER_NAME=\${PRODUCT_NAME}
+
+# =============================================================================
+# GitLab Server  [optional — set HAVE_GITLAB_SERVER=FALSE to skip]
+# =============================================================================
+${gitlab_block}
+
+# =============================================================================
+# Harbor Registry  [required for push/pull]
+# =============================================================================
+HARBOR_SERVER_IP="${harbor_ip}"
+HARBOR_SERVER_PORT="${harbor_port}"
+REGISTRY_URL="\${HARBOR_SERVER_IP}:\${HARBOR_SERVER_PORT}/team_\${CONTAINER_NAME}"
+
+# =============================================================================
+# SDK  [derived — depends on CONTAINER_NAME and server IPs]
+# =============================================================================
+SDK_INSTALL_PATH="\${WORKSPACE_ROOT}/sdk"
+SDK_GIT_REPO="git@\${GITLAB_SERVER_IP:-${harbor_ip}}:team_\${CONTAINER_NAME}/\${CONTAINER_NAME}_sdk.git"
+SDK_GIT_KEY_FILE="SDK_\${CONTAINER_NAME}_ED25519"
+SDK_GIT_DEFAULT_BRANCH="${sdk_branch}"
+
+# =============================================================================
+# Docker Volumes  [REQUIRED — no universal default]
+# =============================================================================
+HOST_VOLUME_DIR="${host_volume_dir}"
+
+# =============================================================================
+# Container Runtime  [ports auto-calculated from PORT_SLOT]
+# =============================================================================
+PORT_SLOT="${port_slot}"
+USE_NVIDIA_GPU="${use_nvidia}"
+
+# =============================================================================
+# Tools Overrides (non-default values only)
+# =============================================================================${tools_overrides}
+
+# =============================================================================
+# Proxy Overrides
+# =============================================================================
+${proxy_block}
+ENVEOF
+
+    echo "  Generated: ${output_file}"
+    echo ""
+}
+
 # ─── Entry point ─────────────────────────────────────────────────────────────
-create_platform "$@"
+# Route to interactive or non-interactive mode based on first argument.
+if [[ "${1:-}" == "--non-interactive" ]]; then
+    shift
+    create_platform_noninteractive "$@"
+else
+    create_platform "$@"
+fi
