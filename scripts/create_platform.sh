@@ -112,24 +112,35 @@ _next_available_slot() {
 create_platform() {
     _header
 
-    # 0. Show existing platforms
+    # 0. Show existing platforms (sorted by PORT_SLOT / SSH port ascending)
     echo -e "  ${_YELLOW}Existing platforms and their PORT_SLOTs:${_NC}"
+
+    # Build a sortable list: "<slot_numeric> <name> <ssh> <gdb> <slot_label>"
+    local _sort_lines=()
     for env_file in "${PLATFORMS_DIR}"/*.env; do
         [[ ! -f "${env_file}" ]] && continue
-        local name slot
+        local name slot sort_key ssh_port gdb_port slot_label
         name=$(basename "${env_file}" .env)
-        slot=$(grep -oP '^\s*PORT_SLOT\s*=\s*"?\K[0-9]+' "${env_file}" 2>/dev/null || echo "explicit")
-        local ssh_port gdb_port
-        if [[ "${slot}" != "explicit" ]]; then
+        slot=$(grep -oP '^\s*PORT_SLOT\s*=\s*"?\K[0-9]+' "${env_file}" 2>/dev/null || true)
+        if [[ -n "${slot}" ]]; then
             ssh_port=$(( _PORT_BASE_CLIENT_SSH + slot * _PORT_STEP ))
             gdb_port=$(( _PORT_BASE_GDB + slot * _PORT_STEP ))
-            printf "    %-24s slot=%-3s  SSH=%-5s  GDB=%-5s\n" "${name}" "${slot}" "${ssh_port}" "${gdb_port}"
+            sort_key="${slot}"
+            slot_label="slot=${slot}"
         else
             ssh_port=$(grep -oP '^\s*CLIENT_SSH_PORT\s*=\s*"?\K[0-9]+' "${env_file}" 2>/dev/null || echo "?")
             gdb_port=$(grep -oP '^\s*GDB_PORT\s*=\s*"?\K[0-9]+' "${env_file}" 2>/dev/null || echo "?")
-            printf "    %-24s %-8s  SSH=%-5s  GDB=%-5s\n" "${name}" "(manual)" "${ssh_port}" "${gdb_port}"
+            sort_key="999"
+            slot_label="(manual)"
         fi
+        _sort_lines+=("${sort_key} ${name} ${ssh_port} ${gdb_port} ${slot_label}")
     done
+
+    # Sort by first field (slot number) and print
+    while IFS= read -r line; do
+        read -r _sk _name _ssh _gdb _label <<< "${line}"
+        printf "    %-24s %-8s  SSH=%-5s  GDB=%-5s\n" "${_name}" "${_label}" "${_ssh}" "${_gdb}"
+    done < <(printf '%s\n' "${_sort_lines[@]}" | sort -n)
 
     local next_slot
     next_slot=$(_next_available_slot)

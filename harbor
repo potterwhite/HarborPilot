@@ -250,17 +250,32 @@ _print_next_steps() {
     TARGET_DIR="${PLATFORM_ENV_SRC_DIR}"
     declare -a platforms_array=()
 
-    while IFS= read -r -d '' file_path; do
-        filename="$(basename ${file_path})"
+    # ── collect platforms sorted by PORT_SLOT (ascending) ──────────────────
+    declare -A _slot_map   # name → slot
+    declare -A _slot_explicit  # name → 1 if explicit ports
+
+    for file_path in "${TARGET_DIR}"/*.env; do
+        [[ ! -f "${file_path}" ]] && continue
+        local filename basename slot
+        filename="$(basename "${file_path}")"
         basename="${filename%.env}"
-
-        if [ -n ${basename} ]; then
-            platforms_array+=(${basename})
+        slot=$(grep -oP '^\s*PORT_SLOT\s*=\s*"?\K[0-9]+' "${file_path}" 2>/dev/null || echo "")
+        if [[ -n "${slot}" ]]; then
+            _slot_map["${basename}"]="${slot}"
+        else
+            _slot_map["${basename}"]="999"  # no slot → sort to end
         fi
+    done
 
-    done < <(find ${TARGET_DIR} -maxdepth 1 -type f -name "*.env" -print0)
+    # Sort by slot value
+    while IFS= read -r line; do
+        platforms_array+=("${line}")
+    done < <(
+        for name in "${!_slot_map[@]}"; do
+            echo "${_slot_map[$name]} ${name}"
+        done | sort -n | awk '{print $2}'
+    )
 
-    # echo ${platforms_array}
     #-------------------------------------------------------
     if [ "${#platforms_array[@]}" == "0" ]; then
         echo "No platforms exists, return now"
@@ -269,7 +284,7 @@ _print_next_steps() {
     echo
     echo "Now we have below platforms:"
     i=0
-    for platform in ${platforms_array[@]}; do
+    for platform in "${platforms_array[@]}"; do
         ((i++))
         echo -e "  [${i}].${platform}"
     done
