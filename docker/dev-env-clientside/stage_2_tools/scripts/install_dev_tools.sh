@@ -243,12 +243,20 @@ sixth_install_kernel_tools() {
         liblz4-dev \
         libssl-dev \
         expect \
-        libncurses5-dev \
         bison \
         flex \
         texinfo \
         exuberant-ctags \
         cscope
+
+    # libncurses5-dev was renamed to libncurses-dev in Ubuntu 22.04+
+    local os_major
+    os_major=$(echo "${OS_VERSION}" | cut -d'.' -f1)
+    if [ "${os_major}" -ge 22 ]; then
+        apt-get install -y libncurses-dev
+    else
+        apt-get install -y libncurses5-dev
+    fi
 }
 
 ###############################################################################
@@ -445,16 +453,27 @@ EOF
 # Description: Install specific versions of Python packages
 ###############################################################################
 eighth_install_python_packages() {
-    # Install Python basic packages
-    apt-get update && apt-get install -y \
-        python2.7 \
-        python2.7-dev \
-        libpython2.7 \
-        libpython2.7-dev
+    # -------------------------------------------------------------------------
+    # Python 2.7: removed from Ubuntu 22.04+ official repositories.
+    # Only install on Ubuntu 20.04 where it is still available.
+    # -------------------------------------------------------------------------
+    local os_major
+    os_major=$(echo "${OS_VERSION}" | cut -d'.' -f1)
 
-    # Setup Python symlinks
-    ln -sf /usr/bin/python2.7 /usr/bin/python
-    ln -sf /usr/bin/python2.7 /usr/bin/python2
+    if [ "${os_major}" -le 20 ]; then
+        echo "Ubuntu <= 20.04: installing python2.7..."
+        apt-get update && apt-get install -y \
+            python2.7 \
+            python2.7-dev \
+            libpython2.7 \
+            libpython2.7-dev
+
+        # Setup Python symlinks
+        ln -sf /usr/bin/python2.7 /usr/bin/python
+        ln -sf /usr/bin/python2.7 /usr/bin/python2
+    else
+        echo "Ubuntu >= 22.04: python2.7 not available, skipping python2 installation"
+    fi
 
     #----------------------------------------------
     # Python 3.x Installation
