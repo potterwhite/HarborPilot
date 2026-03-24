@@ -6,7 +6,6 @@ This guide walks you through setting up HarborPilot from scratch on a fresh Ubun
 
 > **Platform Support**
 > - ✅ **Ubuntu host** — fully supported
-> - ⚠️ **Serverside (distcc)** — deprecated, no longer actively maintained
 > - ❌ **Windows host** — support has been dropped
 
 ---

@@ -170,7 +170,6 @@ func_archive_server() {
         --transform 's,^,project_handover/,' \
         -C "$PROJECT_ROOT" \
         .env \
-        serverside
 }
 
 ###############################################################################
@@ -213,7 +212,6 @@ func_archive_all() {
         .env \
         "clientside/ubuntu" \
         "clientside/windows" \
-        serverside \
         "clientside/volumes/.gitkeep" \
         "clientside/volumes/WelcomeToVolumesRoot"
 }

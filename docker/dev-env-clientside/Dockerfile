@@ -145,23 +145,6 @@ ARG ENABLE_CORE_DUMPS
 ARG CORE_PATTERN
 
 # -----------------------------------------------------------------------------
-# Serverside Image & Container Options (14 arguments)
-# -----------------------------------------------------------------------------
-ARG ENABLE_SERVERSIDE
-ARG DISTCC_GCC_11_ENABLE
-ARG DISTCC_GCC_11_MAIN_PORT
-ARG DISTCC_GCC_11_STATS_PORT
-ARG DISTCC_GCC_10_ENABLE
-ARG DISTCC_GCC_10_MAIN_PORT
-ARG DISTCC_GCC_10_STATS_PORT
-ARG DISTCC_LOG_LEVEL
-ARG DISTCC_LOG_DIR
-ARG PYTHON_VERSION
-ARG TOOLCHAIN_DIR
-ARG SERVERSIDE_IMAGE_NAME
-ARG SERVERSIDE_CONTAINER_NAME
-ARG TOOLCHAIN_TARBALL_NAME  # Already added in Toolchain Offline Configuration
-
 # -----------------------------------------------------------------------------
 # Proxy Configuration
 # -----------------------------------------------------------------------------

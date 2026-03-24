@@ -62,7 +62,6 @@ main() {
         "${DEFAULTS_DIR}/07_volumes.env" \
         "${DEFAULTS_DIR}/08_samba.env" \
         "${DEFAULTS_DIR}/09_runtime.env" \
-        "${DEFAULTS_DIR}/10_serverside.env" \
         "${DEFAULTS_DIR}/11_proxy.env"
     do
         if [ -f "${defaults_file}" ]; then
@@ -239,7 +238,6 @@ _print_next_steps() {
     echo "  ║                                                                  ║"
     echo "  ╠══════════════════════════════════════════════════════════════════╣"
     echo "  ║  ⚠  DEPRECATED (no longer maintained):                          ║"
-    echo "  ║     • Serverside (distcc) — serverside_only_entrance.sh         ║"
     echo "  ║     • Windows client      — windows support has been dropped    ║"
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
     echo ""
@@ -354,11 +352,8 @@ _print_next_steps() {
     fi
 
     # Build is optional, other steps are mandatory
-    if [ "${ENABLE_SERVERSIDE}" == "true" ]; then
         if prompt_with_timeout \"Build [ServerSide] images?\" 10; then
-            _build_images_serverside || exit 1
         else
-            echo "Build serverside image stages skipped."
         fi
     fi
 }
@@ -392,11 +387,9 @@ _build_images_clientside() {
     return 0
 }
 
-_build_images_serverside() {
     echo -e "\n=== 1. Building ServerSide Docker Images ==="
 
     echo "Start Building ServerSide Dev Env"
-    ${BUILD_SCRIPT_DIR}/docker/dev-env-serverside/build.sh
     echo "Done with ServerSide Dev Env Building."
 
     return 0
@@ -420,15 +413,7 @@ _build_images_serverside() {
     fi
     echo "Final image ID: ${FINAL_IMAGE_ID}"
 
-    # Get serverside image ID
-    if [[ "${ENABLE_SERVERSIDE}" == "true" ]]; then
-        echo "Getting serverside image ID for ${SERVERSIDE_IMAGE_NAME}:${PROJECT_VERSION}"
-        FINAL_SERVERSIDE_IMAGE_ID=$(docker images ${SERVERSIDE_IMAGE_NAME}:${PROJECT_VERSION} -q)
-        if [ -z "$FINAL_SERVERSIDE_IMAGE_ID" ]; then
-            echo "Warning: No existing serverside image found with ID, this is normal for first push"
-            FINAL_SERVERSIDE_IMAGE_ID="not_found"
         else
-            echo "Final serverside image ID: ${FINAL_SERVERSIDE_IMAGE_ID}"
         fi
     fi
 
@@ -496,12 +481,9 @@ _tag_image_onair() {
         result=1
     fi
 
-    if [[ "${ENABLE_SERVERSIDE}" == "true" ]]; then
-        local full_server_source="${SERVERSIDE_IMAGE_NAME}:${tag_num}"
 
         # 2.1 Tag server image with version number
         if [ "${is_local}" != "local" ]; then
-            local full_server_target="${REGISTRY_URL}/${SERVERSIDE_IMAGE_NAME}:${tag_num}"
             if ! _tag_single_image "${full_server_source}" "${full_server_target}"; then
                 echo "✗ Error: Failed to tag server image ${full_server_source} as ${full_server_target}"
                 result=1
@@ -510,9 +492,7 @@ _tag_image_onair() {
 
         # 2.2 Tag server image as tag latest
         if [ "${is_local}" == "local" ]; then
-            local full_server_target_latest="${SERVERSIDE_IMAGE_NAME}:${tag_latest}"
         else
-            local full_server_target_latest="${REGISTRY_URL}/${SERVERSIDE_IMAGE_NAME}:${tag_latest}"
         fi
         if ! _tag_single_image "${full_server_source}" "${full_server_target_latest}"; then
             echo "✗ Error: Failed to tag server image ${full_server_source} as ${full_server_target_latest}"
@@ -709,8 +689,6 @@ _push_and_verify_image() {
     fi
 
     # Push server image if enabled
-    if [[ "${ENABLE_SERVERSIDE}" == "true" ]]; then
-        if ! _push_and_verify_single_image "${SERVERSIDE_IMAGE_NAME}" "${tag}"; then
             echo "✗ Error: Failed to push/verify server image"
             result=1
         fi
@@ -752,15 +730,8 @@ _push_and_verify_image() {
             done
         fi
 
-        # Cleanup serverside images
-        if [[ "${ENABLE_SERVERSIDE}" == "true" ]]; then
-            echo "Finding and removing intermediate images for ${SERVERSIDE_IMAGE_NAME}"
-            echo "Keeping final serverside image ID: ${FINAL_SERVERSIDE_IMAGE_ID}"
-            local server_final_id="${FINAL_SERVERSIDE_IMAGE_ID}"
-            docker images --format '{{.Repository}}:{{.Tag}} {{.ID}}' | grep "${SERVERSIDE_IMAGE_NAME}" | grep -v "${REGISTRY_URL}" |
                 awk '{print $2}' | sort -u | while read -r id; do
                 if [ "$id" != "${server_final_id}" ] && [ -n "$id" ]; then
-                    echo "Removing serverside image ID: $id"
                     docker rmi -f "$id" 2>/dev/null || true
                 fi
             done

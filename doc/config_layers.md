@@ -53,7 +53,6 @@ Eleven files, each scoped to one concern. The ordinal prefix makes the load orde
 | `07_volumes.env` | `VOLUMES_ROOT` (note: `HOST_VOLUME_DIR` has no universal default — must be set in Layer 3) |
 | `08_samba.env` | `SAMBA_PUBLIC/PRIVATE_ACCOUNT_NAME/PASSWORD`, `ENABLE_VSC_INTEGRATION` |
 | `09_runtime.env` | `ENABLE_SSH`, `ENABLE_SYSLOG`, `ENABLE_GDB_SERVER`, `ENABLE_CORE_DUMPS`, `USE_NVIDIA_GPU` |
-| `10_serverside.env` | `ENABLE_SERVERSIDE`, `DISTCC_*` ports, `TOOLCHAIN_DIR`, `PYTHON_VERSION` |
 | `11_proxy.env` | `HAS_PROXY` (default: `false`), `HTTP/HTTPS_PROXY_IP` |
 
 **Loading order matters.** The files are sourced in numerical order (01 → 11). A variable defined in `05_registry.env` can reference `CONTAINER_NAME` only if it has already been set — it hasn't yet at Layer 1, which is why `REGISTRY_URL` is intentionally left out of Layer 1 and computed in Layer 3 instead.
@@ -171,7 +170,6 @@ Scripts that implement this pattern:
 | `harbor` | Build orchestrator |
 | `docker/dev-env-clientside/build.sh` | Docker image builder |
 | `project_handover/clientside/ubuntu/ubuntu_only_entrance.sh` | Container lifecycle manager |
-| `project_handover/serverside/serverside_only_entrance.sh` | *(deprecated)* Serverside manager |
 
 ---
 

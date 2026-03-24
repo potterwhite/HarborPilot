@@ -72,7 +72,6 @@ HarborPilot/
 │   │   ├── 07_volumes.env            Volume 根路径
 │   │   ├── 08_samba.env              Samba 账号密码
 │   │   ├── 09_runtime.env            SSH / GDB / syslog 开关
-│   │   ├── 10_serverside.env         distcc 配置
 │   │   └── 11_proxy.env              代理（默认关闭）
 │   ├── platform-independent/
 │   │   └── common.env                ← Layer 2 · 项目版本与常量
@@ -88,14 +87,12 @@ HarborPilot/
 │   ├── dev-env-clientside/           五阶段 Dockerfile
 │   │   ├── Dockerfile
 │   │   └── build.sh
-│   ├── dev-env-serverside/           ⚠ 已废弃
 │   └── libs/                         可复用 Dockerfile 片段和脚本
 │
 ├── project_handover/
 │   ├── clientside/ubuntu/
 │   │   ├── ubuntu_only_entrance.sh   容器生命周期管理脚本
 │   │   └── harbor.crt                Harbor CA 证书（每台宿主机安装一次）
-│   └── serverside/                   ⚠ 已废弃
 │
 └── doc/
     ├── quick_start.md                快速上手指南（英文）
@@ -145,7 +142,6 @@ docker login <registry-ip>:<registry-port>
 
 | 组件 | 状态 |
 |---|---|
-| `project_handover/serverside/` | ⚠️ **已废弃** — distcc serverside 不再维护，脚本仅供参考 |
 | Windows 宿主机 | ❌ **已移除** — 仅支持 Ubuntu 宿主机 |
 
 ---

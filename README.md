@@ -72,7 +72,6 @@ HarborPilot/
 │   │   ├── 07_volumes.env            Volume root path
 │   │   ├── 08_samba.env              Samba credentials
 │   │   ├── 09_runtime.env            SSH / GDB / syslog switches
-│   │   ├── 10_serverside.env         distcc configuration
 │   │   └── 11_proxy.env              Proxy (off by default)
 │   ├── platform-independent/
 │   │   └── common.env                ← Layer 2 · project version & constants
@@ -88,14 +87,12 @@ HarborPilot/
 │   ├── dev-env-clientside/           Multi-stage Dockerfile (5 stages)
 │   │   ├── Dockerfile
 │   │   └── build.sh
-│   ├── dev-env-serverside/           ⚠ Deprecated
 │   └── libs/                         Reusable Dockerfile fragments & scripts
 │
 ├── project_handover/
 │   ├── clientside/ubuntu/
 │   │   ├── ubuntu_only_entrance.sh   Container lifecycle manager
 │   │   └── harbor.crt                Harbor CA cert (install once per host)
-│   └── serverside/                   ⚠ Deprecated
 │
 └── doc/
     ├── quick_start.md                Step-by-step setup guide (EN)
@@ -145,7 +142,6 @@ docker login <registry-ip>:<registry-port>
 
 | Component | Status |
 |---|---|
-| `project_handover/serverside/` | ⚠️ **Deprecated** — distcc serverside is no longer maintained. Scripts are kept for reference only. |
 | Windows host | ❌ **Dropped** — Ubuntu host only. |
 
 ---
