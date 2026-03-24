@@ -1,5 +1,17 @@
 # Change apt source to China mirrors
+# NOTE: Ubuntu 24.04+ uses DEB822 format; setup_base.sh handles both formats.
+#       This module handles the legacy sources.list format only (Ubuntu <= 22.04).
 
-RUN echo "Change apt source to China mirrors" && \
-    sed -i 's|http://archive.ubuntu.com/ubuntu/|http://mirrors.aliyun.com/ubuntu/|g' /etc/apt/sources.list && \
-    echo -e "Done\n"
+RUN if [ -f /etc/apt/sources.list ]; then \
+        echo "Replacing legacy sources.list with aliyun mirror..." && \
+        sed -i 's|http://archive.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g' /etc/apt/sources.list && \
+        sed -i 's|http://security.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g' /etc/apt/sources.list && \
+        echo -e "Done\n"; \
+    elif [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then \
+        echo "Replacing DEB822 ubuntu.sources with aliyun mirror..." && \
+        sed -i 's|http://archive.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g' /etc/apt/sources.list.d/ubuntu.sources && \
+        sed -i 's|http://security.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g' /etc/apt/sources.list.d/ubuntu.sources && \
+        echo -e "Done\n"; \
+    else \
+        echo "WARNING: No known apt sources file found, skipping mirror replacement"; \
+    fi
