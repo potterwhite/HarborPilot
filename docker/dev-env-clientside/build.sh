@@ -100,7 +100,11 @@ func_1_1_setup_env(){
         exit 1
     fi
 
-    # Port calculation: auto-derive ports from PORT_SLOT (or validate explicit ports)
+    # Port calculation: auto-derive ports from PORT_SLOT (or validate explicit ports).
+    # Unset any derived port vars that may have been inherited from a parent process
+    # (e.g. when harbor sources port_calc.sh and then invokes this script as a
+    # subprocess).  Clearing them lets port_calc.sh detect MODE A/B cleanly.
+    unset CLIENT_SSH_PORT GDB_PORT
     source "${TOP_ROOT_DIR}/scripts/port_calc.sh"
 
     BUILD_DATE="$(TZ=$TIMEZONE date +"%Y-%m-%dT%H:%M:%S%z")"
