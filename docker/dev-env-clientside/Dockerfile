@@ -149,11 +149,6 @@ ARG HTTPS_PROXY_IP
 # Copy scripts
 COPY stage_1_base/scripts/setup_base.sh /tmp/
 
-# Change apt source to China mirrors
-RUN echo "Change apt source to China mirrors" && \
-    sed -i 's|http://archive.ubuntu.com/ubuntu/|http://mirrors.aliyun.com/ubuntu/|g' /etc/apt/sources.list && \
-    echo -e "Done\n"
-
 # First install certificates and basic tools (首先安装证书和基本工具)
 RUN apt-get update && \
     apt-get install -y ca-certificates bash && \
@@ -197,7 +192,6 @@ RUN echo -e "\n========= Stage 2nd =========\n\n"
 COPY stage_2_tools/scripts/install_dev_tools.sh /tmp/
 COPY stage_2_tools/scripts/install_cuda.sh /tmp/
 COPY stage_2_tools/scripts/install_opencv.sh /tmp/
-COPY stage_2_tools/scripts/install_distcc_switcher.sh /tmp/
 # COPY stage_2_tools/configs/tool_versions.conf /tmp/
 COPY stage_2_tools/scripts/gitlfs_tracker.sh /usr/local/bin/
 
@@ -212,27 +206,15 @@ RUN echo "# 自动生成的工具版本配置" > /tmp/tool_versions.conf && \
 ################################################################################
 # Install all tools if configured enabled
 ################################################################################
-# Install distcc switcher if configured enabled
-RUN if [ "${INSTALL_DISTCC}" = "true" ]; then \
-        echo -e "\n\n##########################################################\n(1/4)Installing distcc switcher...\n##########################################################\n\n"; \
-        chmod +x /tmp/install_distcc_switcher.sh && \
-        /tmp/install_distcc_switcher.sh && \
-        echo -e "\n\n##########################################################\n(1/4)Distcc switcher is installed, Done\n##########################################################\n\n"; \
-    else \
-        echo "INSTALL_DISTCC=${INSTALL_DISTCC}"; \
-        rm -f /tmp/install_distcc_switcher.sh; \
-        echo -e "\n\n##########################################################\n(1/4)Distcc switcher is not installed, Removed install_distcc_switcher.sh, Done\n##########################################################\n\n"; \
-    fi
-
 # Install CUDA if configured enabled
 RUN if [ "${INSTALL_CUDA}" = "true" ]; then \
-        echo -e "\n\n##########################################################\n(2/4)Installing CUDA...\n##########################################################\n\n"; \
+        echo -e "\n\n##########################################################\n(1/3)Installing CUDA...\n##########################################################\n\n"; \
         chmod +x /tmp/install_cuda.sh && \
         /tmp/install_cuda.sh; \
-        echo -e "\n\n##########################################################\n(2/4)CUDA is installed, Done\n##########################################################\n\n"; \
+        echo -e "\n\n##########################################################\n(1/3)CUDA is installed, Done\n##########################################################\n\n"; \
     else \
         rm -f /tmp/install_cuda.sh; \
-        echo -e "\n\n##########################################################\n(2/4)CUDA is not installed, Removed install_cuda.sh, Done\n##########################################################\n\n"; \
+        echo -e "\n\n##########################################################\n(1/3)CUDA is not installed, Removed install_cuda.sh, Done\n##########################################################\n\n"; \
     fi
 
 # Install OpenCV if configured enabled

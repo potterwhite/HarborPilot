@@ -16,6 +16,89 @@
 
 set -e
 
+###############################################################################
+# Function: func_replace_apt_source
+# Description: Replaces apt sources with China mainland mirrors
+#              Supports Ubuntu (legacy sources.list and new DEB822 format)
+#              and Debian
+# Arguments: None
+# Returns: None
+# Notes:
+#   - Ubuntu >= 24.04 uses DEB822 format: /etc/apt/sources.list.d/ubuntu.sources
+#   - Ubuntu <= 22.04 uses legacy format: /etc/apt/sources.list
+#   - Debian uses legacy format: /etc/apt/sources.list
+#   - Mirror used: mirrors.aliyun.com (fallback: mirrors.ustc.edu.cn)
+###############################################################################
+func_replace_apt_source() {
+    echo "Detecting OS distribution and version..."
+
+    local distro=""
+    local version_id=""
+    local version_codename=""
+
+    # Read /etc/os-release to get distro info
+    if [ -f /etc/os-release ]; then
+        distro=$(. /etc/os-release && echo "${ID}")
+        version_id=$(. /etc/os-release && echo "${VERSION_ID}")
+        version_codename=$(. /etc/os-release && echo "${VERSION_CODENAME}")
+    else
+        echo "WARNING: /etc/os-release not found, skipping apt source replacement"
+        return 0
+    fi
+
+    echo "Detected: distro=${distro}, version_id=${version_id}, codename=${version_codename}"
+
+    case "${distro}" in
+        ubuntu)
+            # Ubuntu 24.04+ uses DEB822 format (.sources file)
+            # Ubuntu 22.04 and earlier uses legacy sources.list
+            local major_version
+            major_version=$(echo "${version_id}" | cut -d'.' -f1)
+
+            if [ "${major_version}" -ge 24 ]; then
+                echo "Ubuntu >= 24.04 detected, using DEB822 format replacement..."
+                local sources_file="/etc/apt/sources.list.d/ubuntu.sources"
+                if [ -f "${sources_file}" ]; then
+                    cp "${sources_file}" "${sources_file}.bak"
+                    sed -i 's|http://archive.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g' "${sources_file}"
+                    sed -i 's|http://security.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g' "${sources_file}"
+                    echo "Replaced DEB822 apt source -> mirrors.aliyun.com"
+                else
+                    echo "WARNING: ${sources_file} not found, skipping DEB822 replacement"
+                fi
+            else
+                echo "Ubuntu < 24.04 detected, using legacy sources.list replacement..."
+                local sources_file="/etc/apt/sources.list"
+                if [ -f "${sources_file}" ]; then
+                    cp "${sources_file}" "${sources_file}.bak"
+                    sed -i 's|http://archive.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g' "${sources_file}"
+                    sed -i 's|http://security.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g' "${sources_file}"
+                    echo "Replaced legacy apt source -> mirrors.aliyun.com"
+                else
+                    echo "WARNING: ${sources_file} not found, skipping legacy replacement"
+                fi
+            fi
+            ;;
+
+        debian)
+            echo "Debian detected, replacing sources.list..."
+            local sources_file="/etc/apt/sources.list"
+            if [ -f "${sources_file}" ]; then
+                cp "${sources_file}" "${sources_file}.bak"
+                sed -i 's|http://deb.debian.org/debian|http://mirrors.aliyun.com/debian|g' "${sources_file}"
+                sed -i 's|http://security.debian.org/debian-security|http://mirrors.aliyun.com/debian-security|g' "${sources_file}"
+                echo "Replaced Debian apt source -> mirrors.aliyun.com"
+            else
+                echo "WARNING: ${sources_file} not found, skipping Debian replacement"
+            fi
+            ;;
+
+        *)
+            echo "WARNING: Unknown distribution '${distro}', skipping apt source replacement"
+            ;;
+    esac
+}
+
 func_install_universe_repo() {
     echo "Enabling universe repository"
     apt-get update
@@ -223,6 +306,7 @@ main() {
     local args="$@"
     echo "Starting system setup with arguments: ${args}"
 
+    func_replace_apt_source
     func_install_universe_repo
     func_install_essential_packages
     func_setup_locale
