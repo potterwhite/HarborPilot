@@ -74,7 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Config layers documentation (doc/config_layers.md, doc/config_layers_cn.md)
 
 ### Miscellaneous
-- Remove legacy n8.env and harbor-cert.pem
+- Remove legacy rk3588s.env and harbor-cert.pem
 
 
 ---
@@ -100,7 +100,7 @@ Example: Before, a symlink like `/app/volumes -> /wrong/path` caused mounting is
 
 ## [1.3.1] - 2025-07-29
 ### Fixed
-- rv1126`s port map conflict with n8
+- rv1126`s port map conflict with rk3588s
 
 ## [1.3.0] - 2025-07-26
 ### Added
@@ -135,7 +135,7 @@ unknown: current image with "Pending" status of vulnerability scanning cannot be
 ## [01.0.1] - 2025-06-10
 ### Added
 - support for rv1126bp platform
-- n8.env and offline.env in configs
+- rk3588s.env and offline.env in configs
 - verify_git_config.sh in /usr/local/bin
 - pull_sdk_by_repo.sh in /usr/local/bin
 - proxy.sh in /etc/profile.d/

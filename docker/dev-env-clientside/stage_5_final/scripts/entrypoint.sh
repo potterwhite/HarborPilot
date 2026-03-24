@@ -45,7 +45,7 @@ main() {
     #################################
     # exec "$@"
     # It is used to run the command passed to the container
-    # e.g., docker run -it --rm n8-dev-env:stage5 /bin/bash
+    # e.g., docker run -it --rm rk3588s-dev-env:stage5 /bin/bash
     # if without this line, the container will not run the command passed to the container
     #################################
     exec "$@"
