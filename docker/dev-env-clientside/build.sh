@@ -65,7 +65,6 @@ func_1_1_setup_env(){
         "${DEFAULTS_DIR}/07_volumes.env" \
         "${DEFAULTS_DIR}/08_samba.env" \
         "${DEFAULTS_DIR}/09_runtime.env" \
-        "${DEFAULTS_DIR}/10_serverside.env" \
         "${DEFAULTS_DIR}/11_proxy.env"
     do
         if [ -f "${defaults_file}" ]; then
@@ -127,7 +126,6 @@ func_1_1_setup_env(){
         "${DEFAULTS_DIR}/07_volumes.env"
         "${DEFAULTS_DIR}/08_samba.env"
         "${DEFAULTS_DIR}/09_runtime.env"
-        "${DEFAULTS_DIR}/10_serverside.env"
         "${DEFAULTS_DIR}/11_proxy.env"
         "${PLATFORM_INDEPENDENT_ENV_PATH}"
         "${PLATFORM_ENV_PATH}"
