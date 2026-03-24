@@ -201,10 +201,6 @@ create_platform() {
     _prompt "SDK git branch" "main"
     local sdk_branch="${REPLY}"
 
-    # 6. Toolchain tarball
-    _prompt "Toolchain tarball name" "gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu.tar.gz"
-    local toolchain="${REPLY}"
-
     # 7. NVIDIA GPU
     local use_nvidia="false"
     if _prompt_yn "Enable NVIDIA GPU support?" "n"; then

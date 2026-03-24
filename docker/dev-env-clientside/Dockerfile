@@ -57,7 +57,7 @@ ARG DOCKER_BUILDKIT
 ARG BUILD_DATE
 
 # -----------------------------------------------------------------------------
-# Development Tools Configuration (13 arguments)
+# Development Tools Configuration (11 arguments)
 # -----------------------------------------------------------------------------
 ARG INSTALL_CUDA
 ARG INSTALL_OPENCV
@@ -65,20 +65,11 @@ ARG INSTALL_HOST_CMAKE
 ARG INSTALL_MAN_DOC
 ARG INSTALL_DISTCC
 ARG NPM_USE_CHINA_MIRROR
-ARG INSTALL_TOOLCHAIN
 ARG CONAN_VERSION
 ARG CMAKE_FORMAT_VERSION
 ARG PRE_COMMIT_VERSION
 ARG CUDA_VERSION
 ARG OPENCV_VERSION
-ARG GCC_OFFLINE_PACKAGE
-
-# -----------------------------------------------------------------------------
-# Toolchain Offline Configuration (3 arguments)
-# -----------------------------------------------------------------------------
-ARG GCC_OFFLINE_VERSION
-ARG GCC_INSTALL_PATH
-ARG TOOLCHAIN_TARBALL_NAME  # Added from Serverside section for consistency
 
 # -----------------------------------------------------------------------------
 # Workspace Configuration (16 arguments)
@@ -209,73 +200,55 @@ COPY stage_2_tools/scripts/install_distcc_switcher.sh /tmp/
 # COPY stage_2_tools/configs/tool_versions.conf /tmp/
 COPY stage_2_tools/scripts/gitlfs_tracker.sh /usr/local/bin/
 
-# Copy offline packages if they exist
-COPY stage_2_tools/offline_toolchain /tmp/offline_toolchain/
-
 # 创建环境变量配置文件
 RUN echo "# 自动生成的工具版本配置" > /tmp/tool_versions.conf && \
     echo "CONAN_VERSION=\"${CONAN_VERSION}\"" >> /tmp/tool_versions.conf && \
     echo "CMAKE_FORMAT_VERSION=\"${CMAKE_FORMAT_VERSION}\"" >> /tmp/tool_versions.conf && \
     echo "PRE_COMMIT_VERSION=\"${PRE_COMMIT_VERSION}\"" >> /tmp/tool_versions.conf && \
     echo "CUDA_VERSION=\"${CUDA_VERSION}\"" >> /tmp/tool_versions.conf && \
-    echo "OPENCV_VERSION=\"${OPENCV_VERSION}\"" >> /tmp/tool_versions.conf && \
-    echo "GCC_OFFLINE_PACKAGE=\"${GCC_OFFLINE_PACKAGE}\"" >> /tmp/tool_versions.conf && \
-    echo "GCC_OFFLINE_VERSION=\"${GCC_OFFLINE_VERSION}\"" >> /tmp/tool_versions.conf && \
-    echo "GCC_INSTALL_PATH=\"${GCC_INSTALL_PATH}\"" >> /tmp/tool_versions.conf
+    echo "OPENCV_VERSION=\"${OPENCV_VERSION}\"" >> /tmp/tool_versions.conf
 
 ################################################################################
 # Install all tools if configured enabled
 ################################################################################
 # Install distcc switcher if configured enabled
 RUN if [ "${INSTALL_DISTCC}" = "true" ]; then \
-        echo -e "\n\n##########################################################\n(1/5)Installing distcc switcher...\n##########################################################\n\n"; \
+        echo -e "\n\n##########################################################\n(1/4)Installing distcc switcher...\n##########################################################\n\n"; \
         chmod +x /tmp/install_distcc_switcher.sh && \
         /tmp/install_distcc_switcher.sh && \
-        echo -e "\n\n##########################################################\n(1/5)Distcc switcher is installed, Done\n##########################################################\n\n"; \
+        echo -e "\n\n##########################################################\n(1/4)Distcc switcher is installed, Done\n##########################################################\n\n"; \
     else \
         echo "INSTALL_DISTCC=${INSTALL_DISTCC}"; \
         rm -f /tmp/install_distcc_switcher.sh; \
-        echo -e "\n\n##########################################################\n(1/5)Distcc switcher is not installed, Removed install_distcc_switcher.sh, Done\n##########################################################\n\n"; \
-    fi
-
-RUN if [ "${INSTALL_TOOLCHAIN}" = "true" ]; then \
-        ls -lha /tmp/offline_toolchain && \
-        echo -e "\n\n##########################################################\n(2/5)Installing GCC...\n##########################################################\n\n"; \
-        chmod +x /tmp/offline_toolchain/gcc/install_gcc.sh && \
-        /tmp/offline_toolchain/gcc/install_gcc.sh && \
-        echo -e "\n\n##########################################################\n(2/5)GCC is installed, Done\n##########################################################\n\n"; \
-    else \
-        echo "INSTALL_TOOLCHAIN=${INSTALL_TOOLCHAIN}"; \
-        rm -f /tmp/offline_toolchain/gcc/install_gcc.sh; \
-        echo -e "\n\n##########################################################\n(2/5)GCC is not installed, Removed, Done\n##########################################################\n\n"; \
+        echo -e "\n\n##########################################################\n(1/4)Distcc switcher is not installed, Removed install_distcc_switcher.sh, Done\n##########################################################\n\n"; \
     fi
 
 # Install CUDA if configured enabled
 RUN if [ "${INSTALL_CUDA}" = "true" ]; then \
-        echo -e "\n\n##########################################################\n(3/5)Installing CUDA...\n##########################################################\n\n"; \
+        echo -e "\n\n##########################################################\n(2/4)Installing CUDA...\n##########################################################\n\n"; \
         chmod +x /tmp/install_cuda.sh && \
         /tmp/install_cuda.sh; \
-        echo -e "\n\n##########################################################\n(3/5)CUDA is installed, Done\n##########################################################\n\n"; \
+        echo -e "\n\n##########################################################\n(2/4)CUDA is installed, Done\n##########################################################\n\n"; \
     else \
         rm -f /tmp/install_cuda.sh; \
-        echo -e "\n\n##########################################################\n(3/5)CUDA is not installed, Removed install_cuda.sh, Done\n##########################################################\n\n"; \
+        echo -e "\n\n##########################################################\n(2/4)CUDA is not installed, Removed install_cuda.sh, Done\n##########################################################\n\n"; \
     fi
 
 # Install OpenCV if configured enabled
 RUN if [ "${INSTALL_OPENCV}" = "true" ]; then \
         chmod +x /tmp/install_opencv.sh && \
         /tmp/install_opencv.sh; \
-        echo -e "\n\n##########################################################\n(4/5)OpenCV is installed, Done\n##########################################################\n\n"; \
+        echo -e "\n\n##########################################################\n(3/4)OpenCV is installed, Done\n##########################################################\n\n"; \
     else \
         rm -f /tmp/install_opencv.sh; \
-        echo -e "\n\n##########################################################\n(4/5)OpenCV is not installed, Removed install_opencv.sh, Done\n##########################################################\n\n"; \
+        echo -e "\n\n##########################################################\n(3/4)OpenCV is not installed, Removed install_opencv.sh, Done\n##########################################################\n\n"; \
     fi
 
 # Execute tools installation
-RUN echo -e "\n\n##########################################################\n(5/5)Installing dev tools...\n##########################################################\n\n"; \
+RUN echo -e "\n\n##########################################################\n(4/4)Installing dev tools...\n##########################################################\n\n"; \
     chmod +x /tmp/install_dev_tools.sh && \
     /tmp/install_dev_tools.sh && \
-    echo -e "\n\n##########################################################\n(5/5)Dev Tools are installed, Done\n##########################################################\n\n";
+    echo -e "\n\n##########################################################\n(4/4)Dev Tools are installed, Done\n##########################################################\n\n";
 
 # Install gitlfs tracker, a diy git lfs tracker to help git operations
 RUN chmod +x /usr/local/bin/gitlfs_tracker.sh
@@ -285,8 +258,7 @@ RUN chmod +x /usr/local/bin/gitlfs_tracker.sh
 ################################################################################
 # Clean up
 ################################################################################
-RUN rm -rf /tmp/offline_toolchain && \
-    rm -f /tmp/install_*.sh && \
+RUN rm -f /tmp/install_*.sh && \
     rm -f /tmp/tool_versions.conf
 
 RUN echo -e "\n========= Stage 2nd Complete =========\n\n"

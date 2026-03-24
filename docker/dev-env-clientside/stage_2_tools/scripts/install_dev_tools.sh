@@ -491,23 +491,6 @@ eighth_install_python_packages() {
 }
 
 ###############################################################################
-# Ninth: Install ARM toolchain
-# Description: Optional ARM toolchain installation
-###############################################################################
-ninth_install_arm_toolchain() {
-    if [ "${INSTALL_ARM_TOOLCHAIN}" = "true" ]; then
-        apt-get update && apt-get install -y \
-            gcc-arm-linux-gnueabi \
-            g++-arm-linux-gnueabi \
-            gcc-arm-linux-gnueabihf \
-            g++-arm-linux-gnueabihf
-    fi
-}
-
-
-
-
-###############################################################################
 # Tenth: Cleanup
 # Description: Clean up package manager cache
 ###############################################################################
@@ -534,7 +517,6 @@ main() {
     fi
 
     eighth_install_python_packages
-    ninth_install_arm_toolchain
 
     #------------------------------
     nintyninth_cleanup
