@@ -22,7 +22,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TOP_ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PLATFORMS_DIR="${TOP_ROOT_DIR}/configs/platforms"
-TEMPLATE_FILE="${PLATFORMS_DIR}/offline.env"
 
 # ─── Colors ──────────────────────────────────────────────────────────────────
 _BOLD='\033[1m'
@@ -32,9 +31,8 @@ _CYAN='\033[0;36m'
 _RED='\033[0;31m'
 _NC='\033[0m'
 
-# ─── Port base values (must match configs/port_calc.sh) ─────────────────────
+# ─── Port base values (must match scripts/port_calc.sh) ──────────────────────
 _PORT_BASE_CLIENT_SSH=2109
-_PORT_BASE_SERVER_SSH=2110
 _PORT_BASE_GDB=2345
 _PORT_STEP=10
 
@@ -69,7 +67,7 @@ _prompt() {
 }
 
 # Prompt for yes/no; returns 0 for yes, 1 for no
-# Usage: _prompt_yn "Question" "y"  (default y)
+# Usage: _prompt_yn "Question" "y/n"  (default)
 _prompt_yn() {
     local label="$1"
     local default="${2:-n}"
@@ -142,7 +140,7 @@ create_platform() {
     echo ""
 
     # 1. Platform name
-    _prompt "Platform name (e.g. rk3566, imx8mp)"
+    _prompt "Platform name (e.g. rk3566, imx8mp, am62x)"
     local platform_name="${REPLY}"
 
     # Validate: no spaces, no special chars
@@ -158,28 +156,27 @@ create_platform() {
         return 1
     fi
 
-    # 2. Ubuntu version
-    _prompt "Ubuntu version" "22.04"
+    # 2. OS version
+    _prompt "OS version (e.g. 22.04, 24.04, 20.04)" "22.04"
     local os_version="${REPLY}"
 
     # 3. Host volume directory
     _prompt "Host volume directory" "/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/volumes/${platform_name}"
     local host_volume_dir="${REPLY}"
 
-    # 4. GitLab server
+    # 4. Registry / GitLab server
     local have_gitlab="FALSE"
-    local ubuntu_server_ip="192.168.3.68"
-    local ubuntu_server_port="9000"
+    local server_ip server_port
     if _prompt_yn "GitLab server available?" "n"; then
         have_gitlab="TRUE"
-        _prompt "Ubuntu server IP" "192.168.3.67"
-        ubuntu_server_ip="${REPLY}"
+        _prompt "GitLab server IP" "192.168.3.67"
+        server_ip="${REPLY}"
     else
-        _prompt "Ubuntu server IP" "192.168.3.68"
-        ubuntu_server_ip="${REPLY}"
+        _prompt "Registry server IP" "192.168.3.68"
+        server_ip="${REPLY}"
     fi
-    _prompt "Ubuntu server port" "9000"
-    ubuntu_server_port="${REPLY}"
+    _prompt "Registry server port" "9000"
+    server_port="${REPLY}"
 
     # 5. SDK branch
     _prompt "SDK git branch" "main"
@@ -215,30 +212,38 @@ create_platform() {
 
     # 9. Proxy
     local has_proxy="false"
+    local http_proxy_url=""
+    local https_proxy_url=""
     if _prompt_yn "Has proxy?" "n"; then
         has_proxy="true"
+        _prompt "HTTP proxy URL" "http://${server_ip}:7890"
+        http_proxy_url="${REPLY}"
+        _prompt "HTTPS proxy URL" "${http_proxy_url}"
+        https_proxy_url="${REPLY}"
     fi
 
     # ─── Calculate and display ports ─────────────────────────────────────
     local offset=$(( port_slot * _PORT_STEP ))
     local calc_ssh=$(( _PORT_BASE_CLIENT_SSH + offset ))
-    local calc_ssh_srv=$(( _PORT_BASE_SERVER_SSH + offset ))
     local calc_gdb=$(( _PORT_BASE_GDB + offset ))
 
     echo ""
     echo -e "  ${_YELLOW}--- Summary ---${_NC}"
     echo ""
     echo -e "  Platform:        ${_BOLD}${platform_name}${_NC}"
-    echo -e "  Ubuntu:          ${os_version}"
+    echo -e "  OS version:      ${os_version}"
     echo -e "  PORT_SLOT:       ${port_slot} (offset = ${offset})"
     echo -e "  Volume:          ${host_volume_dir}"
     echo -e "  GitLab:          ${have_gitlab}"
-    echo -e "  Server:          ${ubuntu_server_ip}:${ubuntu_server_port}"
+    echo -e "  Server:          ${server_ip}:${server_port}"
     echo -e "  NVIDIA GPU:      ${use_nvidia}"
+    if [[ "${has_proxy}" == "true" ]]; then
+        echo -e "  HTTP  proxy:     ${http_proxy_url}"
+        echo -e "  HTTPS proxy:     ${https_proxy_url}"
+    fi
     echo ""
     echo -e "  ${_CYAN}Calculated Ports:${_NC}"
     echo -e "    CLIENT_SSH_PORT = ${calc_ssh}"
-    echo -e "    SERVER_SSH_PORT = ${calc_ssh_srv}"
     echo -e "    GDB_PORT        = ${calc_gdb}"
     echo ""
 
@@ -250,11 +255,21 @@ create_platform() {
     # ─── Generate the .env file ──────────────────────────────────────────
     local output_file="${PLATFORMS_DIR}/${platform_name}.env"
 
+    # Build proxy block conditionally
+    local proxy_block
+    if [[ "${has_proxy}" == "true" ]]; then
+        proxy_block="HAS_PROXY=\"true\"
+HTTP_PROXY_IP=\"${http_proxy_url}\"
+HTTPS_PROXY_IP=\"${https_proxy_url}\""
+    else
+        proxy_block="HAS_PROXY=\"false\""
+    fi
+
     cat > "${output_file}" << ENVEOF
 ################################################################################
 # File: configs/platforms/${platform_name}.env
 #
-# Description: Platform-specific overrides for ${platform_name} (Ubuntu ${os_version}).
+# Description: Platform-specific overrides for ${platform_name} (${os_version}).
 #              Only values that DIFFER from configs/defaults/*.env are listed.
 #              All other settings are inherited from the defaults layer.
 #
@@ -285,8 +300,8 @@ CONTAINER_NAME=\${PRODUCT_NAME}
 # Registry Overrides  [differs from defaults]
 # =============================================================================
 HAVE_GITLAB_SERVER="${have_gitlab}"
-UBUNTU_SERVER_IP="${ubuntu_server_ip}"
-UBUNTU_SERVER_PORT="${ubuntu_server_port}"
+UBUNTU_SERVER_IP="${server_ip}"
+UBUNTU_SERVER_PORT="${server_port}"
 REGISTRY_URL="\${UBUNTU_SERVER_IP}:\${UBUNTU_SERVER_PORT}/team_\${CONTAINER_NAME}"
 
 # =============================================================================
@@ -320,7 +335,7 @@ TOOLCHAIN_TARBALL_NAME="${toolchain}"
 # =============================================================================
 # Proxy Overrides
 # =============================================================================
-HAS_PROXY="${has_proxy}"
+${proxy_block}
 ENVEOF
 
     echo ""
