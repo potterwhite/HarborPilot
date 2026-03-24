@@ -269,29 +269,13 @@ COPY ./stage_3_sdk/scripts/ /tmp/scripts/
 
 WORKDIR /tmp
 
-RUN set -a && \
-    # 创建一个临时文件，包含所有环境变量名称
-    env | cut -d= -f1 > /tmp/env_vars.txt && \
-    # 处理所有模板文件
-    for template in $(find /tmp/configs -name "*_template") $(find /tmp/scripts -name "*_template"); do \
-        output_file="${template%_template}" && \
-        echo "Processing $template -> $output_file" && \
-        cp "$template" "$output_file.tmp" && \
-        # 遍历所有环境变量并使用sed替换
-        while read var_name; do \
-            # 跳过一些特殊变量或内部变量
-            if [[ ! "$var_name" =~ ^(PWD|SHLVL|_|PATH|HOSTNAME|HOME|TERM)$ ]]; then \
-                var_value=$(eval echo \$$var_name) && \
-                # 使用sed替换变量，处理可能包含特殊字符的值
-                var_value_escaped=$(echo "$var_value" | sed 's/[\/&]/\\&/g') && \
-                sed -i "s|\${$var_name}|$var_value_escaped|g" "$output_file.tmp"; \
-            fi; \
-        done < /tmp/env_vars.txt && \
-        mv "$output_file.tmp" "$output_file" && \
+# Render all *_template files using envsubst (provided by gettext-base, already installed)
+RUN for template in $(find /tmp/configs /tmp/scripts -name "*_template" 2>/dev/null); do \
+        output_file="${template%_template}"; \
+        echo "Processing $template -> $output_file"; \
+        envsubst < "$template" > "$output_file"; \
         chmod +x "$output_file"; \
-    done && \
-    rm -f /tmp/env_vars.txt && \
-    set +a
+    done
 
 FROM stage_3rd_template-processor AS stage_3rd_sdk
 
@@ -370,29 +354,13 @@ COPY ./stage_4_config/scripts/ /tmp/scripts/
 RUN find /tmp/
 
 WORKDIR /tmp
-RUN set -a && \
-    # 创建一个临时文件，包含所有环境变量名称
-    env | cut -d= -f1 > /tmp/env_vars.txt && \
-    # 处理所有模板文件
-    for template in $(find /tmp/configs -name "*_template") $(find /tmp/scripts -name "*_template"); do \
-        output_file="${template%_template}" && \
-        echo "Processing $template -> $output_file" && \
-        cp "$template" "$output_file.tmp" && \
-        # 遍历所有环境变量并使用sed替换
-        while read var_name; do \
-            # 跳过一些特殊变量或内部变量
-            if [[ ! "$var_name" =~ ^(PWD|SHLVL|_|PATH|HOSTNAME|HOME|TERM)$ ]]; then \
-                var_value=$(eval echo \$$var_name) && \
-                # 使用sed替换变量，处理可能包含特殊字符的值
-                var_value_escaped=$(echo "$var_value" | sed 's/[\/&]/\\&/g') && \
-                sed -i "s|\${$var_name}|$var_value_escaped|g" "$output_file.tmp"; \
-            fi; \
-        done < /tmp/env_vars.txt && \
-        mv "$output_file.tmp" "$output_file" && \
+# Render all *_template files using envsubst
+RUN for template in $(find /tmp/configs /tmp/scripts -name "*_template" 2>/dev/null); do \
+        output_file="${template%_template}"; \
+        echo "Processing $template -> $output_file"; \
+        envsubst < "$template" > "$output_file"; \
         chmod +x "$output_file"; \
-    done && \
-    rm -f /tmp/env_vars.txt && \
-    set +a
+    done
 
 FROM stage_4th_template-processor AS stage_4th_config
 
@@ -450,29 +418,13 @@ COPY ./stage_5_final/configs/ /tmp/configs/
 COPY ./stage_5_final/scripts/ /tmp/scripts/
 
 WORKDIR /tmp
-RUN set -a && \
-    # 创建一个临时文件，包含所有环境变量名称
-    env | cut -d= -f1 > /tmp/env_vars.txt && \
-    # 处理所有模板文件
-    for template in $(find /tmp/configs -name "*_template") $(find /tmp/scripts -name "*_template"); do \
-        output_file="${template%_template}" && \
-        echo "Processing $template -> $output_file" && \
-        cp "$template" "$output_file.tmp" && \
-        # 遍历所有环境变量并使用sed替换
-        while read var_name; do \
-            # 跳过一些特殊变量或内部变量
-            if [[ ! "$var_name" =~ ^(PWD|SHLVL|_|PATH|HOSTNAME|HOME|TERM)$ ]]; then \
-                var_value=$(eval echo \$$var_name) && \
-                # 使用sed替换变量，处理可能包含特殊字符的值
-                var_value_escaped=$(echo "$var_value" | sed 's/[\/&]/\\&/g') && \
-                sed -i "s|\${$var_name}|$var_value_escaped|g" "$output_file.tmp"; \
-            fi; \
-        done < /tmp/env_vars.txt && \
-        mv "$output_file.tmp" "$output_file" && \
+# Render all *_template files using envsubst
+RUN for template in $(find /tmp/configs /tmp/scripts -name "*_template" 2>/dev/null); do \
+        output_file="${template%_template}"; \
+        echo "Processing $template -> $output_file"; \
+        envsubst < "$template" > "$output_file"; \
         chmod +x "$output_file"; \
-    done && \
-    rm -f /tmp/env_vars.txt && \
-    set +a
+    done
 
 FROM stage_5th_template-processor AS stage_5th_final
 
