@@ -79,6 +79,9 @@ main() {
     echo "Loading environment variables from ${PLATFORM_ENV_DEST_PATH}"
     source ${PLATFORM_ENV_DEST_PATH}
 
+    # Port calculation: auto-derive ports from PORT_SLOT (or validate explicit ports)
+    source "${TOP_ROOT_DIR}/scripts/port_calc.sh"
+
     0_check_registry_login || exit 1
 
     1_1_setup_volume_soft_link || exit 1
@@ -270,6 +273,8 @@ _print_next_steps() {
         ((i++))
         echo -e "  [${i}].${platform}"
     done
+    local create_idx=$(( i + 1 ))
+    echo -e "  [${create_idx}].${_CREATE_PLATFORM_LABEL:-+ Create new platform}"
 
     # echo ${platforms_array[1]}
     #-------------------------------------------------------
@@ -281,6 +286,17 @@ _print_next_steps() {
     if ! [[ "${user_type}" =~ ^[0-9]+$ ]]; then
         echo "✗ Error: Invalid input. Please enter a number."
         return 1
+    fi
+
+    # Handle "Create new platform" selection
+    if [ "${user_type}" -eq "${create_idx}" ]; then
+        if "${TOP_ROOT_DIR}/scripts/create_platform.sh"; then
+            echo "Platform created. Reloading platform list..."
+            return 1  # return 1 triggers the while-true retry in main()
+        else
+            echo "Platform creation cancelled or failed."
+            return 1
+        fi
     fi
 
     if [ ${user_type} -lt 1 ] || [ ${user_type} -gt ${platform_number} ]; then
@@ -350,12 +366,6 @@ _print_next_steps() {
     else
         echo "Build clientside image stages skipped."
     fi
-
-    # Build is optional, other steps are mandatory
-        if prompt_with_timeout \"Build [ServerSide] images?\" 10; then
-        else
-        fi
-    fi
 }
 
 _build_images_clientside() {
@@ -387,14 +397,6 @@ _build_images_clientside() {
     return 0
 }
 
-    echo -e "\n=== 1. Building ServerSide Docker Images ==="
-
-    echo "Start Building ServerSide Dev Env"
-    echo "Done with ServerSide Dev Env Building."
-
-    return 0
-}
-
 ################################################################################
 # 3. Prepare version information and store final image ID
 # Returns:
@@ -412,10 +414,6 @@ _build_images_clientside() {
         return 1
     fi
     echo "Final image ID: ${FINAL_IMAGE_ID}"
-
-        else
-        fi
-    fi
 
     return 0
 }
@@ -479,25 +477,6 @@ _tag_image_onair() {
     if ! _tag_single_image "${full_client_source}" "${full_target_latest}"; then
         echo "✗ Error: Failed to tag client image ${full_client_source} as ${full_target_latest}"
         result=1
-    fi
-
-
-        # 2.1 Tag server image with version number
-        if [ "${is_local}" != "local" ]; then
-            if ! _tag_single_image "${full_server_source}" "${full_server_target}"; then
-                echo "✗ Error: Failed to tag server image ${full_server_source} as ${full_server_target}"
-                result=1
-            fi
-        fi
-
-        # 2.2 Tag server image as tag latest
-        if [ "${is_local}" == "local" ]; then
-        else
-        fi
-        if ! _tag_single_image "${full_server_source}" "${full_server_target_latest}"; then
-            echo "✗ Error: Failed to tag server image ${full_server_source} as ${full_server_target_latest}"
-            result=1
-        fi
     fi
 
     return ${result}
@@ -688,12 +667,6 @@ _push_and_verify_image() {
         result=1
     fi
 
-    # Push server image if enabled
-            echo "✗ Error: Failed to push/verify server image"
-            result=1
-        fi
-    fi
-
     return ${result}
 }
 
@@ -725,13 +698,6 @@ _push_and_verify_image() {
                 awk '{print $2}' | sort -u | while read -r id; do
                 if [ "$id" != "${final_id}" ] && [ -n "$id" ]; then
                     echo "Removing image ID: $id"
-                    docker rmi -f "$id" 2>/dev/null || true
-                fi
-            done
-        fi
-
-                awk '{print $2}' | sort -u | while read -r id; do
-                if [ "$id" != "${server_final_id}" ] && [ -n "$id" ]; then
                     docker rmi -f "$id" 2>/dev/null || true
                 fi
             done
