@@ -171,7 +171,7 @@ prompt_with_timeout() {
 
     echo -e "\n[Registry] Checking Docker login status for ${REGISTRY_URL%%/*} ..."
 
-    local registry_host="${UBUNTU_SERVER_IP}:${UBUNTU_SERVER_PORT}"
+    local registry_host="${HARBOR_SERVER_IP}:${HARBOR_SERVER_PORT}"
 
     # ------------------------------------------------------------------
     # Passive credential check — reads config.json only, no network call.

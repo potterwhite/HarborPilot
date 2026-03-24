@@ -175,21 +175,29 @@ create_platform() {
     _prompt "Host volume directory" "/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/volumes/${platform_name}"
     local host_volume_dir="${REPLY}"
 
-    # 4. Registry / GitLab server
+    # 4. GitLab server (optional)
     local have_gitlab="FALSE"
-    local server_ip server_port
+    local gitlab_ip="" gitlab_port=""
     if _prompt_yn "GitLab server available?" "n"; then
         have_gitlab="TRUE"
         _prompt "GitLab server IP" "192.168.3.67"
-        server_ip="${REPLY}"
-    else
-        _prompt "Registry server IP" "192.168.3.68"
-        server_ip="${REPLY}"
+        gitlab_ip="${REPLY}"
+        _prompt "GitLab server port" "80"
+        gitlab_port="${REPLY}"
     fi
-    _prompt "Registry server port" "9000"
-    server_port="${REPLY}"
 
-    # 5. SDK branch
+    # 5. Harbor registry server
+    local harbor_ip harbor_port
+    if [[ "${have_gitlab}" == "TRUE" ]]; then
+        _prompt "Harbor registry IP" "${gitlab_ip}"
+    else
+        _prompt "Harbor registry IP" "192.168.3.68"
+    fi
+    harbor_ip="${REPLY}"
+    _prompt "Harbor registry port" "9000"
+    harbor_port="${REPLY}"
+
+    # 6. SDK branch
     _prompt "SDK git branch" "main"
     local sdk_branch="${REPLY}"
 
@@ -227,7 +235,7 @@ create_platform() {
     local https_proxy_url=""
     if _prompt_yn "Has proxy?" "n"; then
         has_proxy="true"
-        _prompt "HTTP proxy URL" "http://${server_ip}:7890"
+        _prompt "HTTP proxy URL" "http://${harbor_ip}:7890"
         http_proxy_url="${REPLY}"
         _prompt "HTTPS proxy URL" "${http_proxy_url}"
         https_proxy_url="${REPLY}"
@@ -245,8 +253,12 @@ create_platform() {
     echo -e "  OS version:      ${os_version}"
     echo -e "  PORT_SLOT:       ${port_slot} (offset = ${offset})"
     echo -e "  Volume:          ${host_volume_dir}"
-    echo -e "  GitLab:          ${have_gitlab}"
-    echo -e "  Server:          ${server_ip}:${server_port}"
+    if [[ "${have_gitlab}" == "TRUE" ]]; then
+        echo -e "  GitLab:          ${gitlab_ip}:${gitlab_port}"
+    else
+        echo -e "  GitLab:          (none)"
+    fi
+    echo -e "  Harbor registry: ${harbor_ip}:${harbor_port}"
     echo -e "  NVIDIA GPU:      ${use_nvidia}"
     if [[ "${has_proxy}" == "true" ]]; then
         echo -e "  HTTP  proxy:     ${http_proxy_url}"
@@ -265,6 +277,16 @@ create_platform() {
 
     # ─── Generate the .env file ──────────────────────────────────────────
     local output_file="${PLATFORMS_DIR}/${platform_name}.env"
+
+    # Build GitLab block conditionally
+    local gitlab_block
+    if [[ "${have_gitlab}" == "TRUE" ]]; then
+        gitlab_block="HAVE_GITLAB_SERVER=\"TRUE\"
+GITLAB_SERVER_IP=\"${gitlab_ip}\"
+GITLAB_SERVER_PORT=\"${gitlab_port}\""
+    else
+        gitlab_block="HAVE_GITLAB_SERVER=\"FALSE\""
+    fi
 
     # Build proxy block conditionally
     local proxy_block
@@ -308,18 +330,22 @@ LATEST_IMAGE_TAG=\${PROJECT_VERSION}
 CONTAINER_NAME=\${PRODUCT_NAME}
 
 # =============================================================================
-# Registry Overrides  [differs from defaults]
+# GitLab Server  [optional — set HAVE_GITLAB_SERVER=FALSE to skip]
 # =============================================================================
-HAVE_GITLAB_SERVER="${have_gitlab}"
-UBUNTU_SERVER_IP="${server_ip}"
-UBUNTU_SERVER_PORT="${server_port}"
-REGISTRY_URL="\${UBUNTU_SERVER_IP}:\${UBUNTU_SERVER_PORT}/team_\${CONTAINER_NAME}"
+${gitlab_block}
 
 # =============================================================================
-# SDK  [derived — depends on CONTAINER_NAME]
+# Harbor Registry  [required for push/pull]
+# =============================================================================
+HARBOR_SERVER_IP="${harbor_ip}"
+HARBOR_SERVER_PORT="${harbor_port}"
+REGISTRY_URL="\${HARBOR_SERVER_IP}:\${HARBOR_SERVER_PORT}/team_\${CONTAINER_NAME}"
+
+# =============================================================================
+# SDK  [derived — depends on CONTAINER_NAME and GITLAB_SERVER_IP]
 # =============================================================================
 SDK_INSTALL_PATH="\${WORKSPACE_ROOT}/sdk"
-SDK_GIT_REPO="git@\${UBUNTU_SERVER_IP}:team_\${CONTAINER_NAME}/\${CONTAINER_NAME}_sdk.git"
+SDK_GIT_REPO="git@\${GITLAB_SERVER_IP:-${harbor_ip}}:team_\${CONTAINER_NAME}/\${CONTAINER_NAME}_sdk.git"
 SDK_GIT_KEY_FILE="SDK_\${CONTAINER_NAME}_ED25519"
 SDK_GIT_DEFAULT_BRANCH="${sdk_branch}"
 
@@ -333,15 +359,6 @@ HOST_VOLUME_DIR="${host_volume_dir}"
 # =============================================================================
 PORT_SLOT="${port_slot}"
 USE_NVIDIA_GPU="${use_nvidia}"
-
-# =============================================================================
-
-# =============================================================================
-# Toolchain
-# =============================================================================
-TOOLCHAIN_TARBALL_NAME="${toolchain}"
-
-# =============================================================================
 
 # =============================================================================
 # Proxy Overrides
