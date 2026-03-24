@@ -1,0 +1,245 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "HarborPilot Platform Configuration",
+  "description": "Schema for configs/platforms/<platform>.env files. Only fields that differ from configs/defaults/*.env need to be specified in a platform file.",
+  "type": "object",
+
+  "required": ["PRODUCT_NAME", "OS_VERSION", "PORT_SLOT"],
+
+  "properties": {
+
+    "PRODUCT_NAME": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]+$",
+      "description": "Unique identifier for the target platform. Used as image name prefix, container name, and SDK repo path. No spaces or special chars.",
+      "examples": ["rk3588s", "rk3568", "rv1126", "imx8mp", "am62x"]
+    },
+
+    "OS_DISTRIBUTION": {
+      "type": "string",
+      "enum": ["ubuntu", "debian"],
+      "default": "ubuntu",
+      "description": "Linux distribution for the base Docker image. Default: ubuntu (from configs/defaults/01_base.env)."
+    },
+
+    "OS_VERSION": {
+      "type": "string",
+      "description": "Distribution version string used as the Docker image tag (e.g. ubuntu:${OS_VERSION}). Must match an available image tag.",
+      "examples": ["20.04", "22.04", "24.04", "11", "12"],
+      "enum": ["20.04", "22.04", "24.04", "11", "12"]
+    },
+
+    "IMAGE_NAME": {
+      "type": "string",
+      "description": "Docker image name. Default: ${PRODUCT_NAME}-dev-env. Override only if you need a different naming convention.",
+      "default": "${PRODUCT_NAME}-dev-env"
+    },
+
+    "CONTAINER_NAME": {
+      "type": "string",
+      "description": "Docker container name. Default: ${PRODUCT_NAME}.",
+      "default": "${PRODUCT_NAME}"
+    },
+
+    "PORT_SLOT": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 99,
+      "description": "Port slot number for auto-calculating SSH and GDB host ports. Each platform must use a unique slot. Formula: SSH_PORT = 2109 + PORT_SLOT*10, GDB_PORT = 2345 + PORT_SLOT*10. Run 'scripts/create_platform.sh' to auto-assign the next available slot.",
+      "examples": [0, 1, 2, 3]
+    },
+
+    "HARBOR_SERVER_IP": {
+      "type": "string",
+      "description": "IP address of the Harbor container registry server.",
+      "examples": ["192.168.3.68", "192.168.1.100"]
+    },
+
+    "HARBOR_SERVER_PORT": {
+      "type": "string",
+      "description": "Port of the Harbor container registry server.",
+      "default": "9000",
+      "examples": ["9000", "80", "443"]
+    },
+
+    "REGISTRY_URL": {
+      "type": "string",
+      "description": "Full Harbor registry URL for push/pull. Default: ${HARBOR_SERVER_IP}:${HARBOR_SERVER_PORT}/team_${CONTAINER_NAME}. Override if your Harbor project naming differs.",
+      "default": "${HARBOR_SERVER_IP}:${HARBOR_SERVER_PORT}/team_${CONTAINER_NAME}"
+    },
+
+    "HAVE_GITLAB_SERVER": {
+      "type": "string",
+      "enum": ["TRUE", "FALSE"],
+      "default": "FALSE",
+      "description": "Whether a GitLab server is available. If TRUE, also set GITLAB_SERVER_IP and GITLAB_SERVER_PORT."
+    },
+
+    "GITLAB_SERVER_IP": {
+      "type": "string",
+      "description": "GitLab server IP. Required if HAVE_GITLAB_SERVER=TRUE.",
+      "examples": ["192.168.3.67"]
+    },
+
+    "GITLAB_SERVER_PORT": {
+      "type": "string",
+      "description": "GitLab server port. Required if HAVE_GITLAB_SERVER=TRUE.",
+      "default": "80",
+      "examples": ["80", "443", "8080"]
+    },
+
+    "SDK_INSTALL_PATH": {
+      "type": "string",
+      "description": "Absolute path inside the container where the SDK will be cloned/installed.",
+      "default": "${WORKSPACE_ROOT}/sdk",
+      "examples": ["/development/sdk"]
+    },
+
+    "SDK_GIT_REPO": {
+      "type": "string",
+      "description": "Git SSH URL of the SDK repository.",
+      "examples": ["git@192.168.3.68:team_rk3588s/rk3588s_sdk.git"]
+    },
+
+    "SDK_GIT_KEY_FILE": {
+      "type": "string",
+      "description": "Name of the SSH key file (without path) used to access the SDK repo. The key must be placed in the container's ~/.ssh/ directory.",
+      "examples": ["SDK_rk3588s_ED25519"]
+    },
+
+    "SDK_GIT_DEFAULT_BRANCH": {
+      "type": "string",
+      "default": "main",
+      "description": "Default git branch to check out when cloning the SDK.",
+      "examples": ["main", "master", "develop"]
+    },
+
+    "HOST_VOLUME_DIR": {
+      "type": "string",
+      "description": "Absolute path on the HOST machine that is bind-mounted into the container as the persistent volume. Must exist on the host before running the container.",
+      "examples": [
+        "/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/volumes/rk3588s",
+        "/home/dev/docker-volumes/rk3568"
+      ]
+    },
+
+    "VOLUMES_ROOT": {
+      "type": "string",
+      "description": "Path inside the container corresponding to HOST_VOLUME_DIR. Default: ${WORKSPACE_ROOT}/docker_volumes.",
+      "default": "${WORKSPACE_ROOT}/docker_volumes"
+    },
+
+    "USE_NVIDIA_GPU": {
+      "type": "string",
+      "enum": ["true", "false"],
+      "default": "false",
+      "description": "Enable NVIDIA GPU passthrough to the container (requires nvidia-docker2 on the host). Set to true only for platforms with a discrete NVIDIA GPU."
+    },
+
+    "INSTALL_CUDA": {
+      "type": "string",
+      "enum": ["true", "false"],
+      "default": "false",
+      "description": "Install CUDA toolkit inside the container. Requires USE_NVIDIA_GPU=true."
+    },
+
+    "INSTALL_OPENCV": {
+      "type": "string",
+      "enum": ["true", "false"],
+      "default": "false",
+      "description": "Build and install OpenCV from source inside the container."
+    },
+
+    "INSTALL_HOST_CMAKE": {
+      "type": "string",
+      "enum": ["true", "false"],
+      "default": "true",
+      "description": "Install cmake from the Ubuntu apt repository (host CMake for development). Set to false if you prefer a specific version installed via pip or manual download."
+    },
+
+    "INSTALL_MAN_DOC": {
+      "type": "string",
+      "enum": ["true", "false"],
+      "default": "true",
+      "description": "Install man pages and documentation. Set to false to reduce image size."
+    },
+
+    "NPM_USE_CHINA_MIRROR": {
+      "type": "string",
+      "enum": ["true", "false"],
+      "default": "false",
+      "description": "Use npmmirror.com (China) for Node.js download instead of nodejs.org. Set to true when building in China without a proxy."
+    },
+
+    "HAS_PROXY": {
+      "type": "string",
+      "enum": ["true", "false"],
+      "default": "false",
+      "description": "Whether to configure an HTTP/HTTPS proxy in the container. If true, also set HTTP_PROXY_IP and HTTPS_PROXY_IP."
+    },
+
+    "HTTP_PROXY_IP": {
+      "type": "string",
+      "description": "Full HTTP proxy URL. Required if HAS_PROXY=true.",
+      "examples": ["http://192.168.3.68:7890"]
+    },
+
+    "HTTPS_PROXY_IP": {
+      "type": "string",
+      "description": "Full HTTPS proxy URL. Required if HAS_PROXY=true. Usually same as HTTP_PROXY_IP.",
+      "examples": ["http://192.168.3.68:7890"]
+    },
+
+    "INSTALL_SDK": {
+      "type": "string",
+      "enum": ["true", "false"],
+      "default": "false",
+      "description": "Whether to clone and install the SDK during the Docker build. Set to true only when the build host has SSH access to the SDK git repo."
+    },
+
+    "CONAN_VERSION": {
+      "type": "string",
+      "default": "2.0.17",
+      "description": "Conan C/C++ package manager version to install via pip.",
+      "examples": ["2.0.17", "2.1.0"]
+    },
+
+    "CMAKE_FORMAT_VERSION": {
+      "type": "string",
+      "default": "0.6.13",
+      "description": "cmake-format (pip package) version. Set empty string to skip installation.",
+      "examples": ["0.6.13", "0.6.11"]
+    },
+
+    "PRE_COMMIT_VERSION": {
+      "type": "string",
+      "default": "3.5.0",
+      "description": "pre-commit (pip package) version. Set empty string to skip installation.",
+      "examples": ["3.5.0", "3.6.0"]
+    },
+
+    "CUDA_VERSION": {
+      "type": "string",
+      "default": "12.0",
+      "description": "CUDA toolkit version to install (only relevant if INSTALL_CUDA=true).",
+      "examples": ["11.8", "12.0", "12.3"]
+    },
+
+    "OPENCV_VERSION": {
+      "type": "string",
+      "default": "4.9.0",
+      "description": "OpenCV version to build from source (only relevant if INSTALL_OPENCV=true).",
+      "examples": ["4.8.0", "4.9.0", "4.10.0"]
+    }
+  },
+
+  "if": {
+    "properties": { "HAVE_GITLAB_SERVER": { "const": "TRUE" } },
+    "required": ["HAVE_GITLAB_SERVER"]
+  },
+  "then": {
+    "required": ["GITLAB_SERVER_IP", "GITLAB_SERVER_PORT"]
+  },
+
+  "additionalProperties": true
+}
