@@ -1,0 +1,54 @@
+{
+  "name": "HarborPilot Dev Env",
+  "dockerComposeFile": "../project_handover/clientside/ubuntu/docker-compose.yaml",
+  "service": "dev-env",
+  "workspaceFolder": "/development",
+
+  "remoteUser": "developer",
+
+  "forwardPorts": [2109, 2345],
+  "portsAttributes": {
+    "2109": {
+      "label": "SSH",
+      "onAutoForward": "silent"
+    },
+    "2345": {
+      "label": "GDB Remote Debug",
+      "onAutoForward": "silent"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cpptools-extension-pack",
+        "ms-vscode.cmake-tools",
+        "twxs.cmake",
+        "mhutchie.git-graph",
+        "eamodio.gitlens",
+        "ms-python.python",
+        "ms-python.pylint",
+        "streetsidesoftware.code-spell-checker",
+        "davidanson.vscode-markdownlint",
+        "gruntfuggly.todo-tree"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "editor.formatOnSave": true,
+        "editor.tabSize": 4,
+        "files.eol": "\n",
+        "C_Cpp.default.compilerPath": "/usr/bin/gcc",
+        "cmake.buildDirectory": "${workspaceFolder}/build"
+      }
+    }
+  },
+
+  "remoteEnv": {
+    "WORKSPACE_ROOT": "/development"
+  },
+
+  "postCreateCommand": "echo '✅ HarborPilot Dev Env ready. Type `harbor` for menu.' || true",
+
+  "shutdownAction": "stopCompose"
+}
