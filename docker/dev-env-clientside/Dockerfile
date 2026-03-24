@@ -37,6 +37,7 @@ ARG PROJECT_RELEASE_DATE
 # Base Configuration (12 arguments)
 # -----------------------------------------------------------------------------
 ARG PRODUCT_NAME
+ARG OS_DISTRIBUTION
 ARG OS_VERSION
 ARG IMAGE_NAME
 ARG LATEST_IMAGE_TAG

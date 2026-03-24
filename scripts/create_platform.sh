@@ -167,9 +167,18 @@ create_platform() {
         return 1
     fi
 
-    # 2. OS version
-    _prompt "OS version (e.g. 22.04, 24.04, 20.04)" "22.04"
-    local os_version="${REPLY}"
+    # 2. OS distribution
+    _prompt "OS distribution (e.g. ubuntu, debian, alpine)" "ubuntu"
+    local os_distro="${REPLY,,}"  # lowercase
+
+    # 3. OS version (default only makes sense for Ubuntu)
+    local os_version
+    if [[ "${os_distro}" == "ubuntu" ]]; then
+        _prompt "OS version (e.g. 22.04, 24.04, 20.04)" "22.04"
+    else
+        _prompt "OS version"
+    fi
+    os_version="${REPLY}"
 
     # 3. Host volume directory
     _prompt "Host volume directory" "/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/volumes/${platform_name}"
@@ -246,7 +255,7 @@ create_platform() {
     echo -e "  ${_YELLOW}--- Summary ---${_NC}"
     echo ""
     echo -e "  Platform:        ${_BOLD}${platform_name}${_NC}"
-    echo -e "  OS version:      ${os_version}"
+    echo -e "  OS:              ${os_distro} ${os_version}"
     echo -e "  PORT_SLOT:       ${port_slot} (offset = ${offset})"
     echo -e "  Volume:          ${host_volume_dir}"
     if [[ "${have_gitlab}" == "TRUE" ]]; then
@@ -298,7 +307,7 @@ HTTPS_PROXY_IP=\"${https_proxy_url}\""
 ################################################################################
 # File: configs/platforms/${platform_name}.env
 #
-# Description: Platform-specific overrides for ${platform_name} (${os_version}).
+# Description: Platform-specific overrides for ${platform_name} (${os_distro} ${os_version}).
 #              Only values that DIFFER from configs/defaults/*.env are listed.
 #              All other settings are inherited from the defaults layer.
 #
@@ -318,6 +327,7 @@ HTTPS_PROXY_IP=\"${https_proxy_url}\""
 # Platform Identity  [REQUIRED — no defaults]
 # =============================================================================
 PRODUCT_NAME="${platform_name}"
+OS_DISTRIBUTION="${os_distro}"
 OS_VERSION="${os_version}"
 
 # Derived from PRODUCT_NAME (keep in sync)
