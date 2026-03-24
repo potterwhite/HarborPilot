@@ -80,6 +80,9 @@ fi
         exit 1
     fi
 
+    # Port calculation: auto-derive ports from PORT_SLOT (or validate explicit ports)
+    source "${TOP_ROOT_DIR}/scripts/port_calc.sh"
+
     # 2nd task: determine final image name for docker compose yaml
     if [ "${HAVE_HARBOR_SERVER}" == "TRUE" ];then
         FINAL_IMAGE_NAME="${REGISTRY_URL}/${IMAGE_NAME}:latest"

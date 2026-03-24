@@ -100,6 +100,9 @@ func_1_1_setup_env(){
         exit 1
     fi
 
+    # Port calculation: auto-derive ports from PORT_SLOT (or validate explicit ports)
+    source "${TOP_ROOT_DIR}/scripts/port_calc.sh"
+
     BUILD_DATE="$(TZ=$TIMEZONE date +"%Y-%m-%dT%H:%M:%S%z")"
 
     # ------------------------------------------------------------------
