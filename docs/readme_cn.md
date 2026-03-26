@@ -80,8 +80,7 @@ HarborPilot/
 │       ├── rk3568.env
 │       ├── rk3568-ubuntu22.env
 │       ├── rv1126.env
-│       ├── rv1126bp.env
-│       └── offline.env               新平台模板
+│       └── rv1126bp.env
 │
 ├── docker/
 │   ├── dev-env-clientside/           五阶段 Dockerfile

@@ -80,8 +80,7 @@ HarborPilot/
 │       ├── rk3568.env
 │       ├── rk3568-ubuntu22.env
 │       ├── rv1126.env
-│       ├── rv1126bp.env
-│       └── offline.env               Template for new platforms
+│       └── rv1126bp.env
 │
 ├── docker/
 │   ├── dev-env-clientside/           Multi-stage Dockerfile (5 stages)
