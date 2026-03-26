@@ -94,7 +94,7 @@
 | Add a new config variable only to one platform | Add default in `configs/defaults/`, override per-platform |
 | Modify a `*_template` file without testing envsubst | Always verify rendered output matches intent |
 | Forget OS_VERSION conditionals | Ubuntu 20.04 / 22.04 / 24.04 have different packages and apt formats |
-| Use `sed` for template rendering | Use `envsubst` — the sed-based system is deprecated |
+| Use `sed` for template rendering | Use `envsubst` — the sed-based system has been removed |
 
 ---
 
@@ -104,7 +104,7 @@
 
 2. **PORT_SLOT is the single source of port truth**: `CLIENT_SSH_PORT = 2109 + PORT_SLOT × 10`, `GDB_PORT = 2345 + PORT_SLOT × 10`. Calculated by `scripts/port_calc.sh`. Never hardcode ports — always set PORT_SLOT.
 
-3. **Template rendering uses `envsubst`**: All `*_template` files in stages 3/4/5 are rendered via `envsubst` (from `gettext-base`). The legacy `sed`-based system in `docker/libs/v_utils/env_opts.sh` is deprecated.
+3. **Template rendering uses `envsubst`**: All `*_template` files in stages 3/4/5 are rendered via `envsubst` (from `gettext-base`). The `sed`-based system has been removed.
 
 4. **5-Stage Dockerfile**: `stage_1st_base` (OS + packages + user) → `stage_2nd_tools` (CUDA, OpenCV, dev tools) → `stage_3rd_sdk` (SDK init + helper scripts) → `stage_4th_config` (env vars + proxy) → `stage_5th_final` (workspace + entrypoint + labels).
 
@@ -118,7 +118,7 @@
 
 9. **OS-specific conditionals are critical**: Ubuntu 24.04 uses DEB822 apt format. Ubuntu 20.04 needs `libncurses5-dev` not `libncurses-dev`. `bsdextrautils` is not available on 20.04. UID 1000 is pre-occupied on 24.04. Always check OS_VERSION in any package-related code.
 
-10. **`docker/libs/` is partially deprecated**: `libs/iv_scripts/setup_base.sh` is an older version of `stage_1_base/scripts/setup_base.sh`. `libs/v_utils/env_opts.sh` was the old sed-based template processor. The `.df` Dockerfile modules are not included by the current Dockerfile. Use the stage-specific scripts as the source of truth.
+10. **`docker/libs/` has been removed**: The directory contained deprecated code (old `setup_base.sh`, `sed`-based template processor, unused `.df` Dockerfile modules). All functionality now lives in the stage-specific scripts under `docker/dev-env-clientside/`.
 
 ---
 

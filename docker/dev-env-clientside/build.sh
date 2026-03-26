@@ -30,11 +30,6 @@ func_1_1_setup_env(){
     BUILD_SCRIPT_DIR="$(dirname "${BUILD_SCRIPT_PATH}")"
     CLIENTSIDE_DIR=${BUILD_SCRIPT_DIR}
     DOCKER_DIR="$(dirname "${CLIENTSIDE_DIR}")"
-    LIBS_DIR="${DOCKER_DIR}/libs"
-    PRODUCT_SPECIFIC_DIR="${LIBS_DIR}/i_product-specific"
-    CONFIG_DIR="${LIBS_DIR}/iii_configs"
-    SCRIPT_DIR="${LIBS_DIR}/iv_scripts"
-    UTILS_DIR="${LIBS_DIR}/v_utils"
     TOP_ROOT_DIR="$(dirname "${DOCKER_DIR}")"
     CONFIGS_DIR="${TOP_ROOT_DIR}/configs"
     DEFAULTS_DIR="${CONFIGS_DIR}/defaults"
@@ -163,19 +158,6 @@ func_1_1_setup_env(){
 }
 
 func_1_2_preparation(){
-    # # Create temporary directory structure
-    # echo "Creating temporary directory structure..."
-    # mkdir -p "${BUILD_SCRIPT_DIR}/libs/iv_scripts"
-
-    # # Copy the required files
-    # echo "Copying setup_base.sh..."
-    # cp -rfav "${LIBS_DIR}" "${BUILD_SCRIPT_DIR}/"
-
-    # # Verify the copy
-    # if [ ! -f "${BUILD_SCRIPT_DIR}/libs/iv_scripts/setup_base.sh" ]; then
-    #     echo "Error: Failed to copy setup_base.sh"
-    #     exit 1
-    # fi
     echo
 }
 
@@ -197,10 +179,9 @@ func_2_1_build_docker_image(){
     fi
 }
 
-# Add cleanup function
+# Cleanup function (no-op: libs/ no longer copied into build context)
 func_3_1_cleanup(){
-    echo "Cleaning up temporary files..."
-    rm -rf "${BUILD_SCRIPT_DIR}/libs"
+    :
 }
 
 main(){

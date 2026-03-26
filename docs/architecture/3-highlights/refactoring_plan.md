@@ -71,18 +71,7 @@ HarborPilot.git/
 │   │           ├── setup_workspace.sh_template
 │   │           └── entrypoint.sh_template
 │   │
-│   └── libs/                         # ★ 公共库（构想中，当前部分使用）
-│       ├── ii_dockerfile_modules/    #   Dockerfile 片段（.df 格式，可 include）
-│       │   ├── apt_source.df         #     apt mirror 替换片段
-│       │   ├── base_packages.df      #     基础包安装片段
-│       │   └── network_packages.df   #     网络工具安装片段
-│       ├── iii_configs/
-│       │   └── apt_sources.list      #   Ubuntu 22.04 jammy 的 aliyun sources.list
-│       ├── iv_scripts/
-│       │   └── setup_base.sh         #   libs 版 setup_base（旧，未被当前 Dockerfile 引用）
-│       └── v_utils/
-│           ├── env_opts.sh           #   环境变量处理工具
-│           └── file_opts.sh          #   文件操作工具
+│   └── libs/                         # ★ 已删除（全部代码已迁移至 stage 脚本）
 │
 ├── project_handover/                 # ★ 交付物（实际部署用）
 │   ├── clientside/
@@ -117,10 +106,10 @@ HarborPilot.git/
 **风险**：变量值含特殊字符（`/`, `&`, `\n`）会导致 sed 出错；调试困难；且这个逻辑在三个 stage 里重复了三次。
 **改进方向**：使用 `envsubst`（`gettext-base` 包，已安装）统一替换，或迁移到 Jinja2（Ansible 原生支持）。
 
-### 问题 2：`libs/` 模块未被真正使用
+### 问题 2：`libs/` 模块未被真正使用 — ✅ 已解决
 
-**现状**：`libs/ii_dockerfile_modules/*.df` 是 Dockerfile 片段的构想，但没有自动化的 include 机制——它们不能被 `docker build` 原生引用。`libs/iv_scripts/setup_base.sh` 和 `dev-env-clientside/stage_1_base/scripts/setup_base.sh` 内容重复，各自维护。
-**改进方向**：见下文方案。
+**现状**：`libs/` 目录已被完整删除。所有功能已迁移至 `docker/dev-env-clientside/` 下的 stage 脚本。`envsubst` 替换了 `sed` 模板系统。
+**结果**：消除了重复维护和混淆源。
 
 ### 问题 3：`docker-compose.yaml` 是手动维护的，与 `.env` 配置脱节
 
@@ -298,8 +287,7 @@ envsubst < template_file > output_file
   ├── 添加 .devcontainer/devcontainer.json
   │     - 改动：新增目录和文件，不影响现有代码
   │     - 收益：VSCode 一键开发，AI 友好，现代化项目形象
-  └── 把 libs/iv_scripts/setup_base.sh 合并到 clientside 版本
-        - 或者：让 Dockerfile COPY 从 libs/ 引用，消除重复维护
+  └── ~~把 libs/iv_scripts/setup_base.sh 合并到 clientside 版本~~ ✅ 已完成（直接删除，stage_1 版本是唯一源）
 
 优先级 3（长期，架构升级）：
   └── setup_base.sh → Ansible playbook

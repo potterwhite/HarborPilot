@@ -58,11 +58,6 @@ HarborPilot.git/
 │   │   ├── stage_3_sdk/                ←   Stage 3: SDK init, helper scripts (templates)
 │   │   ├── stage_4_config/             ←   Stage 4: env config, proxy (templates)
 │   │   └── stage_5_final/              ←   Stage 5: workspace, entrypoint, tests (templates)
-│   └── libs/                           ←   Reusable fragments (partially deprecated)
-│       ├── ii_dockerfile_modules/      ←     .df Dockerfile snippets (not used by current Dockerfile)
-│       ├── iii_configs/                ←     Static apt_sources.list (jammy only)
-│       ├── iv_scripts/                 ←     Old setup_base.sh (superseded by stage_1 version)
-│       └── v_utils/                    ←     env_opts.sh (legacy sed processor), file_opts.sh
 │
 ├── project_handover/                   ← ★ Client-side deployment package
 │   ├── clientside/ubuntu/
@@ -252,21 +247,7 @@ Creates tar.gz for distribution: `archive_tarball.sh all|client|server [ubuntu|w
 
 ---
 
-## 6. Utility Libraries (`docker/libs/`)
-
-> **Note:** Parts of this directory are **deprecated**. Use stage-specific scripts as source of truth.
-
-| File | Status | Purpose |
-|---|---|---|
-| `ii_dockerfile_modules/*.df` | ⚠️ Not used | Dockerfile fragments (apt_source, base_packages, network_packages) — concept, not integrated |
-| `iii_configs/apt_sources.list` | ⚠️ Jammy only | Static sources.list for Ubuntu 22.04 only |
-| `iv_scripts/setup_base.sh` | ❌ Deprecated | Older version of stage_1's setup_base.sh (missing 24.04 support, no UID collision fix) |
-| `v_utils/env_opts.sh` | ❌ Deprecated | Legacy `sed`-based template processor. Replaced by `envsubst`. |
-| `v_utils/file_opts.sh` | ✅ Active | `lib_fileopts_create_directory()` — mkdir + chown + chmod helper |
-
----
-
-## 7. SDK Helper Scripts (installed to `/usr/local/bin/`)
+## 6. SDK Helper Scripts (installed to `/usr/local/bin/`)
 
 | Script | Purpose |
 |---|---|
@@ -280,7 +261,7 @@ Creates tar.gz for distribution: `archive_tarball.sh all|client|server [ubuntu|w
 
 ---
 
-## 8. Versioning & Release
+## 7. Versioning & Release
 
 - **release-please** manages `CHANGELOG.md` and version bumps
 - Config: `release-please-config.json` — `release-type: simple`
@@ -291,7 +272,7 @@ Creates tar.gz for distribution: `archive_tarball.sh all|client|server [ubuntu|w
 
 ---
 
-## 9. Key Architectural Patterns
+## 8. Key Architectural Patterns
 
 1. **Three-Layer Config Inheritance** — Defaults provide sensible values for 90% of variables. Platform files only override the differences. Adding a new platform requires ~15–20 lines. Layer 2 (common.env) holds project-wide constants like version.
 
