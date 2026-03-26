@@ -135,11 +135,11 @@ fi
         # fi
 
         #------------------------------------------------------------------------------
-        # 尝试使用现有凭证登录，并捕获输出
+        # Try to login with existing credentials and capture output
         login_output=$(docker login "${registry}" 2>&1)
         login_status=$?
 
-        # 检查输出中是否包含成功登录的标志
+        # Check if output indicates successful authentication
         if [ $login_status -eq 0 ] && echo "$login_output" | grep -q "Authenticating with existing credentials"; then
             utils_print_msg "Already logged in to registry ${registry}" "${GREEN}"
             return 0
@@ -236,7 +236,7 @@ fi
     fi
 
     if [ "${HAVE_HARBOR_SERVER}" == "FALSE" ]; then
-        # 添加镜像检查
+        # Check if local image exists
         if ! 3_5_image_exists; then
             utils_print_msg "Local image ${IMAGE_NAME}:latest not found" "${YELLOW}"
             utils_print_msg "You may need to login to a registry or ensure the image is available locally." "${YELLOW}"
@@ -272,7 +272,7 @@ fi
 
 # Function to remove development environment
 2_3_1_remove_dev_env() {
-    # 1. 先处理容器
+    # 1. Remove container first
     if 3_6_container_exists "${CONTAINER_NAME}"; then
         utils_print_msg "Removing container..."
         if ! docker rm "${CONTAINER_NAME}" -f; then
@@ -283,7 +283,7 @@ fi
 }
 
 2_3_2_remove_dev_env_image() {
-    # 2. 再处理镜像
+    # 2. Then remove image
     if 3_5_image_exists "${IMAGE_NAME}"; then
         utils_print_msg "Removing image..."
         if ! docker rmi "${FINAL_IMAGE_NAME}"; then
@@ -362,9 +362,10 @@ EOF
     local VOLUMES_DIR="$(realpath "${BUILD_SCRIPT_DIR}/../volumes")"
 
     # Build conditional NVIDIA GPU section
-    local tmp_use="${USE_NVIDIA_GPU,,:-false}"
+    local tmp_use="${USE_NVIDIA_GPU:-false}"
+    tmp_use="${tmp_use,,}"
     local COMPOSE_GPU_SETTING=""
-    if [ x"${tmp_use}" == x"true" ];then
+    if [[ "${tmp_use}" == "true" ]]; then
         COMPOSE_GPU_SETTING=$(cat << GPU_EOF
     shm_size: ${CONTAINER_SHM_SIZE}
     deploy:
@@ -435,7 +436,7 @@ volumes:
     driver: local
     driver_opts:
       type: cifs
-      device: "//${UBUNTU_SERVER_IP}/public"
+      device: "//${SAMBA_SERVER_IP}/public"
       o: "username=${SAMBA_PUBLIC_ACCOUNT_NAME},password=${SAMBA_PUBLIC_ACCOUNT_PASSWORD},uid=${DEV_UID},gid=${DEV_GID},file_mode=${SAMBA_FILE_MODE},dir_mode=${SAMBA_DIR_MODE}"
 EOF
 }

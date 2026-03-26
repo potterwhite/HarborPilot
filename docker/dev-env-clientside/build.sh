@@ -135,13 +135,13 @@ func_1_1_setup_env(){
                 [[ -z "$name" ]] && continue
                 [[ -n "${_seen_vars[$name]+set}" ]] && continue
                 _seen_vars[$name]=1
-                value=$(eval echo "\$$name" 2>/dev/null || true)
+                value="${!name}"
                 if [ -n "$value" ]; then
                     BUILD_ARGS+=(--build-arg "$name=$value")
                 fi
             done < "$file"
         else
-            echo "警告：文件 $file 不存在，跳过"
+            echo "Warning: file $file not found, skipping"
         fi
     done
 
