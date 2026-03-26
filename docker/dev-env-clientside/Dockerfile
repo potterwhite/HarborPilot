@@ -58,13 +58,12 @@ ARG DOCKER_BUILDKIT
 ARG BUILD_DATE
 
 # -----------------------------------------------------------------------------
-# Development Tools Configuration (11 arguments)
+# Development Tools Configuration (10 arguments)
 # -----------------------------------------------------------------------------
 ARG INSTALL_CUDA
 ARG INSTALL_OPENCV
 ARG INSTALL_HOST_CMAKE
 ARG INSTALL_MAN_DOC
-ARG INSTALL_DISTCC
 ARG NPM_USE_CHINA_MIRROR
 ARG CONAN_VERSION
 ARG CMAKE_FORMAT_VERSION
@@ -131,7 +130,7 @@ ARG ENABLE_VSC_INTEGRATION  # Moved here from a duplicate entry
 # -----------------------------------------------------------------------------
 ARG ENABLE_SSH
 ARG CLIENT_SSH_PORT
-ARG SERVER_SSH_PORT
+ARG ENABLE_SYSLOG
 ARG ENABLE_SYSLOG
 ARG ENABLE_GDB_SERVER
 ARG GDB_PORT
@@ -201,17 +200,31 @@ ENV WORKSPACE_ROOT=${WORKSPACE_ROOT} \
     GDB_PORT=${GDB_PORT} \
     ENABLE_CORE_DUMPS=${ENABLE_CORE_DUMPS} \
     CORE_PATTERN=${CORE_PATTERN} \
-    USE_NVIDIA_GPU=${USE_NVIDIA_GPU}
+    USE_NVIDIA_GPU=${USE_NVIDIA_GPU} \
+    INSTALL_CUDA=${INSTALL_CUDA} \
+    INSTALL_OPENCV=${INSTALL_OPENCV} \
+    INSTALL_HOST_CMAKE=${INSTALL_HOST_CMAKE} \
+    INSTALL_MAN_DOC=${INSTALL_MAN_DOC} \
+    NPM_USE_CHINA_MIRROR=${NPM_USE_CHINA_MIRROR} \
+    CONAN_VERSION=${CONAN_VERSION} \
+    CMAKE_FORMAT_VERSION=${CMAKE_FORMAT_VERSION} \
+    PRE_COMMIT_VERSION=${PRE_COMMIT_VERSION} \
+    CUDA_VERSION=${CUDA_VERSION} \
+    OPENCV_VERSION=${OPENCV_VERSION} \
+    BUILD_DATE=${BUILD_DATE} \
+    HAS_PROXY=${HAS_PROXY} \
+    HTTP_PROXY_IP=${HTTP_PROXY_IP} \
+    HTTPS_PROXY_IP=${HTTPS_PROXY_IP}
 
 # Copy scripts
 COPY stage_1_base/scripts/setup_base.sh /tmp/
 
-# First install certificates and basic tools (首先安装证书和基本工具)
+# First install certificates and basic tools
 RUN apt-get update && \
     apt-get install -y ca-certificates bash && \
     update-ca-certificates
 
-# Then setup sources and continue (然后设置源并继续)
+# Then clean apt cache and re-update sources
 # COPY configs/apt_sources.list /etc/apt/sources.list
 RUN apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
@@ -252,8 +265,8 @@ COPY stage_2_tools/scripts/install_opencv.sh /tmp/
 # COPY stage_2_tools/configs/tool_versions.conf /tmp/
 COPY stage_2_tools/scripts/gitlfs_tracker.sh /usr/local/bin/
 
-# 创建环境变量配置文件
-RUN echo "# 自动生成的工具版本配置" > /tmp/tool_versions.conf && \
+# Generate tool version configuration file
+RUN echo "# Auto-generated tool version configuration" > /tmp/tool_versions.conf && \
     echo "CONAN_VERSION=\"${CONAN_VERSION}\"" >> /tmp/tool_versions.conf && \
     echo "CMAKE_FORMAT_VERSION=\"${CMAKE_FORMAT_VERSION}\"" >> /tmp/tool_versions.conf && \
     echo "PRE_COMMIT_VERSION=\"${PRE_COMMIT_VERSION}\"" >> /tmp/tool_versions.conf && \
