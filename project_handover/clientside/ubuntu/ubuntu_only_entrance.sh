@@ -20,11 +20,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-#!/bin/bash
-
 ################################################################################
-# File: 2_1_start_dev_env.sh
-# Description: Development environment management script
+# File: ubuntu_only_entrance.sh
+# Description: Container lifecycle manager (start/stop/restart/recreate/remove)
 ################################################################################
 
 set -e
@@ -175,67 +173,6 @@ fi
     done
 }
 
-# 1_2_check_docker_login() {
-#     # utils_print_msg "Do you want to login to a registry? [Y/n]: " "${YELLOW}"
-#     # read -r need_login
-#     # while [[ "$need_login" =~ ^[Nn]$ ]]; do
-#     #     utils_print_msg "Skipping registry login. Using local image if available." "${GREEN}"
-#     #     return 0
-#     # done
-#     if [  "${HAVE_HARBOR_SERVER}" == "FALSE" ];then
-#         return 0;
-#     fi
-
-#     utils_print_msg "Enter registry URL (leave empty for default: ${REGISTRY_URL}): " "${YELLOW}"
-#     read -r custom_registry
-#     local registry="${custom_registry:-${REGISTRY_URL}}"
-#     # local registry="${REGISTRY_URL}"
-
-#     while true; do
-#         # if docker manifest inspect --insecure "${FINAL_IMAGE_NAME}" >/dev/null 2>&1; then
-#         #     utils_print_msg "Already logged in to registry ${registry}" "${GREEN}"
-#         #     return 0
-#         # fi
-
-#         #------------------------------------------------------------------------------
-#         # 尝试使用现有凭证登录，并捕获输出
-#         login_output=$(docker login "${registry}" 2>&1)
-#         login_status=$?
-
-#         # 检查输出中是否包含成功登录的标志
-#         if [ $login_status -eq 0 ] && echo "$login_output" | grep -q "Authenticating with existing credentials"; then
-#             utils_print_msg "Already logged in to registry ${registry}" "${GREEN}"
-#             return 0
-#         fi
-
-#         #------------------------------------------------------------------------------
-#         utils_print_msg "Need to login to registry ${registry}" "${YELLOW}"
-#         read -p "Enter username: " username
-#         read -s -p "Enter password: " password
-#         echo
-
-#         login_output=$(echo "$password" | docker login "${registry}" -u "${username}" --password-stdin 2>&1)
-#         login_status=$?
-
-#         if [ $login_status -eq 0 ]; then
-#             utils_print_msg "Successfully logged in to registry ${registry}" "${GREEN}"
-#             return 0
-#         else
-#             if echo "$login_output" | grep -q "unauthorized"; then
-#                 utils_print_msg "Authentication failed" "${RED}"
-#             elif echo "$login_output" | grep -q "no such host"; then
-#                 utils_print_msg "Registry host not found" "${RED}"
-#             elif echo "$login_output" | grep -q "connection refused"; then
-#                 utils_print_msg "Registry not available" "${RED}"
-#             else
-#                 utils_print_msg "Login failed:" "${RED}"
-#                 echo "$login_output"
-#             fi
-#             sleep 1
-#         fi
-#     done
-# }
-
 #############################################################################
 #                2nd group
 #############################################################################
@@ -356,14 +293,6 @@ fi
     fi
 }
 
-# 2_4_retrieve_latest_image() {
-#     # 3. 最后尝试拉取新镜像
-#     utils_print_msg "Pulling latest image..."
-#     if ! docker pull "${FINAL_IMAGE_NAME}"; then
-#         utils_print_msg "Failed to pull new image" "${RED}"
-#         return 1
-#     fi
-# }
 2_4_retrieve_latest_image() {
     if 3_5_image_exists; then
         utils_print_msg "Local image ${FINAL_IMAGE_NAME} already exists" "${GREEN}"
@@ -429,17 +358,15 @@ EOF
 
 # Function to generate docker-compose configuration
 3_3_generate_compose_config() {
-    # fix volumes dir not shift dynamically problem
-    # jul31.2025
+    # Resolve volumes dir dynamically (symlink-safe)
     local VOLUMES_DIR="$(realpath "${BUILD_SCRIPT_DIR}/../volumes")"
-    # echo "VOLUMES_DIR=${VOLUMES_DIR}"
 
-    # using nvidia gpu or not
+    # Build conditional NVIDIA GPU section
     local tmp_use="${USE_NVIDIA_GPU,,:-false}"
     local COMPOSE_GPU_SETTING=""
     if [ x"${tmp_use}" == x"true" ];then
-        COMPOSE_GPU_SETTING=$(cat << 'GPU_EOF'
-    shm_size: 8g
+        COMPOSE_GPU_SETTING=$(cat << GPU_EOF
+    shm_size: ${CONTAINER_SHM_SIZE}
     deploy:
         resources:
             reservations:
@@ -454,6 +381,13 @@ GPU_EOF
         echo "NVIDIA GPU Support: DISABLED"
     fi
 
+    # Build conditional serial device section
+    local COMPOSE_DEVICES_SETTING=""
+    if [ -n "${CONTAINER_SERIAL_DEVICE}" ] && [ -e "${CONTAINER_SERIAL_DEVICE}" ]; then
+        COMPOSE_DEVICES_SETTING="    devices:
+      - ${CONTAINER_SERIAL_DEVICE}:${CONTAINER_SERIAL_DEVICE}"
+    fi
+
     cat << EOF > "${BUILD_SCRIPT_DIR}/docker-compose.yaml"
 services:
   dev-env:
@@ -461,13 +395,12 @@ services:
     container_name: ${CONTAINER_NAME}
     hostname: ${CONTAINER_NAME}
     user: "${DEV_USERNAME}"
-    restart: unless-stopped
-    privileged: true
+    restart: ${CONTAINER_RESTART_POLICY}
+    privileged: ${CONTAINER_PRIVILEGED}
     tty: true
     stdin_open: true
 
-    devices:
-      - /dev/ttyUSB0:/dev/ttyUSB0
+${COMPOSE_DEVICES_SETTING}
 
     volumes:
       - /dev/bus/usb:/dev/bus/usb
@@ -484,8 +417,8 @@ services:
       - WORKSPACE_LOG_LEVEL=${WORKSPACE_LOG_LEVEL}
 
       # ** NVIDIA **
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=all
+      - NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES}
+      - NVIDIA_DRIVER_CAPABILITIES=${NVIDIA_DRIVER_CAPABILITIES}
 
 ${COMPOSE_GPU_SETTING}
     working_dir: ${WORKSPACE_ROOT}
@@ -503,66 +436,14 @@ volumes:
     driver_opts:
       type: cifs
       device: "//${UBUNTU_SERVER_IP}/public"
-      o: "username=${SAMBA_PUBLIC_ACCOUNT_NAME},password=${SAMBA_PUBLIC_ACCOUNT_PASSWORD},uid=${DEV_UID},gid=${DEV_GID},file_mode=0777,dir_mode=0777"
+      o: "username=${SAMBA_PUBLIC_ACCOUNT_NAME},password=${SAMBA_PUBLIC_ACCOUNT_PASSWORD},uid=${DEV_UID},gid=${DEV_GID},file_mode=${SAMBA_FILE_MODE},dir_mode=${SAMBA_DIR_MODE}"
 EOF
 }
-# # Function to generate docker-compose configuration
-# 3_3_generate_compose_config() {
-#     cat << EOF > "${BUILD_SCRIPT_DIR}/docker-compose.yaml"
-# services:
-#   dev-env:
-#     image: ${FINAL_IMAGE_NAME}
-#     container_name: ${CONTAINER_NAME}
-#     hostname: ${CONTAINER_NAME}
-#     user: "${DEV_USERNAME}"
-#     restart: unless-stopped
-#     privileged: true
-#     tty: true
-#     stdin_open: true
-
-#     volumes:
-#       - /dev/ttyUSB0:/dev/ttyUSB0
-#       - /dev/bus/usb:/dev/bus/usb
-#       - "${BUILD_SCRIPT_DIR}/../volumes:${VOLUMES_ROOT}"
-#       - samba_public:${WORKSPACE_5TH_DOCS_SUBDIR}/usar-samba-public
-
-#     ports:
-#       - "${CLIENT_SSH_PORT}:22"
-#       - "${GDB_PORT}:2345"
-
-#     environment:
-#       - TIMEZONE=${TIMEZONE}
-#       - DISPLAY=${DISPLAY}
-#       - WORKSPACE_ENABLE_REMOTE_DEBUG=${WORKSPACE_ENABLE_REMOTE_DEBUG}
-#       - WORKSPACE_LOG_LEVEL=${WORKSPACE_LOG_LEVEL}
-
-#     working_dir: ${WORKSPACE_ROOT}
-
-#     networks:
-#       - dev-net
-
-# networks:
-#   dev-net:
-#     driver: bridge
-
-# volumes:
-#   samba_public:
-#     driver: local
-#     driver_opts:
-#       type: cifs
-#       device: "//${UBUNTU_SERVER_IP}/public"
-#       o: "username=${SAMBA_PUBLIC_ACCOUNT_NAME},password=${SAMBA_PUBLIC_ACCOUNT_PASSWORD},uid=${DEV_UID},gid=${DEV_GID},file_mode=0777,dir_mode=0777"
-# EOF
-# }
-
 # Function to check if container is running
 3_4_container_running() {
     docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"
 }
 
-# 3_5_image_exists() {
-#     docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^${FINAL_IMAGE_NAME}$"
-# }
 3_5_image_exists() {
     docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^${FINAL_IMAGE_NAME}$"
 }

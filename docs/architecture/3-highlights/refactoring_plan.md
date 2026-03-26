@@ -111,10 +111,10 @@ HarborPilot.git/
 **现状**：`libs/` 目录已被完整删除。所有功能已迁移至 `docker/dev-env-clientside/` 下的 stage 脚本。`envsubst` 替换了 `sed` 模板系统。
 **结果**：消除了重复维护和混淆源。
 
-### 问题 3：`docker-compose.yaml` 是手动维护的，与 `.env` 配置脱节
+### 问题 3：`docker-compose.yaml` 是手动维护的，与 `.env` 配置脱节 — ✅ 已解决
 
-**现状**：`project_handover/clientside/ubuntu/docker-compose.yaml` 里的端口、镜像名是硬编码的，没有从 `.env` 层自动生成。换平台要手改 compose 文件。
-**改进方向**：compose 文件使用 `${VAR}` + `.env` 文件自动注入，或用 Ansible 模板生成。
+**现状**：`ubuntu_only_entrance.sh` 的动态生成器已完全变量化。8 个原硬编码值（restart policy、privileged、serial device、shm_size、NVIDIA settings、Samba permissions）已抽取到 `configs/defaults/` 中，可按平台覆盖。
+**结果**：compose 配置 100% 由三层配置系统驱动。
 
 ### 问题 4：Shell 脚本承担了配置管理职责
 

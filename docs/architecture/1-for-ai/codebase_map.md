@@ -190,8 +190,8 @@ Single monolithic Dockerfile, 5 stages. Each stage has sub-stages for template p
 | `05_registry.env` | `HAVE_GITLAB_SERVER=TRUE`, `HAVE_HARBOR_SERVER=TRUE`, `HARBOR_SERVER_PORT=9000` | `REGISTRY_URL` depends on CONTAINER_NAME |
 | `06_sdk.env` | `INSTALL_SDK=false` | SDK paths are platform-dependent |
 | `07_volumes.env` | `VOLUMES_ROOT=${WORKSPACE_ROOT}` | `HOST_VOLUME_DIR` has no default — REQUIRED per platform |
-| `08_samba.env` | `SAMBA_PUBLIC_ACCOUNT_NAME/PASSWORD=sambashare` | Default Samba credentials |
-| `09_runtime.env` | `ENABLE_SSH=true`, `ENABLE_GDB_SERVER=true`, `USE_NVIDIA_GPU=false`, `ENABLE_CORE_DUMPS=true` | Ports come from port_calc.sh, not here |
+| `08_samba.env` | `SAMBA_PUBLIC_ACCOUNT_NAME/PASSWORD=sambashare`, `SAMBA_FILE_MODE=0777`, `SAMBA_DIR_MODE=0777` | Default Samba credentials + permissions |
+| `09_runtime.env` | `ENABLE_SSH=true`, `ENABLE_GDB_SERVER=true`, `USE_NVIDIA_GPU=false`, `ENABLE_CORE_DUMPS=true`, `CONTAINER_RESTART_POLICY=unless-stopped`, `CONTAINER_PRIVILEGED=true`, `CONTAINER_SERIAL_DEVICE=/dev/ttyUSB0`, `CONTAINER_SHM_SIZE=8g`, `NVIDIA_VISIBLE_DEVICES=all`, `NVIDIA_DRIVER_CAPABILITIES=all` | Ports from port_calc.sh; compose overrides for container runtime |
 | `11_proxy.env` | `HAS_PROXY=false`, `HTTP_PROXY_IP`, `HTTPS_PROXY_IP` | Proxy IPs have defaults but HAS_PROXY is off |
 
 ### Layer 2: `configs/platform-independent/common.env`

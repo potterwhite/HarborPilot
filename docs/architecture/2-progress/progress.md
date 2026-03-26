@@ -74,7 +74,7 @@ Based on `refactoring_plan.md`, priorities:
 
 | Item | Priority | Status |
 |---|---|---|
-| docker-compose.yaml use `${VAR}` + `.env` injection (no more hardcoded values) | P1 | ⏳ |
+| docker-compose.yaml use `${VAR}` + `.env` injection (no more hardcoded values) | P1 | ✅ Done — 8 values extracted to defaults |
 | Extend devcontainer.json for end-user platforms | P2 | ⏳ |
 | Merge `libs/iv_scripts/setup_base.sh` into clientside version (remove duplication) | P2 | ✅ Resolved — entire `docker/libs/` deleted |
 | `setup_base.sh` → Ansible playbook (long-term) | P3 | ⏳ |
