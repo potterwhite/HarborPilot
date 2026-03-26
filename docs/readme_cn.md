@@ -94,14 +94,19 @@ HarborPilot/
 │   │   ├── ubuntu_only_entrance.sh   容器生命周期管理脚本
 │   │   └── harbor.crt                Harbor CA 证书（每台宿主机安装一次）
 │
-└── doc/
+└── docs/
+    ├── architecture/                 AI 文档系统
+    │   ├── 00_INDEX.md               导航中心
+    │   ├── 1-for-ai/                 AI Agent 参考文件
+    │   ├── 2-progress/               进度追踪
+    │   └── 3-highlights/             架构决策与分析
     ├── quick_start.md                快速上手指南（英文）
     ├── quick_start_cn.md             快速上手指南（中文）
     ├── config_layers.md              三层配置系统详解（英文）
     └── config_layers_cn.md           三层配置系统详解（中文）
 ```
 
-> **三层配置系统详解 →** [doc/config_layers_cn.md](config_layers_cn.md)
+> **三层配置系统详解 →** [docs/config_layers_cn.md](config_layers_cn.md)
 
 ---
 
@@ -109,22 +114,22 @@ HarborPilot/
 
 | 平台 | Ubuntu 版本 | SSH 端口 | GDB 端口 | 备注 |
 |---|---|---|---|---|
-| `rk3588s` | 22.04 | 2109 | 2345 | 默认启用 NVIDIA GPU |
+| `rk3588s` | 24.04 | 2109 | 2345 | 默认启用 NVIDIA GPU |
 | `rv1126bp` | 22.04 | 2119 | 2355 | |
 | `rk3568` | 20.04 | 2129 | 2365 | |
 | `rv1126` | 22.04 | 2139 | 2375 | |
 | `rk3568-ubuntu22` | 22.04 | 2149 | 2385 | |
-| `offline` | 22.04 | — | — | 新平台空白模板 |
+| `rk3588s-ubuntu-24` | 24.04 | 2159 | 2395 | 无 NVIDIA GPU |
 
 ---
 
 ## 快速上手
 
-→ **完整指南：[doc/quick_start_cn.md](quick_start_cn.md)**
+→ **完整指南：[docs/quick_start_cn.md](quick_start_cn.md)**
 
 ```bash
 # 1. 安装 Docker，信任 Harbor CA 证书（每台宿主机执行一次）
-#    → 详见 doc/quick_start_cn.md
+#    → 详见 docs/quick_start_cn.md
 
 # 2. 登录 Harbor Registry
 docker login <registry-ip>:<registry-port>
