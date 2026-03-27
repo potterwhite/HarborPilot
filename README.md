@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <strong>English</strong> | <a href="docs/readme_cn.md">简体中文</a>
+  <strong>English</strong> | <a href="docs/zh/readme.md">简体中文</a>
 </p>
 
 ---
@@ -105,7 +105,7 @@ HarborPilot/
     └── config_layers_cn.md           Three-layer config system explained (ZH)
 ```
 
-> **How the three-layer config works →** [docs/config_layers.md](docs/config_layers.md)
+> **How the three-layer config works →** [docs/en/config_layers.md](docs/en/config_layers.md)
 
 ---
 
@@ -127,7 +127,7 @@ Create a new platform with `./scripts/create_platform.sh` (interactive) or `--no
 
 ## Quick Start
 
-→ **Full guide: [docs/quick_start.md](docs/quick_start.md)**
+→ **Full guide: [docs/en/quick_start.md](docs/en/quick_start.md)**
 
 ```bash
 # 1. Install Docker and trust the Harbor CA cert  (once per host)

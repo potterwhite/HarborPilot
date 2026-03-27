@@ -36,13 +36,12 @@ Start here every session. Read in this order before touching any code.
 
 ---
 
-## Human-Facing Documentation (project root `docs/`)
+## Human-Facing Documentation (`docs/en/`)
 
 | Document | Purpose |
 |---|---|
 | [`../config_layers.md`](../config_layers.md) | Three-layer config system explained (EN) |
-| [`../config_layers_cn.md`](../config_layers_cn.md) | Three-layer config system explained (ZH) |
 | [`../quick_start.md`](../quick_start.md) | Step-by-step setup guide (EN) |
-| [`../quick_start_cn.md`](../quick_start_cn.md) | Step-by-step setup guide (ZH) |
 | [`../port-map-calculation.md`](../port-map-calculation.md) | Port calculation formula and platform port map |
-| [`../readme_cn.md`](../readme_cn.md) | Chinese README |
+
+> **Chinese documentation →** [`docs/zh/architecture/00_INDEX.md`](../../../zh/architecture/00_INDEX.md)

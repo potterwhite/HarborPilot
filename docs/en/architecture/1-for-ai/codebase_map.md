@@ -7,7 +7,7 @@
 > **Maintenance rule:** Any AI agent that modifies a file listed here MUST update
 > the relevant section in this document in the same commit/session.
 >
-> Last updated: 2026-03-27 (platform files renamed to chip-os convention; CHIP_EXTRACT_NAME added)
+> Last updated: 2026-03-27 (platform files renamed to chip-os convention; CHIP_EXTRACT_NAME added; docs/ split into en/zh bilingual trees)
 
 ---
 
@@ -67,18 +67,25 @@ HarborPilot.git/
 │   └── scripts/
 │       └── archive_tarball.sh          ←   Package handover as tar.gz
 │
-├── docs/                               ← ★ Documentation
-│   ├── architecture/
-│   │   ├── 00_INDEX.md                 ←   Navigation hub
-│   │   ├── 1-for-ai/                  ←   AI agent reference files
-│   │   ├── 2-progress/                ←   Phase tracking
-│   │   └── 3-highlights/              ←   Architecture decisions & analysis
-│   ├── config_layers.md               ←   Three-layer config explained (EN)
-│   ├── config_layers_cn.md            ←   Three-layer config explained (ZH)
-│   ├── quick_start.md                 ←   Setup guide (EN)
-│   ├── quick_start_cn.md              ←   Setup guide (ZH)
-│   ├── port-map-calculation.md        ←   Port formula documentation
-│   └── readme_cn.md                   ←   Chinese README
+├── docs/                               ← ★ Documentation (bilingual)
+│   ├── en/                             ←   English documentation tree
+│   │   ├── architecture/
+│   │   │   ├── 00_INDEX.md             ←     Navigation hub (EN)
+│   │   │   ├── 1-for-ai/              ←     AI agent reference files
+│   │   │   ├── 2-progress/            ←     Phase tracking
+│   │   │   └── 3-highlights/          ←     Architecture decisions & analysis
+│   │   ├── config_layers.md           ←   Three-layer config explained (EN)
+│   │   ├── quick_start.md             ←   Setup guide (EN)
+│   │   └── port-map-calculation.md    ←   Port formula documentation
+│   └── zh/                             ←   Chinese documentation tree
+│       ├── architecture/
+│       │   ├── 00_INDEX.md             ←     Navigation hub (ZH)
+│       │   ├── 1-for-ai/              ←     AI agent reference files (ZH)
+│       │   ├── 2-progress/            ←     Phase tracking (ZH)
+│       │   └── 3-highlights/          ←     Architecture decisions & analysis (ZH)
+│       ├── config_layers.md           ←   Three-layer config explained (ZH)
+│       ├── quick_start.md             ←   Setup guide (ZH)
+│       └── readme.md                  ←   Chinese README
 │
 └── .devcontainer/
     └── devcontainer.json               ←   VS Code Dev Container config for HarborPilot dev

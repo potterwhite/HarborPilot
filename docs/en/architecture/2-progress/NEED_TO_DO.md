@@ -1,5 +1,29 @@
 - **改完就把下面的checkbox checked**
 
+Mar27.2026 17:00
+- [ ] 看看这个
+    ```bash
+    james@Anastasia:/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git$ ./project_handover/clientside/ubuntu/ubuntu_only_entrance.sh recreate
+    Warning: defaults file not found, skipping: /mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git/configs/defaults/10_serverside.env
+    Done source .env
+
+    [port_calc] PORT_SLOT=5 (offset=50)
+    [port_calc]   CLIENT_SSH_PORT = 2159
+    [port_calc]   GDB_PORT        = 2395
+    INFO: Removing image...
+    Untagged: 192.168.3.67:9000/team_rk3588/rk3588-rk3588s_ubuntu-24.04-dev-env:latest
+    INFO: Pulling latest image from 192.168.3.67:9000/team_rk3588...
+    latest: Pulling from team_rk3588/rk3588-rk3588s_ubuntu-24.04-dev-env
+    Digest: sha256:76a5abc56d8ecfc4200ddc9541c5c090c6c89c210e9b589994ffdf053af546bf
+    Status: Downloaded newer image for 192.168.3.67:9000/team_rk3588/rk3588-rk3588s_ubuntu-24.04-dev-env:latest
+    192.168.3.67:9000/team_rk3588/rk3588-rk3588s_ubuntu-24.04-dev-env:latest
+    SUCCESS: Image pulled successfully
+    INFO: Creating new container...
+    ERROR: VOLUMES_DIR is not set and volumes symlink is not available
+    james@Anastasia:/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git$
+
+    ```
+
 Mar27.2026 16:00
 - [x] 做了很多事情，一直没修改doc,请你接下来修改的时候，验证一个item，就check一个，然后commit，不许等全部都做完，context很快就用完了。
     ```bash

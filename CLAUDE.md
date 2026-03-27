@@ -7,10 +7,10 @@ This file provides essential guidance to Claude Code when working in this reposi
 
 **Before writing any code**, read these two files in order:
 
-1. `docs/architecture/1-for-ai/guide.md` — working rules, commit format, key architecture facts
-2. `docs/architecture/1-for-ai/codebase_map.md` — full codebase map (do NOT scan files instead)
+1. `docs/en/architecture/1-for-ai/guide.md` — working rules, commit format, key architecture facts
+2. `docs/en/architecture/1-for-ai/codebase_map.md` — full codebase map (do NOT scan files instead)
 
-Then check `docs/architecture/2-progress/progress.md` for current phase status.
+Then check `docs/en/architecture/2-progress/progress.md` for current phase status.
 
 Do **not** scan `docker/`, `scripts/`, or `configs/` before reading the above.
 
@@ -52,9 +52,9 @@ V=1 ./harbor
 
 | Need | File |
 |---|---|
-| Working rules + commit format | `docs/architecture/1-for-ai/guide.md` |
-| Codebase structure | `docs/architecture/1-for-ai/codebase_map.md` |
-| Phase progress + roadmap | `docs/architecture/2-progress/progress.md` |
-| Active task backlog | `docs/architecture/2-progress/NEED_TO_DO.md` |
-| Architecture vision + decisions | `docs/architecture/3-highlights/refactoring_plan.md` |
-| Config system deep-dive | `docs/config_layers.md` |
+| Working rules + commit format | `docs/en/architecture/1-for-ai/guide.md` |
+| Codebase structure | `docs/en/architecture/1-for-ai/codebase_map.md` |
+| Phase progress + roadmap | `docs/en/architecture/2-progress/progress.md` |
+| Active task backlog | `docs/en/architecture/2-progress/NEED_TO_DO.md` |
+| Architecture vision + decisions | `docs/en/architecture/3-highlights/refactoring_plan.md` |
+| Config system deep-dive | `docs/en/config_layers.md` |
