@@ -58,8 +58,9 @@ Mar27.2026 10:45
     你把这个亮点，写到3-highlights里面去，放进合适的文档里（你可以新建），然后更新00_index。
     然后重新梳理我的亮点，按顺序排列，务求每一个亮点务实，且很容易记住，亮点体现到readme里面。
     → 已完成：新建 competitive_analysis.md，更新 README.md Key Features，更新 00_INDEX.md（commit: 3a8c37e）
-- [ ] 我当前这个项目，有什么可以给AI Agent开放的空间吗？
+- [x] 我当前这个项目，有什么可以给AI Agent开放的空间吗？
     请结合当下的主流，例如MCP/Skills这些内容，可以让我的软件第一优先是被AI Agent读取使用，其次是能够被AI推荐给其他人（这个不知道要怎么做），第三是给人git clone下来之后，自己配置选项，然后就可以使用。你详细跟我解释一下MCP的原理（例如你觉得是MCP可以做），然后介绍我们要怎么做，做成一个新的版本的计划。例如当前是phase3，你就把这个迭代的部分写到Phase4里去，然后专门出一个文档来介绍（或者一个chapter,你规划好就行）这个迭代任务，写仔细，让下一个ai一眼就可以看懂。
+    → 已完成：新建 phase4_mcp_ai_agent_plan.md，更新 progress.md Phase 4 章节，更新 00_INDEX.md + codebase_map.md（commit: 见下）
 
 - [x] 还是有这样的错误，表明你原先的chip_family并没有在tag的时候传递下去，肯定变量那边哪里出问题了。还有我已经修改了我要的标准样式，你看看HarborPilot.git/configs/platforms/rk3588s-ubuntu-24.env，这里就有我要的，你告诉我你看见什么了，然后才问我是否要把其他的几种.env也都照这样修改。
     → 已修复：所有平台 .env 已迁移至 CHIP_FAMILY/CHIP_EXTRACT_NAME 模式，REGISTRY_URL 使用 ${CHIP_FAMILY} 正确拼装（commits: 4a1ba37, 16ec81f, 281bd96）

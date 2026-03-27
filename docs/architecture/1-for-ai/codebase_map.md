@@ -82,6 +82,13 @@ HarborPilot.git/
 │
 └── .devcontainer/
     └── devcontainer.json               ←   VS Code Dev Container config for HarborPilot dev
+
+[Phase 4 — Planned, not yet created]
+mcp/
+├── harborpilot_mcp_server.py           ←   MCP server: exposes platforms/config/build to AI
+├── requirements.txt                    ←   mcp SDK dependency
+├── claude_code_config.json             ←   Ready-to-paste MCP config for Claude Code
+└── README.md                           ←   Setup guide + example AI prompts
 ```
 
 ---

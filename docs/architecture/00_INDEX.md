@@ -32,6 +32,7 @@ Start here every session. Read in this order before touching any code.
 | [`3-highlights/refactoring_plan.md`](3-highlights/refactoring_plan.md) | Full refactoring analysis: current issues, tools comparison, priority plan |
 | [`3-highlights/generalization_and_ai_era_analysis.md`](3-highlights/generalization_and_ai_era_analysis.md) | Philosophical analysis: generalization trade-offs + AI-era software design |
 | [`3-highlights/competitive_analysis.md`](3-highlights/competitive_analysis.md) | ⭐ Competitive analysis vs Yocto/Ansible/DevContainers + unique value proposition |
+| [`3-highlights/phase4_mcp_ai_agent_plan.md`](3-highlights/phase4_mcp_ai_agent_plan.md) | ⭐ Phase 4 roadmap: MCP server design, AI Agent integration, step-by-step implementation |
 
 ---
 

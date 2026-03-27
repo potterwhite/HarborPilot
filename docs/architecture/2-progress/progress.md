@@ -12,6 +12,7 @@
 | **Phase 1** | Multi-platform support + config system | ✅ Done |
 | **Phase 2** | AI docs system + developer experience | ✅ Done |
 | **Phase 3** | Architecture modernization + code quality audit | 🔄 In Progress |
+| **Phase 4** | MCP Server + AI Agent integration | 📋 Planned |
 
 **Currently active:** Phase 3 — Code quality audit + systematic fixes
 
@@ -102,6 +103,24 @@ Based on `refactoring_plan.md`, priorities:
 | ubuntu_only_entrance.sh modularized (6 modules) | `fe46132` | Auto-init for volumes symlink; numbered prefix naming |
 | All platform .env migrated to CHIP_FAMILY/CHIP_EXTRACT_NAME pattern | `16ec81f` `281bd96` | Platform files renamed to chip-os convention; REGISTRY_URL fixed |
 | harbor platform list grouped by chip family; create_platform.sh + CHIP_EXTRACT_NAME | `aad4e32` | Clean visual grouping; wizard updated with new field |
+
+---
+
+## Phase 4 — MCP Server & AI Agent Integration (Planned)
+
+Full plan: [`docs/architecture/3-highlights/phase4_mcp_ai_agent_plan.md`](../3-highlights/phase4_mcp_ai_agent_plan.md)
+
+| Step | Description | Status |
+|---|---|---|
+| **4.1** | MCP server scaffold + Resources (config files readable by AI) | ⏳ |
+| **4.2** | Read tools: `list_platforms`, `get_platform_config`, `validate` | ⏳ |
+| **4.3** | Write tools: `create_platform`, `set_variable`, `enable_feature` | ⏳ |
+| **4.4** | Build tools: `build_platform` (dry_run default), `check_image` | ⏳ |
+| **4.5** | Claude Code integration guide + example prompts | ⏳ |
+
+**Prerequisites before Phase 4 can start**:
+- Phase 3 must be stable (no open critical bugs)
+- `harbor` needs `HARBORPILOT_NON_INTERACTIVE=1` support to bypass prompts
 
 ---
 
