@@ -392,6 +392,7 @@ eighth_install_python_packages() {
 
         while [ $retry -lt $max_retries ]; do
             if pip3 install --no-cache-dir \
+               --break-system-packages \
                -i https://mirrors.aliyun.com/pypi/simple/ \
                --trusted-host mirrors.aliyun.com \
                --timeout 30 \
