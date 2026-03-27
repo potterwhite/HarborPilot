@@ -1,344 +1,21 @@
 #!/bin/bash
 
-# Copyright (c) 2026 Potter White
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-
 ################################################################################
 # File: ubuntu_only_entrance.sh
 # Description: Container lifecycle manager (start/stop/restart/recreate/remove)
+#              This is the single entry point - all logic is in scripts/*.sh
 ################################################################################
 
 set -e
-if [ "${V}" == "1" ];then
+if [ "${V}" == "1" ]; then
     set -x
 fi
 
-#############################################################################
-#                1st group
-#############################################################################
-1_0_gen_environment_variables() {
+# Get script directory (works both when sourced and executed)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/scripts/utils.sh"
 
-    # 1st task: source env files in three-layer order to retrieve all environments
-    BUILD_SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
-    BUILD_SCRIPT_DIR="$(dirname ${BUILD_SCRIPT_PATH})"
-    ENV_PATH="${BUILD_SCRIPT_DIR}/../../.env"
-    ENV_INDEPENDENT_PATH="${BUILD_SCRIPT_DIR}/../../.env-independent"
-    TOP_ROOT_DIR="$(readlink -f "${BUILD_SCRIPT_DIR}/../../..")"
-    DEFAULTS_DIR="${TOP_ROOT_DIR}/configs/defaults"
-
-    # Layer 1: Global defaults
-    for defaults_file in \
-        "${DEFAULTS_DIR}/01_base.env" \
-        "${DEFAULTS_DIR}/02_build.env" \
-        "${DEFAULTS_DIR}/03_tools.env" \
-        "${DEFAULTS_DIR}/04_workspace.env" \
-        "${DEFAULTS_DIR}/05_registry.env" \
-        "${DEFAULTS_DIR}/06_sdk.env" \
-        "${DEFAULTS_DIR}/07_volumes.env" \
-        "${DEFAULTS_DIR}/08_samba.env" \
-        "${DEFAULTS_DIR}/09_runtime.env" \
-        "${DEFAULTS_DIR}/10_serverside.env" \
-        "${DEFAULTS_DIR}/11_proxy.env"
-    do
-        if [ -f "${defaults_file}" ]; then
-            source "${defaults_file}"
-        else
-            echo "Warning: defaults file not found, skipping: ${defaults_file}"
-        fi
-    done
-
-    # Layer 2: Project constants
-    if [ -f "${ENV_INDEPENDENT_PATH}" ]; then
-        source "${ENV_INDEPENDENT_PATH}"
-    fi
-
-    # Layer 3: Platform-specific overrides
-    if [ -f ${ENV_PATH} ]; then
-        source ${ENV_PATH}
-        echo -e "Done source .env\n"
-    else
-        echo -e "\nNo ${ENV_PATH} exist, quit"
-        exit 1
-    fi
-
-    # Port calculation: auto-derive ports from PORT_SLOT (or validate explicit ports)
-    source "${TOP_ROOT_DIR}/scripts/port_calc.sh"
-
-    # 2nd task: determine final image name for docker compose yaml
-    if [ "${HAVE_HARBOR_SERVER}" == "TRUE" ];then
-        FINAL_IMAGE_NAME="${REGISTRY_URL}/${IMAGE_NAME}:latest"
-    else
-        FINAL_IMAGE_NAME="${IMAGE_NAME}:latest"
-    fi
-
-    # Colors for output
-    RED='\033[0;31m'
-    GREEN='\033[0;32m'
-    YELLOW='\033[1;33m'
-    NC='\033[0m'
-}
-
-
-1_1_check_docker_group() {
-    if ! groups "$USER" | grep -q "docker"; then
-        utils_print_msg "Current user is not in the docker group" "${RED}"
-        utils_print_msg "Do you want to add current user to docker group? [Y/n]: " "${YELLOW}"
-        read -r answer
-        if [[ ! "$answer" =~ ^[Nn]$ ]]; then
-            if sudo usermod -aG docker "$USER"; then
-                utils_print_msg "Successfully added user to docker group" "${GREEN}"
-                utils_print_msg "Do you want to apply changes now? [Y/n]: " "${YELLOW}"
-                read -r apply
-                if [[ ! "$apply" =~ ^[Nn]$ ]]; then
-                    exec newgrp docker
-                else
-                    utils_print_msg "Please log out and log back in" "${YELLOW}"
-                    utils_print_msg "Continue anyway? [y/N]: " "${YELLOW}"
-                    read -r continue
-                    if [[ ! "$continue" =~ ^[Yy]$ ]]; then
-                        exit 1
-                    fi
-                fi
-            fi
-        fi
-    fi
-}
-
-1_2_check_docker_login() {
-    if [  "${HAVE_HARBOR_SERVER}" == "FALSE" ];then
-        return 0;
-    fi
-
-    local registry="${REGISTRY_URL}"
-
-    while true; do
-        # if docker manifest inspect --insecure "${FINAL_IMAGE_NAME}" >/dev/null 2>&1; then
-        #     utils_print_msg "Already logged in to registry ${registry}" "${GREEN}"
-        #     return 0
-        # fi
-
-        #------------------------------------------------------------------------------
-        # Try to login with existing credentials and capture output
-        login_output=$(docker login "${registry}" 2>&1)
-        login_status=$?
-
-        # Check if output indicates successful authentication
-        if [ $login_status -eq 0 ] && echo "$login_output" | grep -q "Authenticating with existing credentials"; then
-            utils_print_msg "Already logged in to registry ${registry}" "${GREEN}"
-            return 0
-        fi
-
-        #------------------------------------------------------------------------------
-        utils_print_msg "Need to login to registry ${registry}" "${YELLOW}"
-        read -p "Enter username: " username
-        read -s -p "Enter password: " password
-        echo
-
-        login_output=$(echo "$password" | docker login "${registry}" -u "${username}" --password-stdin 2>&1)
-        login_status=$?
-
-        if [ $login_status -eq 0 ]; then
-            utils_print_msg "Successfully logged in to registry ${registry}" "${GREEN}"
-            return 0
-        else
-            if echo "$login_output" | grep -q "unauthorized"; then
-                utils_print_msg "Authentication failed" "${RED}"
-            elif echo "$login_output" | grep -q "no such host"; then
-                utils_print_msg "Registry host not found" "${RED}"
-            elif echo "$login_output" | grep -q "connection refused"; then
-                utils_print_msg "Registry not available" "${RED}"
-            else
-                utils_print_msg "Login failed:" "${RED}"
-                echo "$login_output"
-            fi
-            sleep 1
-        fi
-    done
-}
-
-#############################################################################
-#                2nd group
-#############################################################################
-# Function to start development environment
-2_1_start_dev_env() {
-    if 3_4_container_running; then
-        while true; do
-            utils_print_msg "Container is already running!"
-            utils_print_msg "Please choose an option (press Ctrl+C to cancel):" "${YELLOW}"
-            utils_print_msg "1. Enter the container" "${YELLOW}"
-            utils_print_msg "2. Restart container" "${YELLOW}"
-            utils_print_msg "3. Remove(container & image) and recreate" "${YELLOW}"
-            utils_print_msg "(You can always enter container manually using: docker exec -it -u ${DEV_USERNAME} ${CONTAINER_NAME} bash)" "${GREEN}"
-
-            # Wait for user input
-            read -p "Enter your choice (1-3): " choice || exit 1  # Handle Ctrl+D (EOF)
-
-            case $choice in
-                1)
-                    docker exec -it -u ${DEV_USERNAME} ${CONTAINER_NAME} bash
-                    break
-                    ;;
-                2)
-                    2_2_stop_dev_env
-                    3_1_start_container_without_prompt
-                    utils_print_msg "Enter container? [Y/n]: " "${YELLOW}"
-                    read -r answer
-                    if [[ ! "$answer" =~ ^[Nn]$ ]]; then
-                        docker exec -it -u ${DEV_USERNAME} ${CONTAINER_NAME} bash
-                    else
-                        utils_print_msg "You can always enter container manually using: " "${GREEN}"
-                        utils_print_msg "\t\tdocker exec -it -u ${DEV_USERNAME} ${CONTAINER_NAME} bash" "${YELLOW}"
-                        utils_print_msg "\nSee you next time!" "${GREEN}"
-                    fi
-                    break
-                    ;;
-                3)
-                    2_3_1_remove_dev_env
-                    2_3_2_remove_dev_env_image
-                    2_4_retrieve_latest_image
-                    3_1_start_container_without_prompt
-                    utils_print_msg "Enter container? [Y/n]: " "${YELLOW}"
-                    read -r answer
-                    if [[ ! "$answer" =~ ^[Nn]$ ]]; then
-                        docker exec -it -u ${DEV_USERNAME} ${CONTAINER_NAME} bash
-                    else
-                        utils_print_msg "You can always enter container manually using: " "${GREEN}"
-                        utils_print_msg "\t\tdocker exec -it -u ${DEV_USERNAME} ${CONTAINER_NAME} bash" "${YELLOW}"
-                        utils_print_msg "\nSee you next time!" "${GREEN}"
-                    fi
-                    break
-                    ;;
-                *)
-                    utils_print_msg "Invalid choice! Please try again..." "${RED}"
-                    sleep 1
-                    clear
-                    ;;
-            esac
-        done
-        return 0
-    fi
-
-    if [ "${HAVE_HARBOR_SERVER}" == "FALSE" ]; then
-        # Check if local image exists
-        if ! 3_5_image_exists; then
-            utils_print_msg "Local image ${IMAGE_NAME}:latest not found" "${YELLOW}"
-            utils_print_msg "You may need to login to a registry or ensure the image is available locally." "${YELLOW}"
-            2_4_retrieve_latest_image
-            if [ $? -ne 0 ]; then
-                utils_print_msg "Failed to retrieve image. Exiting..." "${RED}"
-                exit 1
-            fi
-        fi
-    fi
-
-    3_1_start_container_without_prompt
-    utils_print_msg "Enter container? [Y/n]: " "${YELLOW}"
-    read -r answer
-    if [[ ! "$answer" =~ ^[Nn]$ ]]; then
-        docker exec -it -u ${DEV_USERNAME} ${CONTAINER_NAME} bash
-    else
-        utils_print_msg "You can always enter container manually using: " "${GREEN}"
-        utils_print_msg "\t\tdocker exec -it -u ${DEV_USERNAME} ${CONTAINER_NAME} bash" "${YELLOW}"
-        utils_print_msg "\nSee you next time!" "${GREEN}"
-    fi
-}
-
-# Function to stop development environment
-2_2_stop_dev_env() {
-    if 3_4_container_running; then
-        utils_print_msg "Stopping development environment..."
-        docker stop ${CONTAINER_NAME}
-    else
-        utils_print_msg "Container is not running" "${YELLOW}"
-    fi
-}
-
-# Function to remove development environment
-2_3_1_remove_dev_env() {
-    # 1. Remove container first
-    if 3_6_container_exists "${CONTAINER_NAME}"; then
-        utils_print_msg "Removing container..."
-        if ! docker rm "${CONTAINER_NAME}" -f; then
-            utils_print_msg "Failed to remove container" "${RED}"
-            return 1
-        fi
-    fi
-}
-
-2_3_2_remove_dev_env_image() {
-    # 2. Then remove image
-    if 3_5_image_exists "${IMAGE_NAME}"; then
-        utils_print_msg "Removing image..."
-        if ! docker rmi "${FINAL_IMAGE_NAME}"; then
-            utils_print_msg "Failed to remove image" "${RED}"
-            return 1
-        fi
-    fi
-}
-
-2_4_retrieve_latest_image() {
-    if 3_5_image_exists; then
-        utils_print_msg "Local image ${FINAL_IMAGE_NAME} already exists" "${GREEN}"
-        utils_print_msg "Do you want to pull the latest image anyway? [y/N]: " "${YELLOW}"
-        read -r pull_anyway
-        if [[ ! "$pull_anyway" =~ ^[Yy]$ ]]; then
-            return 0
-        fi
-    fi
-
-    if [ "${HAVE_HARBOR_SERVER}" == "FALSE" ]; then
-        utils_print_msg "\nYou do not have any registry server, so you cannot retrieve image online, please do restoration manually.\n" "${GREEN}"
-        return 1
-    else
-        utils_print_msg "Pulling latest image from ${REGISTRY_URL}..." "${GREEN}"
-        if ! docker pull "${FINAL_IMAGE_NAME}"; then
-            utils_print_msg "Failed to pull new image" "${RED}"
-            return 1
-        fi
-    fi
-}
-
-#############################################################################
-#                3rd group
-#############################################################################
-# Helper function to start container without prompt
-3_1_start_container_without_prompt() {
-    if ! 3_6_container_exists; then
-        utils_print_msg "Creating new development environment..."
-        3_3_generate_compose_config
-        (cd "${BUILD_SCRIPT_DIR}" && docker compose -p ${CONTAINER_NAME} up -d)
-    else
-        utils_print_msg "Starting existing container..."
-        docker start ${CONTAINER_NAME}
-    fi
-
-    if [ $? -ne 0 ]; then
-        utils_print_msg "Failed to start development environment" "${RED}"
-        return 1
-    fi
-    utils_print_msg "Development environment is ready!"
-}
-
-
-# Function to show help
-3_2_show_help() {
+main_show_help() {
     cat << EOF
 Usage: $0 [COMMAND]
 
@@ -355,203 +32,100 @@ Example:
 EOF
 }
 
-
-# Function to generate docker-compose configuration
-3_3_generate_compose_config() {
-    # Resolve volumes dir dynamically (symlink-safe)
-    local VOLUMES_DIR="$(realpath "${BUILD_SCRIPT_DIR}/../volumes")"
-
-    # Build conditional NVIDIA GPU section
-    local tmp_use="${USE_NVIDIA_GPU:-false}"
-    tmp_use="${tmp_use,,}"
-    local COMPOSE_GPU_SETTING=""
-    if [[ "${tmp_use}" == "true" ]]; then
-        COMPOSE_GPU_SETTING=$(cat << GPU_EOF
-    shm_size: ${CONTAINER_SHM_SIZE}
-    deploy:
-        resources:
-            reservations:
-                devices:
-                    - driver: nvidia
-                      count: all
-                      capabilities: [gpu]
-GPU_EOF
-)
-        echo "NVIDIA GPU Support: ENABLED"
-    else
-        echo "NVIDIA GPU Support: DISABLED"
-    fi
-
-    # Build conditional serial device section
-    local COMPOSE_DEVICES_SETTING=""
-    if [ -n "${CONTAINER_SERIAL_DEVICE}" ] && [ -e "${CONTAINER_SERIAL_DEVICE}" ]; then
-        COMPOSE_DEVICES_SETTING="    devices:
-      - ${CONTAINER_SERIAL_DEVICE}:${CONTAINER_SERIAL_DEVICE}"
-    fi
-
-    cat << EOF > "${BUILD_SCRIPT_DIR}/docker-compose.yaml"
-services:
-  dev-env:
-    image: ${FINAL_IMAGE_NAME}
-    container_name: ${CONTAINER_NAME}
-    hostname: ${CONTAINER_NAME}
-    user: "${DEV_USERNAME}"
-    restart: ${CONTAINER_RESTART_POLICY}
-    privileged: ${CONTAINER_PRIVILEGED}
-    tty: true
-    stdin_open: true
-
-${COMPOSE_DEVICES_SETTING}
-
-    volumes:
-      - /dev/bus/usb:/dev/bus/usb
-      - "${VOLUMES_DIR}:${VOLUMES_ROOT}"
-
-    ports:
-      - "${CLIENT_SSH_PORT}:22"
-      - "${GDB_PORT}:2345"
-
-    environment:
-      - TIMEZONE=${TIMEZONE}
-      - DISPLAY=${DISPLAY}
-      - WORKSPACE_ENABLE_REMOTE_DEBUG=${WORKSPACE_ENABLE_REMOTE_DEBUG}
-      - WORKSPACE_LOG_LEVEL=${WORKSPACE_LOG_LEVEL}
-
-      # ** NVIDIA **
-      - NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES}
-      - NVIDIA_DRIVER_CAPABILITIES=${NVIDIA_DRIVER_CAPABILITIES}
-
-${COMPOSE_GPU_SETTING}
-    working_dir: ${WORKSPACE_ROOT}
-
-    networks:
-      - dev-net
-
-networks:
-  dev-net:
-    driver: bridge
-
-volumes:
-  samba_public:
-    driver: local
-    driver_opts:
-      type: cifs
-      device: "//${SAMBA_SERVER_IP}/public"
-      o: "username=${SAMBA_PUBLIC_ACCOUNT_NAME},password=${SAMBA_PUBLIC_ACCOUNT_PASSWORD},uid=${DEV_UID},gid=${DEV_GID},file_mode=${SAMBA_FILE_MODE},dir_mode=${SAMBA_DIR_MODE}"
-EOF
-}
-# Function to check if container is running
-3_4_container_running() {
-    docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"
+################################################################################
+# main_entry_1st_branch: Load all modules (prerequisite for all commands)
+################################################################################
+main_entry_1st_load_modules() {
+    source "${SCRIPT_DIR}/scripts/01_env_loader.sh"
+    source "${SCRIPT_DIR}/scripts/02_docker_check.sh"
+    source "${SCRIPT_DIR}/scripts/03_volumes_init.sh"
+    source "${SCRIPT_DIR}/scripts/04_compose_generator.sh"
+    source "${SCRIPT_DIR}/scripts/05_container_lifecycle.sh"
 }
 
-3_5_image_exists() {
-    docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^${FINAL_IMAGE_NAME}$"
+################################################################################
+# main_entry_2nd_branch: Start command
+################################################################################
+main_entry_2nd_cmd_start() {
+    main_entry_1st_load_modules
+    
+    env_loader_1st_load_all
+    docker_check_2nd_do_checks
+    volumes_init_3rd_init_if_needed
+    container_lifecycle_5th_9th_start_interactive
 }
 
-# Function to check if container exists
-3_6_container_exists() {
-    docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"
+################################################################################
+# main_entry_3rd_branch: Stop command
+################################################################################
+main_entry_3rd_cmd_stop() {
+    main_entry_1st_load_modules
+    
+    env_loader_1st_load_all
+    container_lifecycle_5th_stop
 }
 
-
-#############################################################################
-#                utils
-#############################################################################
-#-------------------------------------------------------------------------------
-# Unified prompt function with timeout and Ctrl+C/Esc handling
-# Arguments:
-#   $1 - Prompt message
-#   $2 - Timeout in seconds
-# Returns:
-#   0 if user confirms, 1 if user denies or timeout occurs
-#-------------------------------------------------------------------------------
-utils_prompt_with_timeout() {
-    local message="$1"
-    local timeout="$2"
-
-    echo -e "\n--------------------"
-    echo -e "${message}"
-    echo -e "--------------------"
-
-    echo "Default: Yes (Press 'n' to skip, any other key to continue, Ctrl+C or Esc to cancel)"
-
-    trap 'echo -e "\nSkipping..."; return 1' SIGINT
-
-    for ((i=timeout; i>0; i--)); do
-        echo -ne "\rStarting in $i seconds... "
-        read -t 1 -n 1 input
-        if [ $? -eq 0 ]; then
-            echo -e "\n"
-            if [[ "${input,,}" == "n" || "${input}" == $'\e' ]]; then
-                return 1
-            else
-                return 0
-            fi
-        fi
-    done
-
-    echo -e "\nProceeding with default action..."
-    return 0
+################################################################################
+# main_entry_4th_branch: Restart command
+################################################################################
+main_entry_4th_cmd_restart() {
+    main_entry_1st_load_modules
+    
+    env_loader_1st_load_all
+    container_lifecycle_5th_restart
 }
 
-# Function to print messages
-utils_print_msg() {
-    echo -e "${2:-$GREEN}$1${NC}"
+################################################################################
+# main_entry_5th_branch: Recreate command
+################################################################################
+main_entry_5th_cmd_recreate() {
+    main_entry_1st_load_modules
+    
+    env_loader_1st_load_all
+    container_lifecycle_5th_recreate
 }
 
+################################################################################
+# main_entry_6th_branch: Remove command
+################################################################################
+main_entry_6th_cmd_remove() {
+    main_entry_1st_load_modules
+    
+    env_loader_1st_load_all
+    container_lifecycle_5th_remove
+}
 
-#############################################################################
-#                Main script logic
-#############################################################################
-main(){
+################################################################################
+# main_entry: Master router
+################################################################################
+main_entry() {
     case "$1" in
         "start")
-            1_0_gen_environment_variables
-            1_1_check_docker_group
-            1_2_check_docker_login
-            2_1_start_dev_env
+            main_entry_2nd_cmd_start
             ;;
         "stop")
-            1_0_gen_environment_variables
-            1_1_check_docker_group
-            1_2_check_docker_login
-            2_2_stop_dev_env
+            main_entry_3rd_cmd_stop
             ;;
         "restart")
-            1_0_gen_environment_variables
-            1_1_check_docker_group
-            1_2_check_docker_login
-            2_2_stop_dev_env
-            2_1_start_dev_env
+            main_entry_4th_cmd_restart
             ;;
         "recreate")
-            1_0_gen_environment_variables
-            1_1_check_docker_group
-            1_2_check_docker_login
-            2_3_1_remove_dev_env
-            2_3_2_remove_dev_env_image
-            2_4_retrieve_latest_image
-            2_1_start_dev_env
+            main_entry_5th_cmd_recreate
             ;;
         "remove")
-            1_0_gen_environment_variables
-            1_1_check_docker_group
-            1_2_check_docker_login
-            2_3_1_remove_dev_env
+            main_entry_6th_cmd_remove
             ;;
         "-h"|"--help"|"")
-            1_0_gen_environment_variables
-            3_2_show_help
+            main_entry_1st_load_modules
+            main_show_help
             ;;
         *)
-            1_0_gen_environment_variables
-            utils_print_msg "Unknown command: $1" "${RED}"
-            3_2_show_help
+            utils_print_error "Unknown command: $1"
+            main_entry_1st_load_modules
+            main_show_help
             exit 1
             ;;
     esac
-
 }
 
-main "$@"
+main_entry "$@"
