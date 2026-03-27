@@ -1,16 +1,16 @@
 #!/bin/bash
 ################################################################################
-# Script Name: temp_test.sh
+# Script Name: harbor
 # Description: Build multi-stage Docker image and push to registry
-# Usage: ./build-dev-env.sh
+# Usage: ./harbor
 #
 # Author: @PotterWhite
 # created date: 2024-11-28
 # last modified: 2025-06-29
 ################################################################################
 
-# set -e
-if [ "${V}" == "1" ]; then
+set -e
+if [[ "${V}" == "1" ]]; then
     set -x
 fi
 
@@ -315,7 +315,7 @@ _print_next_steps() {
     fi
 
     if [ ${user_type} -lt 1 ] || [ ${user_type} -gt ${platform_number} ]; then
-        echo "$user_type is not valid, plase input from 1 to ${platform_number}"
+        echo "$user_type is not valid, please input from 1 to ${platform_number}"
         return 1
     fi
 
@@ -329,13 +329,7 @@ _print_next_steps() {
     fi
     ln -sf "${PLATFORM_ENV_SRC_DIR}/${target_platform}.env" "${PLATFORM_ENV_DEST_PATH}"
 
-    # # 2nd. create project_handover/.env
-    # if [ -e "${HANDOVER_DIR}/.env" ];then
-    #     rm -f "${HANDOVER_DIR}/.env"
-    # fi
-    # ln -sf "${PLATFORM_ENV_SRC_DIR}/${target_platform}.env" "${HANDOVER_DIR}/.env"
-
-    # 3rd. create project_handover/common.env
+    # create project_handover/common.env symlink
     if [ -e ${PLATFORM_INDEPENDENT_ENV_DEST_PATH} ]; then
         rm -f ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}
     fi
@@ -343,13 +337,6 @@ _print_next_steps() {
 
     ls -lha ${PLATFORM_ENV_DEST_PATH}
     ls -lha ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}
-
-    # # 4th. create project_handover/client soft link
-    # if [ -e ${HANDOVER_CLIENTSIDE_DEST_PATH} ]; then
-    #     rm -f ${HANDOVER_CLIENTSIDE_DEST_PATH}
-    # fi
-    # ln -sf "${HANDOVER_CLIENTSIDE_SRC_DIR}/clientside-${target_platform}" "${HANDOVER_CLIENTSIDE_DEST_PATH}"
-    # ls -lha ${HANDOVER_CLIENTSIDE_DEST_PATH}
 
     echo
     echo "--- Setup env files (${target_platform}) Successfully ---"
@@ -386,28 +373,10 @@ _print_next_steps() {
 _build_images_clientside() {
     echo -e "\n=== 1. Building ClientSide Docker Images ==="
 
-    local stages=(
-        "Base image:stage_1_base"
-        "Tools:stage_2_tools"
-        "SDK:stage_3_sdk"
-        "Configuration:stage_4_config"
-        "Final image:stage_5_final"
-    )
-
     if ! ${BUILD_SCRIPT_DIR}/docker/dev-env-clientside/build.sh; then
-        echo "Error: Failed to build $name"
+        echo "Error: Failed to build clientside image"
         return 1
     fi
-
-    # for stage in "${stages[@]}"; do
-    #     local name="${stage%%:*}"
-    #     local script="${stage#*:}"
-    #     echo "Building stage: $name"
-    #     if ! ${BUILD_SCRIPT_DIR}/docker/dev-env-clientside/$script/build.sh; then
-    #         echo "Error: Failed to build $name"
-    #         return 1
-    #     fi
-    # done
 
     return 0
 }
@@ -503,14 +472,14 @@ _tag_image_onair() {
 #   0 on success, 1 on failure
 ################################################################################
 4_tag_images() {
+    local result=0
 
     if prompt_with_timeout "Tag images?" 10; then
         echo -e "\n=== 3. Tagging Images ==="
-        local result=0
 
         # Tag images
         echo "Tagging images..."
-        if [ "${HAVE_HARBOR_SERVER}" == "TRUE" ]; then
+        if [[ "${HAVE_HARBOR_SERVER}" == "TRUE" ]]; then
             _tag_image_onair "onair"
         else
             _tag_image_onair "local"
@@ -577,16 +546,6 @@ _push_and_verify_single_image() {
         echo "✗ Error: Failed to push ${image_name}:${tag}"
         return 1
     fi
-    #------------------------------------
-    # local push_output
-    # push_output="$(docker push "${full_image_name}" 2>&1)"
-
-    # if [ "${push_output}" == "" ]; then
-    #     echo "✗ Error: Failed to push ${image_name}:${tag}"
-    #     return 1
-    # else
-    #     echo "✓ ${image_name}:${tag} pushed successfully"
-    # fi
 
     #############################################################
     # verify the image on the server
@@ -606,7 +565,6 @@ _push_and_verify_single_image() {
 
     # 3rd stage: verify manifest output
     local digest=$(echo "${manifest_output}" | jq -r '.config.digest')
-    # local digest=$(echo "${manifest_output}" | grep -o 'sha256:[a-f0-9]*' | head -n 1)
 
     if [ -z "${digest}" ]; then
         echo "✗ Error: Could not extract digest for ${image_name}:${tag} from manifest."
@@ -616,60 +574,6 @@ _push_and_verify_single_image() {
 
     echo "Digest found: ${digest}"
     echo "✓ ${image_name}:${tag} inspected successfully, digest is ${digest}"
-
-    #-------------------------------------------
-    # # echo -e "\nExecuting: docker manifest inspect --insecure ${full_image_name}"
-    # # if docker manifest inspect --insecure "${full_image_name}" >/dev/null 2>&1; then
-    # echo -e "\nExecuting: docker manifest inspect ${full_image_name}"
-    # # docker manifest inspect "${full_image_name}"
-    # local digest
-    # # digest=$(echo "${push_output}" | grep "digest:" | awk '{print $2}')
-    # digest=$(echo "${push_output}" | grep "digest:" | awk '{print $3}' )
-    # # echo "push_output=${push_output}"
-    # # echo
-    # # echo "start"
-    # # echo $(echo "${push_output}" | grep "digest:" | awk "$(print $2)")
-    # # echo "end"
-    # # echo
-    # echo "digest=${digest}"
-    # docker inspect "${full_image_name}@${digest}" 2>&1 > /dev/null
-    # if [ $? -eq 0 ]; then
-    #     echo "✓ ${image_name}:${tag} inspected successfully"
-    #     return 0
-    # else
-    #     echo "✗ Error: Failed to verify ${image_name}:${tag}"
-    #     return 1
-    # fi
-}
-
-_push_and_verify_single_image_old() {
-    local image_name="$1"
-    local tag="$2"
-    local full_image_name="${REGISTRY_URL}/${image_name}:${tag}"
-
-    echo -e "\n##############################\nPushing ${image_name}:${tag} to registry...\n##############################"
-    echo "Executing: docker push ${full_image_name}"
-
-    if ! docker push "${full_image_name}"; then
-        echo "✗ Error: Failed to push ${image_name}:${tag}"
-        return 1
-    fi
-
-    #############################################################
-    # verify the image on the server
-    #############################################################
-
-    # echo -e "\nExecuting: docker manifest inspect --insecure ${full_image_name}"
-    # if docker manifest inspect --insecure "${full_image_name}" >/dev/null 2>&1; then
-    echo -e "\nExecuting: docker manifest inspect ${full_image_name}"
-    docker manifest inspect "${full_image_name}"
-    if [ $? -eq 0 ]; then
-        echo "✓ ${image_name}:${tag} pushed successfully"
-        return 0
-    else
-        echo "✗ Error: Failed to verify ${image_name}:${tag}"
-        return 1
-    fi
 }
 
 _push_and_verify_image() {
