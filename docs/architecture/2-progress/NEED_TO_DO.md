@@ -1,5 +1,19 @@
 - **改完就把下面的checkbox checked**
 
+Mar27.2026 09:10
+- [x] 运行出现
+    ```bash
+    $ ./harbor
+    Build process started at:
+    ###################################
+    #   Fri Mar27.2026 09:03:39
+    ###################################
+
+    Now we have below platforms:
+
+    ```
+    请解决
+
 Mar27.2026 08:40
 - [x] 继续完成HarborPilot.git/docs/architecture/2-progress/Mar27.2026-RestWork里的剩余工作，做完后验证（包括请我手动验证，告诉我验证方法和项目是什么），然后确认做好，提醒我确认是否删除HarborPilot.git/docs/architecture/2-progress/Mar27.2026-RestWork文档，然后你commit
 
