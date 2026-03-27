@@ -45,8 +45,10 @@ docker/dev-env-clientside/stage_5_final/configs/workspace.conf
 project_handover/clientside/windows/docker-compose.yaml
 project_handover/clientside/ubuntu/docker-compose.yaml
 
-# Ignore all files in volumes directory except WelcomeToVolumesRoot
+# volumes directory - symlink is managed by 03_volumes_init.sh
+# content is ignored, but .gitkeep is tracked to preserve directory structure
 project_handover/clientside/volumes/*
+!project_handover/clientside/volumes/.gitkeep
 !project_handover/clientside/volumes/WelcomeToVolumesRoot
 
 project_handover/scripts/*
@@ -67,4 +69,3 @@ docker/dev-env-serverside/*
 configs/platforms/.env
 project_handover/.env
 project_handover/.env-independent
-

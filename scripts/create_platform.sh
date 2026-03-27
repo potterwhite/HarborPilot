@@ -375,14 +375,14 @@ ${gitlab_block}
 # =============================================================================
 HARBOR_SERVER_IP="${harbor_ip}"
 HARBOR_SERVER_PORT="${harbor_port}"
-REGISTRY_URL="\${HARBOR_SERVER_IP}:\${HARBOR_SERVER_PORT}/team_\${CONTAINER_NAME}"
+REGISTRY_URL="\${HARBOR_SERVER_IP}:\${HARBOR_SERVER_PORT}/team_\${CHIP_FAMILY}"
 
 # =============================================================================
-# SDK  [derived — depends on CONTAINER_NAME and GITLAB_SERVER_IP]
+# SDK  [CHIP_FAMILY] and GITLAB_SERVER_IP]
 # =============================================================================
 SDK_INSTALL_PATH="\${WORKSPACE_ROOT}/sdk"
-SDK_GIT_REPO="git@\${GITLAB_SERVER_IP:-${harbor_ip}}:team_\${CONTAINER_NAME}/\${CONTAINER_NAME}_sdk.git"
-SDK_GIT_KEY_FILE="SDK_\${CONTAINER_NAME}_ED25519"
+SDK_GIT_REPO="git@\${GITLAB_SERVER_IP:-${harbor_ip}}:team_\${CHIP_FAMILY}/\${CHIP_FAMILY}_sdk.git"
+SDK_GIT_KEY_FILE="SDK_\${CHIP_FAMILY}_ED25519"
 SDK_GIT_DEFAULT_BRANCH="${sdk_branch}"
 
 # =============================================================================
@@ -568,14 +568,14 @@ ${gitlab_block}
 # =============================================================================
 HARBOR_SERVER_IP="${harbor_ip}"
 HARBOR_SERVER_PORT="${harbor_port}"
-REGISTRY_URL="\${HARBOR_SERVER_IP}:\${HARBOR_SERVER_PORT}/team_\${CONTAINER_NAME}"
+REGISTRY_URL="\${HARBOR_SERVER_IP}:\${HARBOR_SERVER_PORT}/team_\${CHIP_FAMILY}"
 
 # =============================================================================
-# SDK  [derived — depends on CONTAINER_NAME and server IPs]
+# SDK  [CHIP_FAMILY] and server IPs]
 # =============================================================================
 SDK_INSTALL_PATH="\${WORKSPACE_ROOT}/sdk"
-SDK_GIT_REPO="git@\${GITLAB_SERVER_IP:-${harbor_ip}}:team_\${CONTAINER_NAME}/\${CONTAINER_NAME}_sdk.git"
-SDK_GIT_KEY_FILE="SDK_\${CONTAINER_NAME}_ED25519"
+SDK_GIT_REPO="git@\${GITLAB_SERVER_IP:-${harbor_ip}}:team_\${CHIP_FAMILY}/\${CHIP_FAMILY}_sdk.git"
+SDK_GIT_KEY_FILE="SDK_\${CHIP_FAMILY}_ED25519"
 SDK_GIT_DEFAULT_BRANCH="${sdk_branch}"
 
 # =============================================================================
