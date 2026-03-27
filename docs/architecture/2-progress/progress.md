@@ -93,6 +93,10 @@ Based on `refactoring_plan.md`, priorities:
 | Chinese comments translated to English in 5 files | `d729c31` | |
 | setup_workspace.sh: hardcoded "developer" → `${DEV_USERNAME}` | `d729c31` | |
 | Stale documentation updated (UBUNTU_SERVER_IP, SERVER_SSH_PORT refs) | `3a06a79` | |
+| OpenCV build fails: cmake not found (dev_tools ran after OpenCV) | `189a7f6` | Reorder: install dev_tools → OpenCV |
+| pip3 externally-managed-environment on Ubuntu 24.04 (PEP 668) | `90611c0` | Add --break-system-packages |
+| setup_workspace.sh_template: local vars replaced by envsubst → empty | `6f505a6` | CRITICAL: escape \${dir_path} etc. |
+| ARG USE_NVIDIA_GPU missing; duplicate ARG ENABLE_SYSLOG | `4cc03db` | Lint fix + correctness |
 
 ---
 
