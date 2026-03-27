@@ -48,7 +48,7 @@ Eleven files, each scoped to one concern. The ordinal prefix makes the load orde
 | `02_build.env` | `DOCKER_BUILDKIT` |
 | `03_tools.env` | `INSTALL_CUDA/OPENCV/CMAKE`, tool versions (`CONAN_VERSION`, etc.), `GCC_OFFLINE_PACKAGE` |
 | `04_workspace.env` | `WORKSPACE_ROOT` and all subdirectory paths, `WORKSPACE_BUILD_THREADS`, debug settings |
-| `05_registry.env` | `HAVE_GITLAB_SERVER`, `UBUNTU_SERVER_IP`, `UBUNTU_SERVER_PORT`, `HAVE_HARBOR_SERVER` |
+| `05_registry.env` | `HAVE_GITLAB_SERVER`, `HARBOR_SERVER_IP`, `HARBOR_SERVER_PORT`, `HAVE_HARBOR_SERVER`, `GITLAB_SERVER_IP`, `GITLAB_SERVER_PORT` |
 | `06_sdk.env` | `INSTALL_SDK`, SDK path pattern (note: full URLs depend on `CONTAINER_NAME`, set in Layer 3) |
 | `07_volumes.env` | `VOLUMES_ROOT` (note: `HOST_VOLUME_DIR` has no universal default — must be set in Layer 3) |
 | `08_samba.env` | `SAMBA_PUBLIC/PRIVATE_ACCOUNT_NAME/PASSWORD`, `ENABLE_VSC_INTEGRATION` |
@@ -86,29 +86,33 @@ Each platform file contains **only what differs from the defaults**. The mandato
 # Platform identity
 PRODUCT_NAME="rk3568"
 OS_VERSION="20.04"
+OS_DISTRIBUTION="ubuntu"
 
 # Derived names (depend on PRODUCT_NAME)
 IMAGE_NAME="${PRODUCT_NAME}-dev-env"
 CONTAINER_NAME=${PRODUCT_NAME}
 LATEST_IMAGE_TAG=${PROJECT_VERSION}
 
-# Registry URL (depends on CONTAINER_NAME, set above)
-UBUNTU_SERVER_IP="192.168.3.67"
-UBUNTU_SERVER_PORT="9000"
-REGISTRY_URL="${UBUNTU_SERVER_IP}:${UBUNTU_SERVER_PORT}/team_${CONTAINER_NAME}"
+# Port slot — all ports derived by port_calc.sh
+PORT_SLOT="2"
+
+# Registry URL (depends on CONTAINER_NAME and HARBOR_SERVER_IP)
+HARBOR_SERVER_IP="192.168.3.67"
+HARBOR_SERVER_PORT="9000"
+REGISTRY_URL="${HARBOR_SERVER_IP}:${HARBOR_SERVER_PORT}/team_${CONTAINER_NAME}"
+
+# GitLab server (for SDK repos)
+HAVE_GITLAB_SERVER="TRUE"
+GITLAB_SERVER_IP="192.168.3.67"
+GITLAB_SERVER_PORT="22"
 
 # SDK paths (depend on CONTAINER_NAME)
 SDK_INSTALL_PATH="${WORKSPACE_ROOT}/sdk"
-SDK_GIT_REPO="git@${UBUNTU_SERVER_IP}:team_${CONTAINER_NAME}/${CONTAINER_NAME}_sdk.git"
+SDK_GIT_REPO="git@${GITLAB_SERVER_IP}:team_${CONTAINER_NAME}/${CONTAINER_NAME}_sdk.git"
 SDK_GIT_KEY_FILE="SDK_${CONTAINER_NAME}_ED25519"
 
 # Host volume path (host-machine-specific, no sensible default)
 HOST_VOLUME_DIR="/mnt/.../volumes/rk3568"
-
-# Ports (every platform must have unique ports)
-CLIENT_SSH_PORT="2129"
-SERVER_SSH_PORT="2130"
-GDB_PORT="2365"
 ```
 
 ### Optional overrides (only when different from defaults)
@@ -175,7 +179,7 @@ Scripts that implement this pattern:
 
 ## Adding a New Platform
 
-1. Copy `configs/platforms/offline.env` to `configs/platforms/<your-platform>.env`
+1. Copy an existing platform `.env` as a starting point or run `./scripts/create_platform.sh`
 2. Fill in the **required** section (identity, ports, `HOST_VOLUME_DIR`, registry URL)
 3. Add only the optional overrides that differ from defaults
 4. Run `./harbor` — your new platform appears in the selection menu automatically

@@ -179,18 +179,18 @@ Single monolithic Dockerfile, 5 stages. Each stage has sub-stages for template p
 
 ## 4. Configuration System — Variable Reference
 
-### Layer 1: `configs/defaults/` (11 files)
+### Layer 1: `configs/defaults/` (10 files)
 
 | File | Key Variables | Notes |
 |---|---|---|
-| `01_base.env` | `OS_DISTRIBUTION=ubuntu`, `OS_VERSION=22.04`, `DEV_USERNAME=developer`, `DEV_UID/GID=1000`, `TIMEZONE=Asia/Hong_Kong` | Password defaults: `123` |
+| `01_base.env` | `OS_DISTRIBUTION=ubuntu`, `OS_VERSION=22.04`, `DEV_USERNAME=developer`, `DEV_GROUP=developer`, `DEV_UID/GID=1000`, `TIMEZONE=Asia/Hong_Kong`, `DEBIAN_FRONTEND=noninteractive` | Password defaults: `123` |
 | `02_build.env` | `DOCKER_BUILDKIT=1` | Single variable |
 | `03_tools.env` | `INSTALL_CUDA=false`, `INSTALL_OPENCV=false`, `INSTALL_HOST_CMAKE=true`, `NPM_USE_CHINA_MIRROR=false`, `CUDA_VERSION=12.0`, `OPENCV_VERSION=4.9.0`, `CONAN_VERSION=2.0.17` | Version pinning for reproducibility |
-| `04_workspace.env` | `WORKSPACE_ROOT=/development`, subdirs: `i_src`…`vi_tools`, `BUILD_THREADS=4`, `LOG_LEVEL=INFO`, `DEBUG_PORT=3000` | 6 workspace subdirectories |
+| `04_workspace.env` | `WORKSPACE_ROOT=/development`, subdirs: `i_src`…`vi_tools`, `WORKSPACE_BUILD_THREADS=4`, `WORKSPACE_LOG_LEVEL=INFO`, `WORKSPACE_DEBUG_PORT=3000` | 6 workspace subdirectories |
 | `05_registry.env` | `HAVE_GITLAB_SERVER=TRUE`, `HAVE_HARBOR_SERVER=TRUE`, `HARBOR_SERVER_PORT=9000` | `REGISTRY_URL` depends on CONTAINER_NAME |
 | `06_sdk.env` | `INSTALL_SDK=false` | SDK paths are platform-dependent |
 | `07_volumes.env` | `VOLUMES_ROOT=${WORKSPACE_ROOT}` | `HOST_VOLUME_DIR` has no default — REQUIRED per platform |
-| `08_samba.env` | `SAMBA_PUBLIC_ACCOUNT_NAME/PASSWORD=sambashare`, `SAMBA_FILE_MODE=0777`, `SAMBA_DIR_MODE=0777` | Default Samba credentials + permissions |
+| `08_samba.env` | `SAMBA_SERVER_IP=""`, `SAMBA_PUBLIC_ACCOUNT_NAME/PASSWORD=sambashare`, `SAMBA_FILE_MODE=0777`, `SAMBA_DIR_MODE=0777` | Default Samba credentials + permissions |
 | `09_runtime.env` | `ENABLE_SSH=true`, `ENABLE_GDB_SERVER=true`, `USE_NVIDIA_GPU=false`, `ENABLE_CORE_DUMPS=true`, `CONTAINER_RESTART_POLICY=unless-stopped`, `CONTAINER_PRIVILEGED=true`, `CONTAINER_SERIAL_DEVICE=/dev/ttyUSB0`, `CONTAINER_SHM_SIZE=8g`, `NVIDIA_VISIBLE_DEVICES=all`, `NVIDIA_DRIVER_CAPABILITIES=all` | Ports from port_calc.sh; compose overrides for container runtime |
 | `11_proxy.env` | `HAS_PROXY=false`, `HTTP_PROXY_IP`, `HTTPS_PROXY_IP` | Proxy IPs have defaults but HAS_PROXY is off |
 

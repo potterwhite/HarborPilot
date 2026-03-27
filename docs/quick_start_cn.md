@@ -57,7 +57,7 @@ Harbor 使用自签名 TLS 证书。Docker 必须信任它，否则所有 `docke
 
 ```bash
 # 将 <registry-ip> 和 <registry-port> 替换为你平台 .env 文件中的
-# UBUNTU_SERVER_IP 和 UBUNTU_SERVER_PORT 的值
+# HARBOR_SERVER_IP 和 HARBOR_SERVER_PORT 的值
 REGISTRY_HOST="<registry-ip>:<registry-port>"
 
 sudo mkdir -p "/etc/docker/certs.d/${REGISTRY_HOST}"
@@ -190,13 +190,14 @@ pull_sdk.sh
 
 ## 平台端口速查表
 
-| 平台 | OS | CLIENT_SSH_PORT | SERVER_SSH_PORT | GDB_PORT |
-|---|---|---|---|---|
-| rk3588s | Ubuntu 22.04 | 2109 | 2110 | 2345 |
-| rv1126bp | Ubuntu 22.04 | 2119 | 2120 | 2355 |
-| rk3568 | Ubuntu 20.04 | 2129 | 2130 | 2365 |
-| rv1126 | Ubuntu 22.04 | 2139 | 2140 | 2375 |
-| rk3568-ubuntu22 | Ubuntu 22.04 | 2149 | 2150 | 2385 |
+| 平台 | OS | CLIENT_SSH_PORT | GDB_PORT |
+|---|---|---|---|
+| rk3588s | Ubuntu 24.04 | 2109 | 2345 |
+| rv1126bp | Ubuntu 22.04 | 2119 | 2355 |
+| rk3568 | Ubuntu 20.04 | 2129 | 2365 |
+| rv1126 | Ubuntu 22.04 | 2139 | 2375 |
+| rk3568-ubuntu22 | Ubuntu 22.04 | 2149 | 2385 |
+| rk3588s-ubuntu-24 | Ubuntu 24.04 | 2159 | 2395 |
 
 ---
 

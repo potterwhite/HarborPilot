@@ -57,7 +57,7 @@ The Harbor registry uses a self-signed TLS certificate. Docker must be told to t
 
 ```bash
 # Replace <registry-ip> and <registry-port> with the values in your platform .env file
-# (UBUNTU_SERVER_IP and UBUNTU_SERVER_PORT)
+# (HARBOR_SERVER_IP and HARBOR_SERVER_PORT)
 REGISTRY_HOST="<registry-ip>:<registry-port>"
 
 sudo mkdir -p "/etc/docker/certs.d/${REGISTRY_HOST}"
@@ -187,13 +187,14 @@ Ask your administrator or SDK developer for the manifest URL, then run the provi
 
 ## Platform Port Reference
 
-| Platform | OS | CLIENT_SSH_PORT | SERVER_SSH_PORT | GDB_PORT |
-|---|---|---|---|---|
-| rk3588s | Ubuntu 22.04 | 2109 | 2110 | 2345 |
-| rv1126bp | Ubuntu 22.04 | 2119 | 2120 | 2355 |
-| rk3568 | Ubuntu 20.04 | 2129 | 2130 | 2365 |
-| rv1126 | Ubuntu 22.04 | 2139 | 2140 | 2375 |
-| rk3568-ubuntu22 | Ubuntu 22.04 | 2149 | 2150 | 2385 |
+| Platform | OS | CLIENT_SSH_PORT | GDB_PORT |
+|---|---|---|---|
+| rk3588s | Ubuntu 24.04 | 2109 | 2345 |
+| rv1126bp | Ubuntu 22.04 | 2119 | 2355 |
+| rk3568 | Ubuntu 20.04 | 2129 | 2365 |
+| rv1126 | Ubuntu 22.04 | 2139 | 2375 |
+| rk3568-ubuntu22 | Ubuntu 22.04 | 2149 | 2385 |
+| rk3588s-ubuntu-24 | Ubuntu 24.04 | 2159 | 2395 |
 
 ---
 

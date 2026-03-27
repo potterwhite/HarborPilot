@@ -11,7 +11,6 @@ The `configs/port_calc.sh` script (sourced after Layer 3) derives all ports:
 
 ```
 CLIENT_SSH_PORT = 2109 + (PORT_SLOT × 10)
-SERVER_SSH_PORT = 2110 + (PORT_SLOT × 10)
 GDB_PORT        = 2345 + (PORT_SLOT × 10)
 ```
 
