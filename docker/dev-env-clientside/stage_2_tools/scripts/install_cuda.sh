@@ -1,3 +1,4 @@
+#!/bin/bash
 ################################################################################
 # File: docker/stage_2_tools/scripts/install_cuda.sh
 #
@@ -8,11 +9,9 @@
 # Created: 2024-11-21
 # Last Modified: 2024-11-21
 #
-# Copyright (c) 2024 [Your Company/Name]
+# Copyright (c) 2024
 # License: MIT
 ################################################################################
-
-#!/bin/bash
 set -e
 
 # Source tool versions

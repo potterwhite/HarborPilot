@@ -20,7 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-#!/bin/bash
 # =============================================================================
 # Workspace Setup Script
 # =============================================================================
@@ -59,19 +58,19 @@ func_utils_create_directory() {
 init_workspace() {
     echo "Initializing workspace structure..."
 
-    func_utils_create_directory "/development" "developer" "755"
+    func_utils_create_directory "/development" "${DEV_USERNAME}" "755"
     # Setup user and group
-    chown -R "developer:developer" "/development"
+    chown -R "${DEV_USERNAME}:${DEV_USERNAME}" "/development"
 
     # Create main directories
-    func_utils_create_directory "/development/i_src" "developer" "755"
-    func_utils_create_directory "/development/ii_build" "developer" "755"
-    func_utils_create_directory "/development/iii_logs" "developer" "755"
-    func_utils_create_directory "/development/iv_temp" "developer" "755"
+    func_utils_create_directory "/development/i_src" "${DEV_USERNAME}" "755"
+    func_utils_create_directory "/development/ii_build" "${DEV_USERNAME}" "755"
+    func_utils_create_directory "/development/iii_logs" "${DEV_USERNAME}" "755"
+    func_utils_create_directory "/development/iv_temp" "${DEV_USERNAME}" "755"
 
     # Create additional development directories
-    func_utils_create_directory "/development/v_docs" "developer" "755"
-    func_utils_create_directory "/development/vi_tools" "developer" "755"
+    func_utils_create_directory "/development/v_docs" "${DEV_USERNAME}" "755"
+    func_utils_create_directory "/development/vi_tools" "${DEV_USERNAME}" "755"
 
     echo "Workspace initialization completed."
 }

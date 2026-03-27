@@ -20,7 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-#!/bin/bash
 ###############################################################################
 # Git LFS Tracker
 # Description: Track large files and add them to Git LFS

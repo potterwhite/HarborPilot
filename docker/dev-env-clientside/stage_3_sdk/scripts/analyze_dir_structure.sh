@@ -20,8 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-#!/bin/bash
-
 # File name: analyze_dir_structure.sh
 # Purpose: Quick analysis of large SDK directory
 # Usage: ./analyze_dir_structure.sh <sdk_path> [max_depth]
