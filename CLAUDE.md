@@ -20,7 +20,8 @@ Do **not** scan `docker/`, `scripts/`, or `configs/` before reading the above.
 
 - All source code and comments must be in **English**
 - Communicate with me in **Chinese**
-- Do not end the session arbitrarily — always prompt the user for next steps
+- 严谨中断会话，你的所有任务执行完毕后的下一步是进入UserAskQuestion工具，让用户选择（也可以主动输入）接下来的工作内容
+- 以文档提供的内容为可信，没有发现文档错误或内容冲突等异常的情况下，严禁全盘扫描
 
 ---
 

@@ -1,6 +1,6 @@
 # HarborPilot — Project Progress
 
-> Last updated: 2026-03-26
+> Last updated: 2026-03-27
 
 ---
 
@@ -10,10 +10,10 @@
 |---|---|---|
 | **Phase 0** | Initial implementation — multi-stage Docker build | ✅ Done |
 | **Phase 1** | Multi-platform support + config system | ✅ Done |
-| **Phase 2** | AI docs system + developer experience | 🔄 In Progress |
-| **Phase 3** | Architecture modernization (envsubst, devcontainer, schema) | ⏳ Pending |
+| **Phase 2** | AI docs system + developer experience | ✅ Done |
+| **Phase 3** | Architecture modernization + code quality audit | 🔄 In Progress |
 
-**Currently active:** Phase 2 — Injecting AI-first documentation system
+**Currently active:** Phase 3 — Code quality audit + systematic fixes
 
 ---
 
@@ -52,7 +52,7 @@
 
 ---
 
-## Phase 2 — AI Documentation System (In Progress)
+## Phase 2 — AI Documentation System (Done)
 
 | Item | Status |
 |---|---|
@@ -68,7 +68,7 @@
 
 ---
 
-## Phase 3 — Architecture Modernization (Pending)
+## Phase 3 — Architecture Modernization + Code Quality (In Progress)
 
 Based on `refactoring_plan.md`, priorities:
 
@@ -79,6 +79,20 @@ Based on `refactoring_plan.md`, priorities:
 | Merge `libs/iv_scripts/setup_base.sh` into clientside version (remove duplication) | P2 | ✅ Resolved — entire `docker/libs/` deleted |
 | `setup_base.sh` → Ansible playbook (long-term) | P3 | ⏳ |
 | Unified error format across all scripts | P3 | ⏳ |
+
+### Code Quality Audit (2026-03-27)
+
+| Fix | Commit | Notes |
+|---|---|---|
+| Dockerfile ARG cross-stage loss (CUDA/OpenCV never installed) | `0dd8a0c` | CRITICAL: 13 ARGs now in ENV block |
+| eval injection in build.sh → `${!name}` | `2872784` | Security fix |
+| UBUNTU_SERVER_IP orphan reference in Samba CIFS mount | `2872784` | Runtime bug fix, add SAMBA_SERVER_IP |
+| Invalid bash expansion `${USE_NVIDIA_GPU,,:-false}` | `2872784` | Correctness fix |
+| harbor: set -e, dead functions, dead code (~100 lines removed) | `0f0e12e` | |
+| Shebangs moved to line 1 in 8 affected scripts | `d729c31` | |
+| Chinese comments translated to English in 5 files | `d729c31` | |
+| setup_workspace.sh: hardcoded "developer" → `${DEV_USERNAME}` | `d729c31` | |
+| Stale documentation updated (UBUNTU_SERVER_IP, SERVER_SSH_PORT refs) | `3a06a79` | |
 
 ---
 
