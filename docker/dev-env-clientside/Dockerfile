@@ -126,16 +126,16 @@ ARG SAMBA_PRIVATE_ACCOUNT_PASSWORD
 ARG ENABLE_VSC_INTEGRATION  # Moved here from a duplicate entry
 
 # -----------------------------------------------------------------------------
-# Container Runtime Configuration (8 arguments)
+# Container Runtime Configuration (9 arguments)
 # -----------------------------------------------------------------------------
 ARG ENABLE_SSH
 ARG CLIENT_SSH_PORT
-ARG ENABLE_SYSLOG
 ARG ENABLE_SYSLOG
 ARG ENABLE_GDB_SERVER
 ARG GDB_PORT
 ARG ENABLE_CORE_DUMPS
 ARG CORE_PATTERN
+ARG USE_NVIDIA_GPU
 
 # -----------------------------------------------------------------------------
 # Proxy Configuration
