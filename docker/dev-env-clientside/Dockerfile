@@ -103,10 +103,11 @@ ARG HAVE_HARBOR_SERVER
 ARG REGISTRY_URL
 
 # -----------------------------------------------------------------------------
-# SDK Configuration (5 arguments)
+# SDK Configuration (6 arguments)
 # -----------------------------------------------------------------------------
 ARG INSTALL_SDK
 ARG SDK_INSTALL_PATH
+ARG CHIP_FAMILY
 ARG SDK_GIT_REPO
 ARG SDK_GIT_KEY_FILE
 ARG SDK_GIT_DEFAULT_BRANCH
@@ -182,6 +183,7 @@ ENV WORKSPACE_ROOT=${WORKSPACE_ROOT} \
     PROJECT_LICENSE=${PROJECT_LICENSE} \
     PROJECT_RELEASE_DATE=${PROJECT_RELEASE_DATE} \
     SDK_INSTALL_PATH=${SDK_INSTALL_PATH} \
+    CHIP_FAMILY=${CHIP_FAMILY} \
     SDK_GIT_REPO=${SDK_GIT_REPO} \
     SDK_GIT_KEY_FILE=${SDK_GIT_KEY_FILE} \
     SDK_GIT_DEFAULT_BRANCH=${SDK_GIT_DEFAULT_BRANCH} \
