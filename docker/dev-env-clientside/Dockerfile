@@ -37,6 +37,7 @@ ARG PROJECT_RELEASE_DATE
 # Base Configuration (12 arguments)
 # -----------------------------------------------------------------------------
 ARG PRODUCT_NAME
+ARG OS_DISTRIBUTION
 ARG OS_VERSION
 ARG IMAGE_NAME
 ARG LATEST_IMAGE_TAG
@@ -57,28 +58,18 @@ ARG DOCKER_BUILDKIT
 ARG BUILD_DATE
 
 # -----------------------------------------------------------------------------
-# Development Tools Configuration (13 arguments)
+# Development Tools Configuration (10 arguments)
 # -----------------------------------------------------------------------------
 ARG INSTALL_CUDA
 ARG INSTALL_OPENCV
 ARG INSTALL_HOST_CMAKE
 ARG INSTALL_MAN_DOC
-ARG INSTALL_DISTCC
 ARG NPM_USE_CHINA_MIRROR
-ARG INSTALL_TOOLCHAIN
 ARG CONAN_VERSION
 ARG CMAKE_FORMAT_VERSION
 ARG PRE_COMMIT_VERSION
 ARG CUDA_VERSION
 ARG OPENCV_VERSION
-ARG GCC_OFFLINE_PACKAGE
-
-# -----------------------------------------------------------------------------
-# Toolchain Offline Configuration (3 arguments)
-# -----------------------------------------------------------------------------
-ARG GCC_OFFLINE_VERSION
-ARG GCC_INSTALL_PATH
-ARG TOOLCHAIN_TARBALL_NAME  # Added from Serverside section for consistency
 
 # -----------------------------------------------------------------------------
 # Workspace Configuration (16 arguments)
@@ -104,16 +95,19 @@ ARG WORKSPACE_DEBUG_PORT
 # Registry Configuration (5 arguments)
 # -----------------------------------------------------------------------------
 ARG HAVE_GITLAB_SERVER
-ARG UBUNTU_SERVER_IP
-ARG UBUNTU_SERVER_PORT
+ARG GITLAB_SERVER_IP
+ARG GITLAB_SERVER_PORT
+ARG HARBOR_SERVER_IP
+ARG HARBOR_SERVER_PORT
 ARG HAVE_HARBOR_SERVER
 ARG REGISTRY_URL
 
 # -----------------------------------------------------------------------------
-# SDK Configuration (5 arguments)
+# SDK Configuration (6 arguments)
 # -----------------------------------------------------------------------------
 ARG INSTALL_SDK
 ARG SDK_INSTALL_PATH
+ARG CHIP_FAMILY
 ARG SDK_GIT_REPO
 ARG SDK_GIT_KEY_FILE
 ARG SDK_GIT_DEFAULT_BRANCH
@@ -133,34 +127,16 @@ ARG SAMBA_PRIVATE_ACCOUNT_PASSWORD
 ARG ENABLE_VSC_INTEGRATION  # Moved here from a duplicate entry
 
 # -----------------------------------------------------------------------------
-# Container Runtime Configuration (8 arguments)
+# Container Runtime Configuration (9 arguments)
 # -----------------------------------------------------------------------------
 ARG ENABLE_SSH
 ARG CLIENT_SSH_PORT
-ARG SERVER_SSH_PORT
 ARG ENABLE_SYSLOG
 ARG ENABLE_GDB_SERVER
 ARG GDB_PORT
 ARG ENABLE_CORE_DUMPS
 ARG CORE_PATTERN
-
-# -----------------------------------------------------------------------------
-# Serverside Image & Container Options (14 arguments)
-# -----------------------------------------------------------------------------
-ARG ENABLE_SERVERSIDE
-ARG DISTCC_GCC_11_ENABLE
-ARG DISTCC_GCC_11_MAIN_PORT
-ARG DISTCC_GCC_11_STATS_PORT
-ARG DISTCC_GCC_10_ENABLE
-ARG DISTCC_GCC_10_MAIN_PORT
-ARG DISTCC_GCC_10_STATS_PORT
-ARG DISTCC_LOG_LEVEL
-ARG DISTCC_LOG_DIR
-ARG PYTHON_VERSION
-ARG TOOLCHAIN_DIR
-ARG SERVERSIDE_IMAGE_NAME
-ARG SERVERSIDE_CONTAINER_NAME
-ARG TOOLCHAIN_TARBALL_NAME  # Already added in Toolchain Offline Configuration
+ARG USE_NVIDIA_GPU
 
 # -----------------------------------------------------------------------------
 # Proxy Configuration
@@ -169,20 +145,88 @@ ARG HAS_PROXY
 ARG HTTP_PROXY_IP
 ARG HTTPS_PROXY_IP
 
+# =============================================================================
+# Persist ARG values as ENV so all subsequent stages can access them.
+# Docker ARGs are scoped per-stage; ENV values propagate through all stages.
+# Only non-sensitive variables are listed here.
+# =============================================================================
+ENV WORKSPACE_ROOT=${WORKSPACE_ROOT} \
+    WORKSPACE_1ST_SOURCE_SUBDIR=${WORKSPACE_1ST_SOURCE_SUBDIR} \
+    WORKSPACE_2ND_BUILD_SUBDIR=${WORKSPACE_2ND_BUILD_SUBDIR} \
+    WORKSPACE_3RD_LOGS_SUBDIR=${WORKSPACE_3RD_LOGS_SUBDIR} \
+    WORKSPACE_4TH_TEMP_SUBDIR=${WORKSPACE_4TH_TEMP_SUBDIR} \
+    WORKSPACE_5TH_DOCS_SUBDIR=${WORKSPACE_5TH_DOCS_SUBDIR} \
+    WORKSPACE_6TH_TOOLS_SUBDIR=${WORKSPACE_6TH_TOOLS_SUBDIR} \
+    WORKSPACE_DEFAULT_PROJECT_NAME=${WORKSPACE_DEFAULT_PROJECT_NAME} \
+    WORKSPACE_DEFAULT_BUILD_TYPE=${WORKSPACE_DEFAULT_BUILD_TYPE} \
+    WORKSPACE_BUILD_THREADS=${WORKSPACE_BUILD_THREADS} \
+    WORKSPACE_ENABLE_AUTO_SAVE=${WORKSPACE_ENABLE_AUTO_SAVE} \
+    WORKSPACE_ENABLE_ERROR_REPORTING=${WORKSPACE_ENABLE_ERROR_REPORTING} \
+    WORKSPACE_LOG_LEVEL=${WORKSPACE_LOG_LEVEL} \
+    WORKSPACE_ENABLE_VSC_INTEGRATION=${WORKSPACE_ENABLE_VSC_INTEGRATION} \
+    WORKSPACE_ENABLE_REMOTE_DEBUG=${WORKSPACE_ENABLE_REMOTE_DEBUG} \
+    WORKSPACE_DEBUG_PORT=${WORKSPACE_DEBUG_PORT} \
+    DEV_USERNAME=${DEV_USERNAME} \
+    DEV_GROUP=${DEV_GROUP} \
+    DEV_UID=${DEV_UID} \
+    DEV_GID=${DEV_GID} \
+    TIMEZONE=${TIMEZONE} \
+    PRODUCT_NAME=${PRODUCT_NAME} \
+    OS_VERSION=${OS_VERSION} \
+    OS_DISTRIBUTION=${OS_DISTRIBUTION} \
+    IMAGE_NAME=${IMAGE_NAME} \
+    CONTAINER_NAME=${CONTAINER_NAME} \
+    PROJECT_VERSION=${PROJECT_VERSION} \
+    PROJECT_MAINTAINER=${PROJECT_MAINTAINER} \
+    PROJECT_EMAIL=${PROJECT_EMAIL} \
+    PROJECT_COPYRIGHT=${PROJECT_COPYRIGHT} \
+    PROJECT_LICENSE=${PROJECT_LICENSE} \
+    PROJECT_RELEASE_DATE=${PROJECT_RELEASE_DATE} \
+    SDK_INSTALL_PATH=${SDK_INSTALL_PATH} \
+    CHIP_FAMILY=${CHIP_FAMILY} \
+    SDK_GIT_REPO=${SDK_GIT_REPO} \
+    SDK_GIT_KEY_FILE=${SDK_GIT_KEY_FILE} \
+    SDK_GIT_DEFAULT_BRANCH=${SDK_GIT_DEFAULT_BRANCH} \
+    VOLUMES_ROOT=${VOLUMES_ROOT} \
+    INSTALL_SDK=${INSTALL_SDK} \
+    REGISTRY_URL=${REGISTRY_URL} \
+    HARBOR_SERVER_IP=${HARBOR_SERVER_IP} \
+    HARBOR_SERVER_PORT=${HARBOR_SERVER_PORT} \
+    HAVE_HARBOR_SERVER=${HAVE_HARBOR_SERVER} \
+    HAVE_GITLAB_SERVER=${HAVE_GITLAB_SERVER} \
+    GITLAB_SERVER_IP=${GITLAB_SERVER_IP} \
+    GITLAB_SERVER_PORT=${GITLAB_SERVER_PORT} \
+    ENABLE_SSH=${ENABLE_SSH} \
+    CLIENT_SSH_PORT=${CLIENT_SSH_PORT} \
+    ENABLE_GDB_SERVER=${ENABLE_GDB_SERVER} \
+    GDB_PORT=${GDB_PORT} \
+    ENABLE_CORE_DUMPS=${ENABLE_CORE_DUMPS} \
+    CORE_PATTERN=${CORE_PATTERN} \
+    USE_NVIDIA_GPU=${USE_NVIDIA_GPU} \
+    INSTALL_CUDA=${INSTALL_CUDA} \
+    INSTALL_OPENCV=${INSTALL_OPENCV} \
+    INSTALL_HOST_CMAKE=${INSTALL_HOST_CMAKE} \
+    INSTALL_MAN_DOC=${INSTALL_MAN_DOC} \
+    NPM_USE_CHINA_MIRROR=${NPM_USE_CHINA_MIRROR} \
+    CONAN_VERSION=${CONAN_VERSION} \
+    CMAKE_FORMAT_VERSION=${CMAKE_FORMAT_VERSION} \
+    PRE_COMMIT_VERSION=${PRE_COMMIT_VERSION} \
+    CUDA_VERSION=${CUDA_VERSION} \
+    OPENCV_VERSION=${OPENCV_VERSION} \
+    BUILD_DATE=${BUILD_DATE} \
+    HAS_PROXY=${HAS_PROXY} \
+    HTTP_PROXY_IP=${HTTP_PROXY_IP} \
+    HTTPS_PROXY_IP=${HTTPS_PROXY_IP}
+
 # Copy scripts
 COPY stage_1_base/scripts/setup_base.sh /tmp/
 
-# Change apt source to China mirrors
-RUN echo "Change apt source to China mirrors" && \
-    sed -i 's|http://archive.ubuntu.com/ubuntu/|http://mirrors.aliyun.com/ubuntu/|g' /etc/apt/sources.list && \
-    echo -e "Done\n"
-
-# First install certificates and basic tools (首先安装证书和基本工具)
+# First install certificates and basic tools
 RUN apt-get update && \
     apt-get install -y ca-certificates bash && \
     update-ca-certificates
 
-# Then setup sources and continue (然后设置源并继续)
+# Then clean apt cache and re-update sources
 # COPY configs/apt_sources.list /etc/apt/sources.list
 RUN apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
@@ -220,77 +264,48 @@ RUN echo -e "\n========= Stage 2nd =========\n\n"
 COPY stage_2_tools/scripts/install_dev_tools.sh /tmp/
 COPY stage_2_tools/scripts/install_cuda.sh /tmp/
 COPY stage_2_tools/scripts/install_opencv.sh /tmp/
-COPY stage_2_tools/scripts/install_distcc_switcher.sh /tmp/
 # COPY stage_2_tools/configs/tool_versions.conf /tmp/
 COPY stage_2_tools/scripts/gitlfs_tracker.sh /usr/local/bin/
 
-# Copy offline packages if they exist
-COPY stage_2_tools/offline_toolchain /tmp/offline_toolchain/
-
-# 创建环境变量配置文件
-RUN echo "# 自动生成的工具版本配置" > /tmp/tool_versions.conf && \
+# Generate tool version configuration file
+RUN echo "# Auto-generated tool version configuration" > /tmp/tool_versions.conf && \
     echo "CONAN_VERSION=\"${CONAN_VERSION}\"" >> /tmp/tool_versions.conf && \
     echo "CMAKE_FORMAT_VERSION=\"${CMAKE_FORMAT_VERSION}\"" >> /tmp/tool_versions.conf && \
     echo "PRE_COMMIT_VERSION=\"${PRE_COMMIT_VERSION}\"" >> /tmp/tool_versions.conf && \
     echo "CUDA_VERSION=\"${CUDA_VERSION}\"" >> /tmp/tool_versions.conf && \
-    echo "OPENCV_VERSION=\"${OPENCV_VERSION}\"" >> /tmp/tool_versions.conf && \
-    echo "GCC_OFFLINE_PACKAGE=\"${GCC_OFFLINE_PACKAGE}\"" >> /tmp/tool_versions.conf && \
-    echo "GCC_OFFLINE_VERSION=\"${GCC_OFFLINE_VERSION}\"" >> /tmp/tool_versions.conf && \
-    echo "GCC_INSTALL_PATH=\"${GCC_INSTALL_PATH}\"" >> /tmp/tool_versions.conf
+    echo "OPENCV_VERSION=\"${OPENCV_VERSION}\"" >> /tmp/tool_versions.conf
 
 ################################################################################
 # Install all tools if configured enabled
 ################################################################################
-# Install distcc switcher if configured enabled
-RUN if [ "${INSTALL_DISTCC}" = "true" ]; then \
-        echo -e "\n\n##########################################################\n(1/5)Installing distcc switcher...\n##########################################################\n\n"; \
-        chmod +x /tmp/install_distcc_switcher.sh && \
-        /tmp/install_distcc_switcher.sh && \
-        echo -e "\n\n##########################################################\n(1/5)Distcc switcher is installed, Done\n##########################################################\n\n"; \
-    else \
-        echo "INSTALL_DISTCC=${INSTALL_DISTCC}"; \
-        rm -f /tmp/install_distcc_switcher.sh; \
-        echo -e "\n\n##########################################################\n(1/5)Distcc switcher is not installed, Removed install_distcc_switcher.sh, Done\n##########################################################\n\n"; \
-    fi
-
-RUN if [ "${INSTALL_TOOLCHAIN}" = "true" ]; then \
-        ls -lha /tmp/offline_toolchain && \
-        echo -e "\n\n##########################################################\n(2/5)Installing GCC...\n##########################################################\n\n"; \
-        chmod +x /tmp/offline_toolchain/gcc/install_gcc.sh && \
-        /tmp/offline_toolchain/gcc/install_gcc.sh && \
-        echo -e "\n\n##########################################################\n(2/5)GCC is installed, Done\n##########################################################\n\n"; \
-    else \
-        echo "INSTALL_TOOLCHAIN=${INSTALL_TOOLCHAIN}"; \
-        rm -f /tmp/offline_toolchain/gcc/install_gcc.sh; \
-        echo -e "\n\n##########################################################\n(2/5)GCC is not installed, Removed, Done\n##########################################################\n\n"; \
-    fi
-
 # Install CUDA if configured enabled
 RUN if [ "${INSTALL_CUDA}" = "true" ]; then \
-        echo -e "\n\n##########################################################\n(3/5)Installing CUDA...\n##########################################################\n\n"; \
+        echo -e "\n\n##########################################################\n(1/4)Installing CUDA...\n##########################################################\n\n"; \
         chmod +x /tmp/install_cuda.sh && \
         /tmp/install_cuda.sh; \
-        echo -e "\n\n##########################################################\n(3/5)CUDA is installed, Done\n##########################################################\n\n"; \
+        echo -e "\n\n##########################################################\n(1/4)CUDA is installed, Done\n##########################################################\n\n"; \
     else \
         rm -f /tmp/install_cuda.sh; \
-        echo -e "\n\n##########################################################\n(3/5)CUDA is not installed, Removed install_cuda.sh, Done\n##########################################################\n\n"; \
+        echo -e "\n\n##########################################################\n(1/4)CUDA is not installed, Removed install_cuda.sh, Done\n##########################################################\n\n"; \
     fi
 
-# Install OpenCV if configured enabled
-RUN if [ "${INSTALL_OPENCV}" = "true" ]; then \
-        chmod +x /tmp/install_opencv.sh && \
-        /tmp/install_opencv.sh; \
-        echo -e "\n\n##########################################################\n(4/5)OpenCV is installed, Done\n##########################################################\n\n"; \
-    else \
-        rm -f /tmp/install_opencv.sh; \
-        echo -e "\n\n##########################################################\n(4/5)OpenCV is not installed, Removed install_opencv.sh, Done\n##########################################################\n\n"; \
-    fi
-
-# Execute tools installation
-RUN echo -e "\n\n##########################################################\n(5/5)Installing dev tools...\n##########################################################\n\n"; \
+# Install dev tools BEFORE OpenCV so that cmake and other build essentials
+# are available when install_opencv.sh runs its cmake build step
+RUN echo -e "\n\n##########################################################\n(2/4)Installing dev tools...\n##########################################################\n\n"; \
     chmod +x /tmp/install_dev_tools.sh && \
     /tmp/install_dev_tools.sh && \
-    echo -e "\n\n##########################################################\n(5/5)Dev Tools are installed, Done\n##########################################################\n\n";
+    echo -e "\n\n##########################################################\n(2/4)Dev Tools are installed, Done\n##########################################################\n\n";
+
+# Install OpenCV if configured enabled (requires cmake from previous step)
+RUN if [ "${INSTALL_OPENCV}" = "true" ]; then \
+        echo -e "\n\n##########################################################\n(3/4)Installing OpenCV...\n##########################################################\n\n"; \
+        chmod +x /tmp/install_opencv.sh && \
+        /tmp/install_opencv.sh; \
+        echo -e "\n\n##########################################################\n(3/4)OpenCV is installed, Done\n##########################################################\n\n"; \
+    else \
+        rm -f /tmp/install_opencv.sh; \
+        echo -e "\n\n##########################################################\n(3/4)OpenCV is not installed, Removed install_opencv.sh, Done\n##########################################################\n\n"; \
+    fi
 
 # Install gitlfs tracker, a diy git lfs tracker to help git operations
 RUN chmod +x /usr/local/bin/gitlfs_tracker.sh
@@ -300,8 +315,7 @@ RUN chmod +x /usr/local/bin/gitlfs_tracker.sh
 ################################################################################
 # Clean up
 ################################################################################
-RUN rm -rf /tmp/offline_toolchain && \
-    rm -f /tmp/install_*.sh && \
+RUN rm -f /tmp/install_*.sh && \
     rm -f /tmp/tool_versions.conf
 
 RUN echo -e "\n========= Stage 2nd Complete =========\n\n"
@@ -329,29 +343,13 @@ COPY ./stage_3_sdk/scripts/ /tmp/scripts/
 
 WORKDIR /tmp
 
-RUN set -a && \
-    # 创建一个临时文件，包含所有环境变量名称
-    env | cut -d= -f1 > /tmp/env_vars.txt && \
-    # 处理所有模板文件
-    for template in $(find /tmp/configs -name "*_template") $(find /tmp/scripts -name "*_template"); do \
-        output_file="${template%_template}" && \
-        echo "Processing $template -> $output_file" && \
-        cp "$template" "$output_file.tmp" && \
-        # 遍历所有环境变量并使用sed替换
-        while read var_name; do \
-            # 跳过一些特殊变量或内部变量
-            if [[ ! "$var_name" =~ ^(PWD|SHLVL|_|PATH|HOSTNAME|HOME|TERM)$ ]]; then \
-                var_value=$(eval echo \$$var_name) && \
-                # 使用sed替换变量，处理可能包含特殊字符的值
-                var_value_escaped=$(echo "$var_value" | sed 's/[\/&]/\\&/g') && \
-                sed -i "s|\${$var_name}|$var_value_escaped|g" "$output_file.tmp"; \
-            fi; \
-        done < /tmp/env_vars.txt && \
-        mv "$output_file.tmp" "$output_file" && \
+# Render all *_template files using envsubst (provided by gettext-base, already installed)
+RUN for template in $(find /tmp/configs /tmp/scripts -name "*_template" 2>/dev/null); do \
+        output_file="${template%_template}"; \
+        echo "Processing $template -> $output_file"; \
+        envsubst < "$template" > "$output_file"; \
         chmod +x "$output_file"; \
-    done && \
-    rm -f /tmp/env_vars.txt && \
-    set +a
+    done
 
 FROM stage_3rd_template-processor AS stage_3rd_sdk
 
@@ -430,29 +428,13 @@ COPY ./stage_4_config/scripts/ /tmp/scripts/
 RUN find /tmp/
 
 WORKDIR /tmp
-RUN set -a && \
-    # 创建一个临时文件，包含所有环境变量名称
-    env | cut -d= -f1 > /tmp/env_vars.txt && \
-    # 处理所有模板文件
-    for template in $(find /tmp/configs -name "*_template") $(find /tmp/scripts -name "*_template"); do \
-        output_file="${template%_template}" && \
-        echo "Processing $template -> $output_file" && \
-        cp "$template" "$output_file.tmp" && \
-        # 遍历所有环境变量并使用sed替换
-        while read var_name; do \
-            # 跳过一些特殊变量或内部变量
-            if [[ ! "$var_name" =~ ^(PWD|SHLVL|_|PATH|HOSTNAME|HOME|TERM)$ ]]; then \
-                var_value=$(eval echo \$$var_name) && \
-                # 使用sed替换变量，处理可能包含特殊字符的值
-                var_value_escaped=$(echo "$var_value" | sed 's/[\/&]/\\&/g') && \
-                sed -i "s|\${$var_name}|$var_value_escaped|g" "$output_file.tmp"; \
-            fi; \
-        done < /tmp/env_vars.txt && \
-        mv "$output_file.tmp" "$output_file" && \
+# Render all *_template files using envsubst
+RUN for template in $(find /tmp/configs /tmp/scripts -name "*_template" 2>/dev/null); do \
+        output_file="${template%_template}"; \
+        echo "Processing $template -> $output_file"; \
+        envsubst < "$template" > "$output_file"; \
         chmod +x "$output_file"; \
-    done && \
-    rm -f /tmp/env_vars.txt && \
-    set +a
+    done
 
 FROM stage_4th_template-processor AS stage_4th_config
 
@@ -510,29 +492,13 @@ COPY ./stage_5_final/configs/ /tmp/configs/
 COPY ./stage_5_final/scripts/ /tmp/scripts/
 
 WORKDIR /tmp
-RUN set -a && \
-    # 创建一个临时文件，包含所有环境变量名称
-    env | cut -d= -f1 > /tmp/env_vars.txt && \
-    # 处理所有模板文件
-    for template in $(find /tmp/configs -name "*_template") $(find /tmp/scripts -name "*_template"); do \
-        output_file="${template%_template}" && \
-        echo "Processing $template -> $output_file" && \
-        cp "$template" "$output_file.tmp" && \
-        # 遍历所有环境变量并使用sed替换
-        while read var_name; do \
-            # 跳过一些特殊变量或内部变量
-            if [[ ! "$var_name" =~ ^(PWD|SHLVL|_|PATH|HOSTNAME|HOME|TERM)$ ]]; then \
-                var_value=$(eval echo \$$var_name) && \
-                # 使用sed替换变量，处理可能包含特殊字符的值
-                var_value_escaped=$(echo "$var_value" | sed 's/[\/&]/\\&/g') && \
-                sed -i "s|\${$var_name}|$var_value_escaped|g" "$output_file.tmp"; \
-            fi; \
-        done < /tmp/env_vars.txt && \
-        mv "$output_file.tmp" "$output_file" && \
+# Render all *_template files using envsubst
+RUN for template in $(find /tmp/configs /tmp/scripts -name "*_template" 2>/dev/null); do \
+        output_file="${template%_template}"; \
+        echo "Processing $template -> $output_file"; \
+        envsubst < "$template" > "$output_file"; \
         chmod +x "$output_file"; \
-    done && \
-    rm -f /tmp/env_vars.txt && \
-    set +a
+    done
 
 FROM stage_5th_template-processor AS stage_5th_final
 

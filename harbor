@@ -1,16 +1,16 @@
 #!/bin/bash
 ################################################################################
-# Script Name: temp_test.sh
+# Script Name: harbor
 # Description: Build multi-stage Docker image and push to registry
-# Usage: ./build-dev-env.sh
+# Usage: ./harbor
 #
 # Author: @PotterWhite
 # created date: 2024-11-28
 # last modified: 2025-06-29
 ################################################################################
 
-# set -e
-if [ "${V}" == "1" ]; then
+set -e
+if [[ "${V}" == "1" ]]; then
     set -x
 fi
 
@@ -62,7 +62,6 @@ main() {
         "${DEFAULTS_DIR}/07_volumes.env" \
         "${DEFAULTS_DIR}/08_samba.env" \
         "${DEFAULTS_DIR}/09_runtime.env" \
-        "${DEFAULTS_DIR}/10_serverside.env" \
         "${DEFAULTS_DIR}/11_proxy.env"
     do
         if [ -f "${defaults_file}" ]; then
@@ -79,6 +78,9 @@ main() {
     # Layer 3: Platform-specific overrides (only what differs from defaults)
     echo "Loading environment variables from ${PLATFORM_ENV_DEST_PATH}"
     source ${PLATFORM_ENV_DEST_PATH}
+
+    # Port calculation: auto-derive ports from PORT_SLOT (or validate explicit ports)
+    source "${TOP_ROOT_DIR}/scripts/port_calc.sh"
 
     0_check_registry_login || exit 1
 
@@ -169,7 +171,7 @@ prompt_with_timeout() {
 
     echo -e "\n[Registry] Checking Docker login status for ${REGISTRY_URL%%/*} ..."
 
-    local registry_host="${UBUNTU_SERVER_IP}:${UBUNTU_SERVER_PORT}"
+    local registry_host="${HARBOR_SERVER_IP}:${HARBOR_SERVER_PORT}"
 
     # ------------------------------------------------------------------
     # Passive credential check — reads config.json only, no network call.
@@ -239,7 +241,6 @@ _print_next_steps() {
     echo "  ║                                                                  ║"
     echo "  ╠══════════════════════════════════════════════════════════════════╣"
     echo "  ║  ⚠  DEPRECATED (no longer maintained):                          ║"
-    echo "  ║     • Serverside (distcc) — serverside_only_entrance.sh         ║"
     echo "  ║     • Windows client      — windows support has been dropped    ║"
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
     echo ""
@@ -249,44 +250,97 @@ _print_next_steps() {
     TARGET_DIR="${PLATFORM_ENV_SRC_DIR}"
     declare -a platforms_array=()
 
-    while IFS= read -r -d '' file_path; do
-        filename="$(basename ${file_path})"
+    # ── collect platforms; read CHIP_FAMILY, CHIP_EXTRACT_NAME, OS_VERSION, PORT_SLOT ──
+    declare -A _slot_map       # basename → slot (numeric, 999 if none)
+    declare -A _family_map     # basename → CHIP_FAMILY
+    declare -A _extract_map    # basename → CHIP_EXTRACT_NAME
+    declare -A _os_map         # basename → OS_VERSION
+
+    for file_path in "${TARGET_DIR}"/*.env; do
+        [[ ! -f "${file_path}" ]] && continue
+        local filename basename slot family extract os_ver
+        filename="$(basename "${file_path}")"
         basename="${filename%.env}"
+        slot=$(grep -oP '^\s*PORT_SLOT\s*=\s*"?\K[0-9]+' "${file_path}" 2>/dev/null || echo "")
+        family=$(grep -oP '^\s*CHIP_FAMILY\s*=\s*"?\K[^"]+' "${file_path}" 2>/dev/null || echo "")
+        extract=$(grep -oP '^\s*CHIP_EXTRACT_NAME\s*=\s*"?\K[^"]+' "${file_path}" 2>/dev/null || echo "")
+        os_ver=$(grep -oP '^\s*OS_VERSION\s*=\s*"?\K[^"]+' "${file_path}" 2>/dev/null || echo "")
+        _slot_map["${basename}"]="${slot:-999}"
+        _family_map["${basename}"]="${family:-unknown}"
+        _extract_map["${basename}"]="${extract:-${basename}}"
+        _os_map["${basename}"]="${os_ver:-?}"
+    done
 
-        if [ -n ${basename} ]; then
-            platforms_array+=(${basename})
-        fi
+    # Sort by CHIP_FAMILY first, then by PORT_SLOT within the same family
+    # Build sort key: "<family> <slot_padded> <basename>"
+    while IFS= read -r line; do
+        platforms_array+=("${line}")
+    done < <(
+        for name in "${!_slot_map[@]}"; do
+            local fam="${_family_map[$name]}"
+            local slot="${_slot_map[$name]}"
+            printf '%s %03d %s\n' "${fam}" "${slot}" "${name}"
+        done | sort | awk '{print $3}'
+    )
 
-    done < <(find ${TARGET_DIR} -maxdepth 1 -type f -name "*.env" -print0)
-
-    # echo ${platforms_array}
     #-------------------------------------------------------
     if [ "${#platforms_array[@]}" == "0" ]; then
         echo "No platforms exists, return now"
         return 1
     fi
+
     echo
     echo "Now we have below platforms:"
-    i=0
-    for platform in ${platforms_array[@]}; do
-        ((i++))
-        echo -e "  [${i}].${platform}"
+    echo ""
+
+    local i=0
+    local prev_family=""
+    for platform in "${platforms_array[@]}"; do
+        ((++i))
+        local fam="${_family_map[$platform]}"
+        local extract="${_extract_map[$platform]}"
+        local os_ver="${_os_map[$platform]}"
+        local slot="${_slot_map[$platform]}"
+        local slot_label="slot=${slot}"
+        [[ "${slot}" == "999" ]] && slot_label="(manual)"
+
+        # Print family header when family changes
+        if [[ "${fam}" != "${prev_family}" ]]; then
+            [[ -n "${prev_family}" ]] && echo ""
+            echo -e "  ── ${fam} ──"
+            prev_family="${fam}"
+        fi
+
+        printf "    [%d] %-14s  os=%-5s  %s\n" "${i}" "${extract}" "${os_ver}" "${slot_label}"
     done
 
-    # echo ${platforms_array[1]}
+    echo ""
+    local create_idx=$(( i + 1 ))
+    echo -e "  [${create_idx}].${_CREATE_PLATFORM_LABEL:-+ Create new platform}"
+
     #-------------------------------------------------------
-    read -p "Please type the index your choice(e.g. if you wanna choose ${platforms_array[0]}, you can type 1):" user_type
+    read -p "Please type the index your choice: " user_type
 
     platform_number="$((${#platforms_array[@]}))"
-    # echo "platform_number=${platform_number}"
 
     if ! [[ "${user_type}" =~ ^[0-9]+$ ]]; then
         echo "✗ Error: Invalid input. Please enter a number."
         return 1
     fi
 
+    # Handle "Create new platform" selection
+    if [ "${user_type}" -eq "${create_idx}" ]; then
+        if "${TOP_ROOT_DIR}/scripts/create_platform.sh"; then
+            echo "Platform created. Reloading platform list..."
+            return 1  # return 1 triggers the while-true retry in main()
+        else
+            echo "Platform creation cancelled or failed."
+            return 1
+        fi
+    fi
+
     if [ ${user_type} -lt 1 ] || [ ${user_type} -gt ${platform_number} ]; then
-        echo "$user_type is not valid, plase input from 1 to ${platform_number}"
+        echo "$user_type is not valid, please input from 1 to ${platform_number}"
         return 1
     fi
 
@@ -300,13 +354,7 @@ _print_next_steps() {
     fi
     ln -sf "${PLATFORM_ENV_SRC_DIR}/${target_platform}.env" "${PLATFORM_ENV_DEST_PATH}"
 
-    # # 2nd. create project_handover/.env
-    # if [ -e "${HANDOVER_DIR}/.env" ];then
-    #     rm -f "${HANDOVER_DIR}/.env"
-    # fi
-    # ln -sf "${PLATFORM_ENV_SRC_DIR}/${target_platform}.env" "${HANDOVER_DIR}/.env"
-
-    # 3rd. create project_handover/common.env
+    # create project_handover/common.env symlink
     if [ -e ${PLATFORM_INDEPENDENT_ENV_DEST_PATH} ]; then
         rm -f ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}
     fi
@@ -314,13 +362,6 @@ _print_next_steps() {
 
     ls -lha ${PLATFORM_ENV_DEST_PATH}
     ls -lha ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}
-
-    # # 4th. create project_handover/client soft link
-    # if [ -e ${HANDOVER_CLIENTSIDE_DEST_PATH} ]; then
-    #     rm -f ${HANDOVER_CLIENTSIDE_DEST_PATH}
-    # fi
-    # ln -sf "${HANDOVER_CLIENTSIDE_SRC_DIR}/clientside-${target_platform}" "${HANDOVER_CLIENTSIDE_DEST_PATH}"
-    # ls -lha ${HANDOVER_CLIENTSIDE_DEST_PATH}
 
     echo
     echo "--- Setup env files (${target_platform}) Successfully ---"
@@ -352,52 +393,15 @@ _print_next_steps() {
     else
         echo "Build clientside image stages skipped."
     fi
-
-    # Build is optional, other steps are mandatory
-    if [ "${ENABLE_SERVERSIDE}" == "true" ]; then
-        if prompt_with_timeout \"Build [ServerSide] images?\" 10; then
-            _build_images_serverside || exit 1
-        else
-            echo "Build serverside image stages skipped."
-        fi
-    fi
 }
 
 _build_images_clientside() {
     echo -e "\n=== 1. Building ClientSide Docker Images ==="
 
-    local stages=(
-        "Base image:stage_1_base"
-        "Tools:stage_2_tools"
-        "SDK:stage_3_sdk"
-        "Configuration:stage_4_config"
-        "Final image:stage_5_final"
-    )
-
     if ! ${BUILD_SCRIPT_DIR}/docker/dev-env-clientside/build.sh; then
-        echo "Error: Failed to build $name"
+        echo "Error: Failed to build clientside image"
         return 1
     fi
-
-    # for stage in "${stages[@]}"; do
-    #     local name="${stage%%:*}"
-    #     local script="${stage#*:}"
-    #     echo "Building stage: $name"
-    #     if ! ${BUILD_SCRIPT_DIR}/docker/dev-env-clientside/$script/build.sh; then
-    #         echo "Error: Failed to build $name"
-    #         return 1
-    #     fi
-    # done
-
-    return 0
-}
-
-_build_images_serverside() {
-    echo -e "\n=== 1. Building ServerSide Docker Images ==="
-
-    echo "Start Building ServerSide Dev Env"
-    ${BUILD_SCRIPT_DIR}/docker/dev-env-serverside/build.sh
-    echo "Done with ServerSide Dev Env Building."
 
     return 0
 }
@@ -419,18 +423,6 @@ _build_images_serverside() {
         return 1
     fi
     echo "Final image ID: ${FINAL_IMAGE_ID}"
-
-    # Get serverside image ID
-    if [[ "${ENABLE_SERVERSIDE}" == "true" ]]; then
-        echo "Getting serverside image ID for ${SERVERSIDE_IMAGE_NAME}:${PROJECT_VERSION}"
-        FINAL_SERVERSIDE_IMAGE_ID=$(docker images ${SERVERSIDE_IMAGE_NAME}:${PROJECT_VERSION} -q)
-        if [ -z "$FINAL_SERVERSIDE_IMAGE_ID" ]; then
-            echo "Warning: No existing serverside image found with ID, this is normal for first push"
-            FINAL_SERVERSIDE_IMAGE_ID="not_found"
-        else
-            echo "Final serverside image ID: ${FINAL_SERVERSIDE_IMAGE_ID}"
-        fi
-    fi
 
     return 0
 }
@@ -496,30 +488,6 @@ _tag_image_onair() {
         result=1
     fi
 
-    if [[ "${ENABLE_SERVERSIDE}" == "true" ]]; then
-        local full_server_source="${SERVERSIDE_IMAGE_NAME}:${tag_num}"
-
-        # 2.1 Tag server image with version number
-        if [ "${is_local}" != "local" ]; then
-            local full_server_target="${REGISTRY_URL}/${SERVERSIDE_IMAGE_NAME}:${tag_num}"
-            if ! _tag_single_image "${full_server_source}" "${full_server_target}"; then
-                echo "✗ Error: Failed to tag server image ${full_server_source} as ${full_server_target}"
-                result=1
-            fi
-        fi
-
-        # 2.2 Tag server image as tag latest
-        if [ "${is_local}" == "local" ]; then
-            local full_server_target_latest="${SERVERSIDE_IMAGE_NAME}:${tag_latest}"
-        else
-            local full_server_target_latest="${REGISTRY_URL}/${SERVERSIDE_IMAGE_NAME}:${tag_latest}"
-        fi
-        if ! _tag_single_image "${full_server_source}" "${full_server_target_latest}"; then
-            echo "✗ Error: Failed to tag server image ${full_server_source} as ${full_server_target_latest}"
-            result=1
-        fi
-    fi
-
     return ${result}
 }
 
@@ -529,14 +497,14 @@ _tag_image_onair() {
 #   0 on success, 1 on failure
 ################################################################################
 4_tag_images() {
+    local result=0
 
     if prompt_with_timeout "Tag images?" 10; then
         echo -e "\n=== 3. Tagging Images ==="
-        local result=0
 
         # Tag images
         echo "Tagging images..."
-        if [ "${HAVE_HARBOR_SERVER}" == "TRUE" ]; then
+        if [[ "${HAVE_HARBOR_SERVER}" == "TRUE" ]]; then
             _tag_image_onair "onair"
         else
             _tag_image_onair "local"
@@ -603,16 +571,6 @@ _push_and_verify_single_image() {
         echo "✗ Error: Failed to push ${image_name}:${tag}"
         return 1
     fi
-    #------------------------------------
-    # local push_output
-    # push_output="$(docker push "${full_image_name}" 2>&1)"
-
-    # if [ "${push_output}" == "" ]; then
-    #     echo "✗ Error: Failed to push ${image_name}:${tag}"
-    #     return 1
-    # else
-    #     echo "✓ ${image_name}:${tag} pushed successfully"
-    # fi
 
     #############################################################
     # verify the image on the server
@@ -632,7 +590,6 @@ _push_and_verify_single_image() {
 
     # 3rd stage: verify manifest output
     local digest=$(echo "${manifest_output}" | jq -r '.config.digest')
-    # local digest=$(echo "${manifest_output}" | grep -o 'sha256:[a-f0-9]*' | head -n 1)
 
     if [ -z "${digest}" ]; then
         echo "✗ Error: Could not extract digest for ${image_name}:${tag} from manifest."
@@ -642,60 +599,6 @@ _push_and_verify_single_image() {
 
     echo "Digest found: ${digest}"
     echo "✓ ${image_name}:${tag} inspected successfully, digest is ${digest}"
-
-    #-------------------------------------------
-    # # echo -e "\nExecuting: docker manifest inspect --insecure ${full_image_name}"
-    # # if docker manifest inspect --insecure "${full_image_name}" >/dev/null 2>&1; then
-    # echo -e "\nExecuting: docker manifest inspect ${full_image_name}"
-    # # docker manifest inspect "${full_image_name}"
-    # local digest
-    # # digest=$(echo "${push_output}" | grep "digest:" | awk '{print $2}')
-    # digest=$(echo "${push_output}" | grep "digest:" | awk '{print $3}' )
-    # # echo "push_output=${push_output}"
-    # # echo
-    # # echo "start"
-    # # echo $(echo "${push_output}" | grep "digest:" | awk "$(print $2)")
-    # # echo "end"
-    # # echo
-    # echo "digest=${digest}"
-    # docker inspect "${full_image_name}@${digest}" 2>&1 > /dev/null
-    # if [ $? -eq 0 ]; then
-    #     echo "✓ ${image_name}:${tag} inspected successfully"
-    #     return 0
-    # else
-    #     echo "✗ Error: Failed to verify ${image_name}:${tag}"
-    #     return 1
-    # fi
-}
-
-_push_and_verify_single_image_old() {
-    local image_name="$1"
-    local tag="$2"
-    local full_image_name="${REGISTRY_URL}/${image_name}:${tag}"
-
-    echo -e "\n##############################\nPushing ${image_name}:${tag} to registry...\n##############################"
-    echo "Executing: docker push ${full_image_name}"
-
-    if ! docker push "${full_image_name}"; then
-        echo "✗ Error: Failed to push ${image_name}:${tag}"
-        return 1
-    fi
-
-    #############################################################
-    # verify the image on the server
-    #############################################################
-
-    # echo -e "\nExecuting: docker manifest inspect --insecure ${full_image_name}"
-    # if docker manifest inspect --insecure "${full_image_name}" >/dev/null 2>&1; then
-    echo -e "\nExecuting: docker manifest inspect ${full_image_name}"
-    docker manifest inspect "${full_image_name}"
-    if [ $? -eq 0 ]; then
-        echo "✓ ${image_name}:${tag} pushed successfully"
-        return 0
-    else
-        echo "✗ Error: Failed to verify ${image_name}:${tag}"
-        return 1
-    fi
 }
 
 _push_and_verify_image() {
@@ -706,14 +609,6 @@ _push_and_verify_image() {
     if ! _push_and_verify_single_image "${IMAGE_NAME}" "${tag}"; then
         echo "✗ Error: Failed to push/verify client image"
         result=1
-    fi
-
-    # Push server image if enabled
-    if [[ "${ENABLE_SERVERSIDE}" == "true" ]]; then
-        if ! _push_and_verify_single_image "${SERVERSIDE_IMAGE_NAME}" "${tag}"; then
-            echo "✗ Error: Failed to push/verify server image"
-            result=1
-        fi
     fi
 
     return ${result}
@@ -747,20 +642,6 @@ _push_and_verify_image() {
                 awk '{print $2}' | sort -u | while read -r id; do
                 if [ "$id" != "${final_id}" ] && [ -n "$id" ]; then
                     echo "Removing image ID: $id"
-                    docker rmi -f "$id" 2>/dev/null || true
-                fi
-            done
-        fi
-
-        # Cleanup serverside images
-        if [[ "${ENABLE_SERVERSIDE}" == "true" ]]; then
-            echo "Finding and removing intermediate images for ${SERVERSIDE_IMAGE_NAME}"
-            echo "Keeping final serverside image ID: ${FINAL_SERVERSIDE_IMAGE_ID}"
-            local server_final_id="${FINAL_SERVERSIDE_IMAGE_ID}"
-            docker images --format '{{.Repository}}:{{.Tag}} {{.ID}}' | grep "${SERVERSIDE_IMAGE_NAME}" | grep -v "${REGISTRY_URL}" |
-                awk '{print $2}' | sort -u | while read -r id; do
-                if [ "$id" != "${server_final_id}" ] && [ -n "$id" ]; then
-                    echo "Removing serverside image ID: $id"
                     docker rmi -f "$id" 2>/dev/null || true
                 fi
             done

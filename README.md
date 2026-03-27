@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <strong>English</strong> | <a href="doc/readme_cn.md">简体中文</a>
+  <strong>English</strong> | <a href="docs/readme_cn.md">简体中文</a>
 </p>
 
 ---
@@ -43,14 +43,14 @@ The primary targets are Rockchip SoCs (RK3588s, RK3568, RV1126, RV1126bp), but t
 
 | Feature | Details |
 |---|---|
-| **One-command build** | `./harbor` — select platform, build, tag, push |
-| **Multi-platform** | RK3588s · RK3568 (Ubuntu 20.04 / 22.04) · RV1126 · RV1126bp |
-| **Three-layer config** | `defaults/` → `common.env` → `platform.env` · [learn more →](doc/config_layers.md) |
-| **Registry pre-check** | Detects missing `docker login` before build and prompts the user — no surprise failures after a 30-minute build |
-| **Harbor integration** | Auto push + manifest verification after every build |
-| **NVIDIA GPU support** | Per-platform toggle; enabled by default for rk3588s |
-| **SSH + GDB ready** | Each platform gets unique, non-conflicting port numbers |
-| **Samba support** | Optional host ↔ container file sharing via CIFS |
+| **One command to build** | `./harbor` — select platform → build → tag → push → verify manifest |
+| **One command to run** | `ubuntu_only_entrance.sh start` — fully configured container in seconds |
+| **New platform in 15 lines** | Three-layer config: `defaults/` → `common.env` → `platform.env` · only overrides needed |
+| **Zero port conflicts** | `PORT_SLOT` formula — SSH and GDB ports derived automatically, never collide |
+| **Registry lifecycle** | Auto push + manifest digest verification — not just "hope it uploaded" |
+| **Chip-family grouping** | `CHIP_FAMILY` drives Harbor project, SDK repo, SSH keys — RK3588 variants share one team |
+| **AI-operable config** | `.env` files are the intent layer — AI agents can read, modify, then call `./harbor` |
+| **Embedded-first defaults** | GDB server, serial passthrough, OpenCV, optional CUDA — all pre-wired |
 
 ---
 
@@ -59,7 +59,7 @@ The primary targets are Rockchip SoCs (RK3588s, RK3568, RV1126, RV1126bp), but t
 ```
 HarborPilot/
 │
-├── harbor                            ← Entry point: build → tag → push
+├── harbor                            ← Entry point: build → tag → push → verify
 │
 ├── configs/
 │   ├── defaults/                     ← Layer 1 · 11 domain-scoped default files
@@ -71,40 +71,41 @@ HarborPilot/
 │   │   ├── 06_sdk.env                SDK install switch
 │   │   ├── 07_volumes.env            Volume root path
 │   │   ├── 08_samba.env              Samba credentials
-│   │   ├── 09_runtime.env            SSH / GDB / syslog switches
-│   │   ├── 10_serverside.env         distcc configuration
+│   │   ├── 09_runtime.env            SSH / GDB / NVIDIA switches
 │   │   └── 11_proxy.env              Proxy (off by default)
 │   ├── platform-independent/
 │   │   └── common.env                ← Layer 2 · project version & constants
 │   └── platforms/
-│       ├── rk3588s.env               ← Layer 3 · platform overrides only
-│       ├── rk3568.env
-│       ├── rk3568-ubuntu22.env
-│       ├── rv1126.env
-│       ├── rv1126bp.env
-│       └── offline.env               Template for new platforms
+│       ├── rk3588-rk3588s_ubuntu-22.04.env   ← Layer 3 · platform overrides only
+│       ├── rk3588-rk3588s_ubuntu-24.04.env
+│       ├── rk3568-rk3568_ubuntu-20.04.env
+│       ├── rk3568-rk3568_ubuntu-22.04.env
+│       ├── rv1126-rv1126_ubuntu-22.04.env
+│       └── rv1126-rv1126bp_ubuntu-22.04.env
 │
 ├── docker/
-│   ├── dev-env-clientside/           Multi-stage Dockerfile (5 stages)
-│   │   ├── Dockerfile
-│   │   └── build.sh
-│   ├── dev-env-serverside/           ⚠ Deprecated
-│   └── libs/                         Reusable Dockerfile fragments & scripts
+│   └── dev-env-clientside/           Multi-stage Dockerfile (5 stages)
+│       ├── Dockerfile
+│       └── build.sh
 │
 ├── project_handover/
-│   ├── clientside/ubuntu/
-│   │   ├── ubuntu_only_entrance.sh   Container lifecycle manager
-│   │   └── harbor.crt                Harbor CA cert (install once per host)
-│   └── serverside/                   ⚠ Deprecated
+│   └── clientside/ubuntu/
+│       ├── ubuntu_only_entrance.sh   Container lifecycle manager
+│       └── harbor.crt                Harbor CA cert (install once per host)
 │
-└── doc/
+└── docs/
+    ├── architecture/                 AI-first documentation system
+    │   ├── 00_INDEX.md               Navigation hub
+    │   ├── 1-for-ai/                 AI agent reference files
+    │   ├── 2-progress/               Phase tracking
+    │   └── 3-highlights/             Architecture decisions & analysis
     ├── quick_start.md                Step-by-step setup guide (EN)
     ├── quick_start_cn.md             Step-by-step setup guide (ZH)
     ├── config_layers.md              Three-layer config system explained (EN)
     └── config_layers_cn.md           Three-layer config system explained (ZH)
 ```
 
-> **How the three-layer config works →** [doc/config_layers.md](doc/config_layers.md)
+> **How the three-layer config works →** [docs/config_layers.md](docs/config_layers.md)
 
 ---
 
@@ -112,22 +113,25 @@ HarborPilot/
 
 | Platform | Ubuntu | SSH Port | GDB Port | Notes |
 |---|---|---|---|---|
-| `rk3588s` | 22.04 | 2109 | 2345 | NVIDIA GPU enabled by default |
-| `rv1126bp` | 22.04 | 2119 | 2355 | |
-| `rk3568` | 20.04 | 2129 | 2365 | |
-| `rv1126` | 22.04 | 2139 | 2375 | |
-| `rk3568-ubuntu22` | 22.04 | 2149 | 2385 | |
-| `offline` | 22.04 | — | — | Blank template for new platforms |
+| `rk3588-rk3588s_ubuntu-22.04` | 22.04 | 2109 | 2345 | NVIDIA GPU supported |
+| `rv1126-rv1126bp_ubuntu-22.04` | 22.04 | 2119 | 2355 | |
+| `rk3568-rk3568_ubuntu-20.04` | 20.04 | 2129 | 2365 | |
+| `rv1126-rv1126_ubuntu-22.04` | 22.04 | 2139 | 2375 | |
+| `rk3568-rk3568_ubuntu-22.04` | 22.04 | 2149 | 2385 | |
+| `rk3588-rk3588s_ubuntu-24.04` | 24.04 | 2159 | 2395 | Without NVIDIA GPU |
+
+Ports are auto-calculated from `PORT_SLOT` — adding a new platform is conflict-free by design.
+Create a new platform with `./scripts/create_platform.sh` (interactive) or `--non-interactive` mode for CI.
 
 ---
 
 ## Quick Start
 
-→ **Full guide: [doc/quick_start.md](doc/quick_start.md)**
+→ **Full guide: [docs/quick_start.md](docs/quick_start.md)**
 
 ```bash
 # 1. Install Docker and trust the Harbor CA cert  (once per host)
-#    → see doc/quick_start.md
+#    → see docs/quick_start.md
 
 # 2. Log in to your Harbor registry
 docker login <registry-ip>:<registry-port>
@@ -145,7 +149,6 @@ docker login <registry-ip>:<registry-port>
 
 | Component | Status |
 |---|---|
-| `project_handover/serverside/` | ⚠️ **Deprecated** — distcc serverside is no longer maintained. Scripts are kept for reference only. |
 | Windows host | ❌ **Dropped** — Ubuntu host only. |
 
 ---

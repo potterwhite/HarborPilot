@@ -30,11 +30,6 @@ func_1_1_setup_env(){
     BUILD_SCRIPT_DIR="$(dirname "${BUILD_SCRIPT_PATH}")"
     CLIENTSIDE_DIR=${BUILD_SCRIPT_DIR}
     DOCKER_DIR="$(dirname "${CLIENTSIDE_DIR}")"
-    LIBS_DIR="${DOCKER_DIR}/libs"
-    PRODUCT_SPECIFIC_DIR="${LIBS_DIR}/i_product-specific"
-    CONFIG_DIR="${LIBS_DIR}/iii_configs"
-    SCRIPT_DIR="${LIBS_DIR}/iv_scripts"
-    UTILS_DIR="${LIBS_DIR}/v_utils"
     TOP_ROOT_DIR="$(dirname "${DOCKER_DIR}")"
     CONFIGS_DIR="${TOP_ROOT_DIR}/configs"
     DEFAULTS_DIR="${CONFIGS_DIR}/defaults"
@@ -65,7 +60,6 @@ func_1_1_setup_env(){
         "${DEFAULTS_DIR}/07_volumes.env" \
         "${DEFAULTS_DIR}/08_samba.env" \
         "${DEFAULTS_DIR}/09_runtime.env" \
-        "${DEFAULTS_DIR}/10_serverside.env" \
         "${DEFAULTS_DIR}/11_proxy.env"
     do
         if [ -f "${defaults_file}" ]; then
@@ -100,6 +94,13 @@ func_1_1_setup_env(){
         exit 1
     fi
 
+    # Port calculation: auto-derive ports from PORT_SLOT (or validate explicit ports).
+    # Unset any derived port vars that may have been inherited from a parent process
+    # (e.g. when harbor sources port_calc.sh and then invokes this script as a
+    # subprocess).  Clearing them lets port_calc.sh detect MODE A/B cleanly.
+    unset CLIENT_SSH_PORT GDB_PORT
+    source "${TOP_ROOT_DIR}/scripts/port_calc.sh"
+
     BUILD_DATE="$(TZ=$TIMEZONE date +"%Y-%m-%dT%H:%M:%S%z")"
 
     # ------------------------------------------------------------------
@@ -120,7 +121,6 @@ func_1_1_setup_env(){
         "${DEFAULTS_DIR}/07_volumes.env"
         "${DEFAULTS_DIR}/08_samba.env"
         "${DEFAULTS_DIR}/09_runtime.env"
-        "${DEFAULTS_DIR}/10_serverside.env"
         "${DEFAULTS_DIR}/11_proxy.env"
         "${PLATFORM_INDEPENDENT_ENV_PATH}"
         "${PLATFORM_ENV_PATH}"
@@ -135,13 +135,13 @@ func_1_1_setup_env(){
                 [[ -z "$name" ]] && continue
                 [[ -n "${_seen_vars[$name]+set}" ]] && continue
                 _seen_vars[$name]=1
-                value=$(eval echo "\$$name" 2>/dev/null || true)
+                value="${!name}"
                 if [ -n "$value" ]; then
                     BUILD_ARGS+=(--build-arg "$name=$value")
                 fi
             done < "$file"
         else
-            echo "警告：文件 $file 不存在，跳过"
+            echo "Warning: file $file not found, skipping"
         fi
     done
 
@@ -158,19 +158,6 @@ func_1_1_setup_env(){
 }
 
 func_1_2_preparation(){
-    # # Create temporary directory structure
-    # echo "Creating temporary directory structure..."
-    # mkdir -p "${BUILD_SCRIPT_DIR}/libs/iv_scripts"
-
-    # # Copy the required files
-    # echo "Copying setup_base.sh..."
-    # cp -rfav "${LIBS_DIR}" "${BUILD_SCRIPT_DIR}/"
-
-    # # Verify the copy
-    # if [ ! -f "${BUILD_SCRIPT_DIR}/libs/iv_scripts/setup_base.sh" ]; then
-    #     echo "Error: Failed to copy setup_base.sh"
-    #     exit 1
-    # fi
     echo
 }
 
@@ -192,10 +179,9 @@ func_2_1_build_docker_image(){
     fi
 }
 
-# Add cleanup function
+# Cleanup function (no-op: libs/ no longer copied into build context)
 func_3_1_cleanup(){
-    echo "Cleaning up temporary files..."
-    rm -rf "${BUILD_SCRIPT_DIR}/libs"
+    :
 }
 
 main(){

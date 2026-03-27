@@ -74,7 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Config layers documentation (doc/config_layers.md, doc/config_layers_cn.md)
 
 ### Miscellaneous
-- Remove legacy n8.env and harbor-cert.pem
+- Remove legacy rk3588s.env and harbor-cert.pem
 
 
 ---
@@ -100,7 +100,7 @@ Example: Before, a symlink like `/app/volumes -> /wrong/path` caused mounting is
 
 ## [1.3.1] - 2025-07-29
 ### Fixed
-- rv1126`s port map conflict with n8
+- rv1126`s port map conflict with rk3588s
 
 ## [1.3.0] - 2025-07-26
 ### Added
@@ -135,7 +135,7 @@ unknown: current image with "Pending" status of vulnerability scanning cannot be
 ## [01.0.1] - 2025-06-10
 ### Added
 - support for rv1126bp platform
-- n8.env and offline.env in configs
+- rk3588s.env and offline.env in configs
 - verify_git_config.sh in /usr/local/bin
 - pull_sdk_by_repo.sh in /usr/local/bin
 - proxy.sh in /etc/profile.d/
@@ -156,19 +156,15 @@ unknown: current image with "Pending" status of vulnerability scanning cannot be
 
 ## [0.6.2] - 2025-02-19
 ### Added
-- [Clientside][Serverside]Added PROJECT_RELEASE_DATE environment variable and its output display in both clientside and serverside commands
 - [Clientside]Added automatic Samba mount on clientside startup
-- [Serverside]Added git-lfs installation and configuration
 - [Clientside]Added support for git-lfs file restoration when executing pull_sdk.sh script
 
 ### Changed
 - Updated workspace subdirectory creation in 5th stage to strictly follow environment variables
-- Modified SSH port configuration to differentiate between clientside and serverside
 - Updated pull_sdk.sh with the default branch name
 
 ### Fixed
 - Enhanced workspace directory structure compliance with environment variables
-- Improved SSH port isolation between clientside and serverside containers
 
 
 ## [0.6.1] - 2025-02-13
@@ -182,7 +178,6 @@ unknown: current image with "Pending" status of vulnerability scanning cannot be
 
 ### Changed
 - Added libncursesw5 to system core packages in stage_1_base/scripts/setup_base.sh
-- Added version_of_dev_env.sh script for environment version tracking in serverside image
 
 
 ## [0.5.9] - 2024-12-25
@@ -194,23 +189,17 @@ unknown: current image with "Pending" status of vulnerability scanning cannot be
 
 ### Fixed
 - Fix version_of_dev_env.sh environment mismatched problem
-- Fix distcc_watcher.sh disable functionality not working properly
 
 ### Changed
 - Enhance pull_sdk.sh to support both 'all' parameter and specific branch names
 
 ## [0.5.8] - 2024-12-20
 ### Added
-- Add distcc_switcher.sh script to docker image
-- Fix host name of serverside container
 
 ## [0.5.7.1] - 2024-12-19
 ### Added
-- Add distccd server support but only in frontground
-- Add a tool in serverside that could start harbor (not completed)
 
 ### Changed
-- Host tools (e.g., ubuntu_only_entrance.sh && serverside_only_entrance.sh)
   remove container will remove image at the same time
 
 ## [0.5.7] - 2024-12-14
@@ -218,9 +207,6 @@ unknown: current image with "Pending" status of vulnerability scanning cannot be
 - Reorganize the structure of project
 
 ### Added
-- Add distcc support with clientside docker image
-- Add serverside docker image for distccd server
-  (and the sdk the buildroot is using internal toolchain so distccd server is not used in this version)
 
 ## [0.5.6] - 2024-12-12
 ### Changed

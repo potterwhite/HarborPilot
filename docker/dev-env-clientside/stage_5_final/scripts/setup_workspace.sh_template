@@ -12,25 +12,24 @@
 set -e
 
 # Function: Create directory with proper permissions
+# Args: $1=dir_path  $2=dir_owner  $3=dir_perms
+# Note: positional parameters ($1/$2/$3) are not substituted by envsubst,
+#       so they remain as runtime bash variables even after template rendering.
 func_utils_create_directory() {
-    local dir_path="$1"
-    local dir_owner="$2"
-    local dir_perms="$3"
-
-    echo "Creating directory: ${dir_path}"
-    if [ -z "${dir_path}" ]; then
+    echo "Creating directory: $1"
+    if [ -z "$1" ]; then
         echo "ERROR: Directory path is empty"
         exit 1
     fi
 
     echo "Parameters:"
-    echo "  Path: ${dir_path}"
-    echo "  Owner: ${dir_owner}"
-    echo "  Permissions: ${dir_perms}"
+    echo "  Path: $1"
+    echo "  Owner: $2"
+    echo "  Permissions: $3"
 
-    mkdir -p "${dir_path}"
-    chown "${dir_owner}:${dir_owner}" "${dir_path}"
-    chmod "${dir_perms}" "${dir_path}"
+    mkdir -p "$1"
+    chown "$2:$2" "$1"
+    chmod "$3" "$1"
 }
 
 # Function: Initialize workspace structure
