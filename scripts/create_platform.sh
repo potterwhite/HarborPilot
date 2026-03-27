@@ -9,7 +9,8 @@
 #
 #   Non-interactive mode (AI-friendly / CI-friendly):
 #     ./scripts/create_platform.sh --non-interactive \
-#         --name <platform_name> \
+#         --chip-family <chip_family> \  # e.g. rk3568, rk3588, rv1126
+#         --chip-extract-name <name> \   # e.g. rk3568, rk3588s, rv1126bp
 #         --os <ubuntu|debian> \
 #         --os-version <22.04|24.04|...> \
 #         --harbor-ip <ip> \
@@ -28,7 +29,8 @@
 #
 #   Example (for AI agent or CI):
 #     ./scripts/create_platform.sh --non-interactive \
-#         --name rk3568-debian12 \
+#         --chip-family rk3568 \
+#         --chip-extract-name rk3568 \
 #         --os debian \
 #         --os-version 12 \
 #         --harbor-ip 192.168.3.68 \
@@ -180,13 +182,45 @@ create_platform() {
     echo -e "  ${_YELLOW}--- Platform Details ---${_NC}"
     echo ""
 
-    # 1. Platform name
-    _prompt "Platform name (e.g. rk3566, imx8mp, am62x)"
+    # 1. CHIP_FAMILY — silicon family used for Harbor team / SDK repo grouping
+    _prompt "CHIP_FAMILY (e.g. rk3588, rk3568, rv1126)"
+    local chip_family="${REPLY,,}"
+
+    if [[ ! "${chip_family}" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        echo -e "  ${_RED}Error: CHIP_FAMILY can only contain letters, digits, hyphens, and underscores.${_NC}"
+        return 1
+    fi
+
+    # 2. CHIP_EXTRACT_NAME — the exact variant name (may differ from family, e.g. rk3588s)
+    _prompt "CHIP_EXTRACT_NAME (exact variant, e.g. rk3588s, rv1126bp)" "${chip_family}"
+    local chip_extract_name="${REPLY,,}"
+
+    if [[ ! "${chip_extract_name}" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        echo -e "  ${_RED}Error: CHIP_EXTRACT_NAME can only contain letters, digits, hyphens, and underscores.${_NC}"
+        return 1
+    fi
+
+    # 3. OS distribution
+    _prompt "OS distribution (e.g. ubuntu, debian, alpine)" "ubuntu"
+    local os_distro="${REPLY,,}"  # lowercase
+
+    # 4. OS version (default only makes sense for Ubuntu)
+    local os_version
+    if [[ "${os_distro}" == "ubuntu" ]]; then
+        _prompt "OS version (e.g. 22.04, 24.04, 20.04)" "22.04"
+    else
+        _prompt "OS version"
+    fi
+    os_version="${REPLY}"
+
+    # Auto-derive platform name: <chip_family>-<chip_extract_name>_<os_distro>-<os_version>
+    local derived_name="${chip_family}-${chip_extract_name}_${os_distro}-${os_version}"
+    _prompt "Platform config file name (auto-derived)" "${derived_name}"
     local platform_name="${REPLY}"
 
     # Validate: no spaces, no special chars
-    if [[ ! "${platform_name}" =~ ^[a-zA-Z0-9_-]+$ ]]; then
-        echo -e "  ${_RED}Error: Platform name can only contain letters, digits, hyphens, and underscores.${_NC}"
+    if [[ ! "${platform_name}" =~ ^[a-zA-Z0-9_.-]+$ ]]; then
+        echo -e "  ${_RED}Error: Platform name can only contain letters, digits, hyphens, dots, and underscores.${_NC}"
         return 1
     fi
 
@@ -197,21 +231,8 @@ create_platform() {
         return 1
     fi
 
-    # 2. OS distribution
-    _prompt "OS distribution (e.g. ubuntu, debian, alpine)" "ubuntu"
-    local os_distro="${REPLY,,}"  # lowercase
-
-    # 3. OS version (default only makes sense for Ubuntu)
-    local os_version
-    if [[ "${os_distro}" == "ubuntu" ]]; then
-        _prompt "OS version (e.g. 22.04, 24.04, 20.04)" "22.04"
-    else
-        _prompt "OS version"
-    fi
-    os_version="${REPLY}"
-
-    # 3. Host volume directory
-    _prompt "Host volume directory" "/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/volumes/${platform_name}"
+    # Host volume directory
+    _prompt "Host volume directory" "/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/volumes/${chip_family}"
     local host_volume_dir="${REPLY}"
 
     # 4. GitLab server (optional)
@@ -284,7 +305,9 @@ create_platform() {
     echo ""
     echo -e "  ${_YELLOW}--- Summary ---${_NC}"
     echo ""
-    echo -e "  Platform:        ${_BOLD}${platform_name}${_NC}"
+    echo -e "  File name:       ${_BOLD}${platform_name}.env${_NC}"
+    echo -e "  CHIP_FAMILY:     ${chip_family}"
+    echo -e "  CHIP_EXTRACT_NAME: ${chip_extract_name}"
     echo -e "  OS:              ${os_distro} ${os_version}"
     echo -e "  PORT_SLOT:       ${port_slot} (offset = ${offset})"
     echo -e "  Volume:          ${host_volume_dir}"
@@ -356,9 +379,12 @@ HTTPS_PROXY_IP=\"${https_proxy_url}\""
 # =============================================================================
 # Platform Identity  [REQUIRED — no defaults]
 # =============================================================================
-PRODUCT_NAME="${platform_name}"
+CHIP_FAMILY="${chip_family}"
+# ${chip_extract_name} is a variant of ${chip_family} series SOC
+CHIP_EXTRACT_NAME="${chip_extract_name}"
 OS_DISTRIBUTION="${os_distro}"
 OS_VERSION="${os_version}"
+PRODUCT_NAME="\${CHIP_FAMILY}-\${CHIP_EXTRACT_NAME}_\${OS_DISTRIBUTION}-\${OS_VERSION}"
 
 # Derived from PRODUCT_NAME (keep in sync)
 IMAGE_NAME="\${PRODUCT_NAME}-dev-env"
@@ -378,10 +404,10 @@ HARBOR_SERVER_PORT="${harbor_port}"
 REGISTRY_URL="\${HARBOR_SERVER_IP}:\${HARBOR_SERVER_PORT}/team_\${CHIP_FAMILY}"
 
 # =============================================================================
-# SDK  [CHIP_FAMILY] and GITLAB_SERVER_IP]
+# SDK  [CHIP_FAMILY groups same-silicon variants together]
 # =============================================================================
 SDK_INSTALL_PATH="\${WORKSPACE_ROOT}/sdk"
-SDK_GIT_REPO="git@\${GITLAB_SERVER_IP:-${harbor_ip}}:team_\${CHIP_FAMILY}/\${CHIP_FAMILY}_sdk.git"
+SDK_GIT_REPO="git@\${GITLAB_SERVER_IP:-${harbor_ip}}:team_\${CHIP_FAMILY}/\${PRODUCT_NAME}_sdk.git"
 SDK_GIT_KEY_FILE="SDK_\${CHIP_FAMILY}_ED25519"
 SDK_GIT_DEFAULT_BRANCH="${sdk_branch}"
 
@@ -415,7 +441,7 @@ ENVEOF
 
 create_platform_noninteractive() {
     # ── Parse arguments ──────────────────────────────────────────────────────
-    local platform_name="" os_distro="ubuntu" os_version=""
+    local chip_family="" chip_extract_name="" os_distro="ubuntu" os_version=""
     local harbor_ip="" harbor_port="9000"
     local host_volume_dir=""
     local have_gitlab="FALSE" gitlab_ip="" gitlab_port="80"
@@ -428,7 +454,9 @@ create_platform_noninteractive() {
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            --name)            platform_name="$2";    shift 2 ;;
+            --chip-family)     chip_family="${2,,}";   shift 2 ;;
+            --chip-extract-name) chip_extract_name="${2,,}"; shift 2 ;;
+            --name)            chip_family="$2"; chip_extract_name="$2"; shift 2 ;;  # legacy compat
             --os)              os_distro="${2,,}";    shift 2 ;;
             --os-version)      os_version="$2";       shift 2 ;;
             --harbor-ip)       harbor_ip="$2";        shift 2 ;;
@@ -450,13 +478,21 @@ create_platform_noninteractive() {
 
     # ── Validate required fields ─────────────────────────────────────────────
     local errors=0
-    [[ -z "${platform_name}" ]] && { echo "ERROR: --name is required" >&2; ((errors++)); }
-    [[ -z "${os_version}" ]]    && { echo "ERROR: --os-version is required" >&2; ((errors++)); }
-    [[ -z "${harbor_ip}" ]]     && { echo "ERROR: --harbor-ip is required" >&2; ((errors++)); }
+    [[ -z "${chip_family}" ]]    && { echo "ERROR: --chip-family is required" >&2; ((errors++)); }
+    [[ -z "${os_version}" ]]     && { echo "ERROR: --os-version is required" >&2; ((errors++)); }
+    [[ -z "${harbor_ip}" ]]      && { echo "ERROR: --harbor-ip is required" >&2; ((errors++)); }
     [[ $errors -gt 0 ]] && exit 1
 
-    if [[ ! "${platform_name}" =~ ^[a-zA-Z0-9_-]+$ ]]; then
-        echo "ERROR: Platform name '${platform_name}' contains invalid characters" >&2
+    # chip_extract_name defaults to chip_family if not specified
+    if [[ -z "${chip_extract_name}" ]]; then
+        chip_extract_name="${chip_family}"
+    fi
+
+    # Auto-derive platform file name
+    local platform_name="${chip_family}-${chip_extract_name}_${os_distro}-${os_version}"
+
+    if [[ ! "${chip_family}" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        echo "ERROR: CHIP_FAMILY '${chip_family}' contains invalid characters" >&2
         exit 1
     fi
 
@@ -478,7 +514,7 @@ create_platform_noninteractive() {
 
     # ── Default host volume dir ───────────────────────────────────────────────
     if [[ -z "${host_volume_dir}" ]]; then
-        host_volume_dir="/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/volumes/${platform_name}"
+        host_volume_dir="/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/volumes/${chip_family}"
     fi
 
     # ── Default HTTPS proxy = HTTP proxy if not set ───────────────────────────
@@ -518,6 +554,8 @@ HTTPS_PROXY_IP=\"${https_proxy_url}\""
     # ── Print summary ─────────────────────────────────────────────────────────
     echo ""
     echo "  [non-interactive] Creating platform: ${platform_name}"
+    echo "  CHIP_FAMILY:     ${chip_family}"
+    echo "  CHIP_EXTRACT_NAME: ${chip_extract_name}"
     echo "  OS:              ${os_distro} ${os_version}"
     echo "  PORT_SLOT:       ${port_slot} → SSH=${calc_ssh}, GDB=${calc_gdb}"
     echo "  Harbor:          ${harbor_ip}:${harbor_port}"
@@ -549,9 +587,12 @@ HTTPS_PROXY_IP=\"${https_proxy_url}\""
 # =============================================================================
 # Platform Identity  [REQUIRED — no defaults]
 # =============================================================================
-PRODUCT_NAME="${platform_name}"
+CHIP_FAMILY="${chip_family}"
+# ${chip_extract_name} is a variant of ${chip_family} series SOC
+CHIP_EXTRACT_NAME="${chip_extract_name}"
 OS_DISTRIBUTION="${os_distro}"
 OS_VERSION="${os_version}"
+PRODUCT_NAME="\${CHIP_FAMILY}-\${CHIP_EXTRACT_NAME}_\${OS_DISTRIBUTION}-\${OS_VERSION}"
 
 # Derived from PRODUCT_NAME (keep in sync)
 IMAGE_NAME="\${PRODUCT_NAME}-dev-env"
@@ -571,10 +612,10 @@ HARBOR_SERVER_PORT="${harbor_port}"
 REGISTRY_URL="\${HARBOR_SERVER_IP}:\${HARBOR_SERVER_PORT}/team_\${CHIP_FAMILY}"
 
 # =============================================================================
-# SDK  [CHIP_FAMILY] and server IPs]
+# SDK  [CHIP_FAMILY groups same-silicon variants together]
 # =============================================================================
 SDK_INSTALL_PATH="\${WORKSPACE_ROOT}/sdk"
-SDK_GIT_REPO="git@\${GITLAB_SERVER_IP:-${harbor_ip}}:team_\${CHIP_FAMILY}/\${CHIP_FAMILY}_sdk.git"
+SDK_GIT_REPO="git@\${GITLAB_SERVER_IP:-${harbor_ip}}:team_\${CHIP_FAMILY}/\${PRODUCT_NAME}_sdk.git"
 SDK_GIT_KEY_FILE="SDK_\${CHIP_FAMILY}_ED25519"
 SDK_GIT_DEFAULT_BRANCH="${sdk_branch}"
 

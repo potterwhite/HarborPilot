@@ -250,30 +250,37 @@ _print_next_steps() {
     TARGET_DIR="${PLATFORM_ENV_SRC_DIR}"
     declare -a platforms_array=()
 
-    # ── collect platforms sorted by PORT_SLOT (ascending) ──────────────────
-    declare -A _slot_map   # name → slot
-    declare -A _slot_explicit  # name → 1 if explicit ports
+    # ── collect platforms; read CHIP_FAMILY, CHIP_EXTRACT_NAME, OS_VERSION, PORT_SLOT ──
+    declare -A _slot_map       # basename → slot (numeric, 999 if none)
+    declare -A _family_map     # basename → CHIP_FAMILY
+    declare -A _extract_map    # basename → CHIP_EXTRACT_NAME
+    declare -A _os_map         # basename → OS_VERSION
 
     for file_path in "${TARGET_DIR}"/*.env; do
         [[ ! -f "${file_path}" ]] && continue
-        local filename basename slot
+        local filename basename slot family extract os_ver
         filename="$(basename "${file_path}")"
         basename="${filename%.env}"
         slot=$(grep -oP '^\s*PORT_SLOT\s*=\s*"?\K[0-9]+' "${file_path}" 2>/dev/null || echo "")
-        if [[ -n "${slot}" ]]; then
-            _slot_map["${basename}"]="${slot}"
-        else
-            _slot_map["${basename}"]="999"  # no slot → sort to end
-        fi
+        family=$(grep -oP '^\s*CHIP_FAMILY\s*=\s*"?\K[^"]+' "${file_path}" 2>/dev/null || echo "")
+        extract=$(grep -oP '^\s*CHIP_EXTRACT_NAME\s*=\s*"?\K[^"]+' "${file_path}" 2>/dev/null || echo "")
+        os_ver=$(grep -oP '^\s*OS_VERSION\s*=\s*"?\K[^"]+' "${file_path}" 2>/dev/null || echo "")
+        _slot_map["${basename}"]="${slot:-999}"
+        _family_map["${basename}"]="${family:-unknown}"
+        _extract_map["${basename}"]="${extract:-${basename}}"
+        _os_map["${basename}"]="${os_ver:-?}"
     done
 
-    # Sort by slot value
+    # Sort by CHIP_FAMILY first, then by PORT_SLOT within the same family
+    # Build sort key: "<family> <slot_padded> <basename>"
     while IFS= read -r line; do
         platforms_array+=("${line}")
     done < <(
         for name in "${!_slot_map[@]}"; do
-            echo "${_slot_map[$name]} ${name}"
-        done | sort -n | awk '{print $2}'
+            local fam="${_family_map[$name]}"
+            local slot="${_slot_map[$name]}"
+            printf '%s %03d %s\n' "${fam}" "${slot}" "${name}"
+        done | sort | awk '{print $3}'
     )
 
     #-------------------------------------------------------
@@ -281,22 +288,40 @@ _print_next_steps() {
         echo "No platforms exists, return now"
         return 1
     fi
+
     echo
     echo "Now we have below platforms:"
-    i=0
+    echo ""
+
+    local i=0
+    local prev_family=""
     for platform in "${platforms_array[@]}"; do
         ((++i))
-        echo -e "  [${i}].${platform}"
+        local fam="${_family_map[$platform]}"
+        local extract="${_extract_map[$platform]}"
+        local os_ver="${_os_map[$platform]}"
+        local slot="${_slot_map[$platform]}"
+        local slot_label="slot=${slot}"
+        [[ "${slot}" == "999" ]] && slot_label="(manual)"
+
+        # Print family header when family changes
+        if [[ "${fam}" != "${prev_family}" ]]; then
+            [[ -n "${prev_family}" ]] && echo ""
+            echo -e "  ── ${fam} ──"
+            prev_family="${fam}"
+        fi
+
+        printf "    [%d] %-14s  os=%-5s  %s\n" "${i}" "${extract}" "${os_ver}" "${slot_label}"
     done
+
+    echo ""
     local create_idx=$(( i + 1 ))
     echo -e "  [${create_idx}].${_CREATE_PLATFORM_LABEL:-+ Create new platform}"
 
-    # echo ${platforms_array[1]}
     #-------------------------------------------------------
-    read -p "Please type the index your choice(e.g. if you wanna choose ${platforms_array[0]}, you can type 1):" user_type
+    read -p "Please type the index your choice: " user_type
 
     platform_number="$((${#platforms_array[@]}))"
-    # echo "platform_number=${platform_number}"
 
     if ! [[ "${user_type}" =~ ^[0-9]+$ ]]; then
         echo "✗ Error: Invalid input. Please enter a number."
