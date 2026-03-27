@@ -1,5 +1,48 @@
 - **改完就把下面的checkbox checked**
 
+Mar27.2026 16:00
+- [x] 做了很多事情，一直没修改doc,请你接下来修改的时候，验证一个item，就check一个，然后commit，不许等全部都做完，context很快就用完了。
+    ```bash
+        ● 显示效果很清晰。现在 commit：
+
+    ● Bash(git diff --stat)
+    ⎿   docs/architecture/2-progress/NEED_TO_DO.md |  15 +++++
+        harbor                                     |  59 ++++++++++++-----
+        scripts/create_platform.sh                 | 103 ++++++++++++++++++++---------
+        3 files changed, 129 insertions(+), 48 deletions(-)
+
+    ● Bash(git add harbor scripts/create_platform.sh && git commit -m "$(cat <<'EOF'
+        feat: add CHIP_EXTRACT_NAME to create_platform.sh; group platform list by chip family…)
+    ⎿  [refactor/port-mapping aad4e32] feat: add CHIP_EXTRACT_NAME to create_platform.sh; group platform list by chip family
+        2 files changed, 114 insertions(+), 48 deletions(-)
+    ⎿  Context limit reached · /compact or /clear to continue
+
+    ✻ Baked for 19m 50s
+
+    5 tasks (3 done, 2 open)
+    ✔ Optimize harbor platform list display (group by chip family)
+    ✔ Update create_platform.sh with CHIP_FAMILY + CHIP_EXTRACT_NAME
+    ◻ Write competitive analysis + highlights doc + update README
+    ◻ Write MCP/AI Agent Phase 4 plan
+    ✔ Confirm CHIP_FAMILY tag bug status & check checkbox
+
+    ```
+
+Mar27.2026 15:30
+- [x] 我的./harbor [7].+ Create new platform应该需要增加选项，因为我增加了一个chip_exact_name
+- [x] 我当前的item list显示太杂乱了，现在我把names都加长了，写得很详细，所以文本太密集，感觉获取信息的时间就增长了。
+    ```bash
+    Now we have below platforms:
+    [1].rk3588-rk3588s_ubuntu-22.04
+    [2].rv1126-rv1126bp_ubuntu-22.04
+    [3].rk3568-rk3568_ubuntu-20.04
+    [4].rv1126-rv1126_ubuntu-22.04
+    [5].rk3568-rk3568_ubuntu-22.04
+    [6].rk3588-rk3588s_ubuntu-24.04
+
+    ```
+    我之前要求按照port-map的递增顺序来排列，现在可以按照chip_family来，或者你有更好的建议，可以用你的。
+
 Mar27.2026 10:45
 - [x] 我这里要修改harbor push的url
     ```bash
@@ -17,7 +60,8 @@ Mar27.2026 10:45
 - [ ] 我当前这个项目，有什么可以给AI Agent开放的空间吗？
     请结合当下的主流，例如MCP/Skills这些内容，可以让我的软件第一优先是被AI Agent读取使用，其次是能够被AI推荐给其他人（这个不知道要怎么做），第三是给人git clone下来之后，自己配置选项，然后就可以使用。你详细跟我解释一下MCP的原理（例如你觉得是MCP可以做），然后介绍我们要怎么做，做成一个新的版本的计划。例如当前是phase3，你就把这个迭代的部分写到Phase4里去，然后专门出一个文档来介绍（或者一个chapter,你规划好就行）这个迭代任务，写仔细，让下一个ai一眼就可以看懂。
 
-- [ ] 还是有这样的错误，表明你原先的chip_family并没有在tag的时候传递下去，肯定变量那边哪里出问题了。还有我已经修改了我要的标准样式，你看看HarborPilot.git/configs/platforms/rk3588s-ubuntu-24.env，这里就有我要的，你告诉我你看见什么了，然后才问我是否要把其他的几种.env也都照这样修改。
+- [x] 还是有这样的错误，表明你原先的chip_family并没有在tag的时候传递下去，肯定变量那边哪里出问题了。还有我已经修改了我要的标准样式，你看看HarborPilot.git/configs/platforms/rk3588s-ubuntu-24.env，这里就有我要的，你告诉我你看见什么了，然后才问我是否要把其他的几种.env也都照这样修改。
+    → 已修复：所有平台 .env 已迁移至 CHIP_FAMILY/CHIP_EXTRACT_NAME 模式，REGISTRY_URL 使用 ${CHIP_FAMILY} 正确拼装（commits: 4a1ba37, 16ec81f, 281bd96）
     ```bash
     3 warnings found (use docker --debug to expand):
     - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SAMBA_PRIVATE_ACCOUNT_PASSWORD") (line 125)

@@ -1,6 +1,6 @@
 # HarborPilot — Project Progress
 
-> Last updated: 2026-03-27
+> Last updated: 2026-03-27 (Phase 3 audit log updated; platform migration + harbor grouping commits added)
 
 ---
 
@@ -100,6 +100,8 @@ Based on `refactoring_plan.md`, priorities:
 | ARG USE_NVIDIA_GPU missing; duplicate ARG ENABLE_SYSLOG | `4cc03db` | Lint fix + correctness |
 | CHIP_FAMILY for Harbor/GitLab URL grouping | `9dd8d36` | REGISTRY_URL and SDK_GIT_REPO use ${CHIP_FAMILY} |
 | ubuntu_only_entrance.sh modularized (6 modules) | `fe46132` | Auto-init for volumes symlink; numbered prefix naming |
+| All platform .env migrated to CHIP_FAMILY/CHIP_EXTRACT_NAME pattern | `16ec81f` `281bd96` | Platform files renamed to chip-os convention; REGISTRY_URL fixed |
+| harbor platform list grouped by chip family; create_platform.sh + CHIP_EXTRACT_NAME | `aad4e32` | Clean visual grouping; wizard updated with new field |
 
 ---
 
@@ -109,4 +111,3 @@ Based on `refactoring_plan.md`, priorities:
 - Vagrant + Ansible for non-Docker virtualization
 - CI/CD pipeline for automated platform image builds
 - Nix flake as alternative to Docker (experimental)
-| ubuntu_only_entrance.sh modularized (6 modules) | `fe46132` | Auto-init for volumes symlink; numbered prefix naming |
