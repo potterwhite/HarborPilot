@@ -278,17 +278,25 @@ RUN echo "# Auto-generated tool version configuration" > /tmp/tool_versions.conf
 ################################################################################
 # Install CUDA if configured enabled
 RUN if [ "${INSTALL_CUDA}" = "true" ]; then \
-        echo -e "\n\n##########################################################\n(1/3)Installing CUDA...\n##########################################################\n\n"; \
+        echo -e "\n\n##########################################################\n(1/4)Installing CUDA...\n##########################################################\n\n"; \
         chmod +x /tmp/install_cuda.sh && \
         /tmp/install_cuda.sh; \
-        echo -e "\n\n##########################################################\n(1/3)CUDA is installed, Done\n##########################################################\n\n"; \
+        echo -e "\n\n##########################################################\n(1/4)CUDA is installed, Done\n##########################################################\n\n"; \
     else \
         rm -f /tmp/install_cuda.sh; \
-        echo -e "\n\n##########################################################\n(1/3)CUDA is not installed, Removed install_cuda.sh, Done\n##########################################################\n\n"; \
+        echo -e "\n\n##########################################################\n(1/4)CUDA is not installed, Removed install_cuda.sh, Done\n##########################################################\n\n"; \
     fi
 
-# Install OpenCV if configured enabled
+# Install dev tools BEFORE OpenCV so that cmake and other build essentials
+# are available when install_opencv.sh runs its cmake build step
+RUN echo -e "\n\n##########################################################\n(2/4)Installing dev tools...\n##########################################################\n\n"; \
+    chmod +x /tmp/install_dev_tools.sh && \
+    /tmp/install_dev_tools.sh && \
+    echo -e "\n\n##########################################################\n(2/4)Dev Tools are installed, Done\n##########################################################\n\n";
+
+# Install OpenCV if configured enabled (requires cmake from previous step)
 RUN if [ "${INSTALL_OPENCV}" = "true" ]; then \
+        echo -e "\n\n##########################################################\n(3/4)Installing OpenCV...\n##########################################################\n\n"; \
         chmod +x /tmp/install_opencv.sh && \
         /tmp/install_opencv.sh; \
         echo -e "\n\n##########################################################\n(3/4)OpenCV is installed, Done\n##########################################################\n\n"; \
@@ -296,12 +304,6 @@ RUN if [ "${INSTALL_OPENCV}" = "true" ]; then \
         rm -f /tmp/install_opencv.sh; \
         echo -e "\n\n##########################################################\n(3/4)OpenCV is not installed, Removed install_opencv.sh, Done\n##########################################################\n\n"; \
     fi
-
-# Execute tools installation
-RUN echo -e "\n\n##########################################################\n(4/4)Installing dev tools...\n##########################################################\n\n"; \
-    chmod +x /tmp/install_dev_tools.sh && \
-    /tmp/install_dev_tools.sh && \
-    echo -e "\n\n##########################################################\n(4/4)Dev Tools are installed, Done\n##########################################################\n\n";
 
 # Install gitlfs tracker, a diy git lfs tracker to help git operations
 RUN chmod +x /usr/local/bin/gitlfs_tracker.sh
