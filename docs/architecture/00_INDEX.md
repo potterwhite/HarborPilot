@@ -1,6 +1,6 @@
 # HarborPilot — Documentation Index
 
-> Last updated: 2026-03-27 · Status: Phase 3 (Architecture Modernization) in progress
+> Last updated: 2026-03-27 · Status: Phase 3 (Architecture Modernization) in progress · competitive_analysis.md added
 
 ---
 
@@ -31,6 +31,7 @@ Start here every session. Read in this order before touching any code.
 |---|---|
 | [`3-highlights/refactoring_plan.md`](3-highlights/refactoring_plan.md) | Full refactoring analysis: current issues, tools comparison, priority plan |
 | [`3-highlights/generalization_and_ai_era_analysis.md`](3-highlights/generalization_and_ai_era_analysis.md) | Philosophical analysis: generalization trade-offs + AI-era software design |
+| [`3-highlights/competitive_analysis.md`](3-highlights/competitive_analysis.md) | ⭐ Competitive analysis vs Yocto/Ansible/DevContainers + unique value proposition |
 
 ---
 

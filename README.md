@@ -43,14 +43,14 @@ The primary targets are Rockchip SoCs (RK3588s, RK3568, RV1126, RV1126bp), but t
 
 | Feature | Details |
 |---|---|
-| **One-command build** | `./harbor` — select platform, build, tag, push |
-| **Multi-platform** | RK3588s · RK3568 (Ubuntu 20.04 / 22.04) · RV1126 · RV1126bp |
-| **Three-layer config** | `defaults/` → `common.env` → `platform.env` · [learn more →](docs/config_layers.md) |
-| **Registry pre-check** | Detects missing `docker login` before build and prompts the user — no surprise failures after a 30-minute build |
-| **Harbor integration** | Auto push + manifest verification after every build |
-| **NVIDIA GPU support** | Per-platform toggle; enabled by default for rk3588s |
-| **SSH + GDB ready** | Each platform gets unique, non-conflicting port numbers |
-| **Samba support** | Optional host ↔ container file sharing via CIFS |
+| **One command to build** | `./harbor` — select platform → build → tag → push → verify manifest |
+| **One command to run** | `ubuntu_only_entrance.sh start` — fully configured container in seconds |
+| **New platform in 15 lines** | Three-layer config: `defaults/` → `common.env` → `platform.env` · only overrides needed |
+| **Zero port conflicts** | `PORT_SLOT` formula — SSH and GDB ports derived automatically, never collide |
+| **Registry lifecycle** | Auto push + manifest digest verification — not just "hope it uploaded" |
+| **Chip-family grouping** | `CHIP_FAMILY` drives Harbor project, SDK repo, SSH keys — RK3588 variants share one team |
+| **AI-operable config** | `.env` files are the intent layer — AI agents can read, modify, then call `./harbor` |
+| **Embedded-first defaults** | GDB server, serial passthrough, OpenCV, optional CUDA — all pre-wired |
 
 ---
 
@@ -59,7 +59,7 @@ The primary targets are Rockchip SoCs (RK3588s, RK3568, RV1126, RV1126bp), but t
 ```
 HarborPilot/
 │
-├── harbor                            ← Entry point: build → tag → push
+├── harbor                            ← Entry point: build → tag → push → verify
 │
 ├── configs/
 │   ├── defaults/                     ← Layer 1 · 11 domain-scoped default files
@@ -71,27 +71,27 @@ HarborPilot/
 │   │   ├── 06_sdk.env                SDK install switch
 │   │   ├── 07_volumes.env            Volume root path
 │   │   ├── 08_samba.env              Samba credentials
-│   │   ├── 09_runtime.env            SSH / GDB / syslog switches
+│   │   ├── 09_runtime.env            SSH / GDB / NVIDIA switches
 │   │   └── 11_proxy.env              Proxy (off by default)
 │   ├── platform-independent/
 │   │   └── common.env                ← Layer 2 · project version & constants
 │   └── platforms/
-│       ├── rk3588s.env               ← Layer 3 · platform overrides only
-│       ├── rk3568.env
-│       ├── rk3568-ubuntu22.env
-│       ├── rv1126.env
-│       └── rv1126bp.env
+│       ├── rk3588-rk3588s_ubuntu-22.04.env   ← Layer 3 · platform overrides only
+│       ├── rk3588-rk3588s_ubuntu-24.04.env
+│       ├── rk3568-rk3568_ubuntu-20.04.env
+│       ├── rk3568-rk3568_ubuntu-22.04.env
+│       ├── rv1126-rv1126_ubuntu-22.04.env
+│       └── rv1126-rv1126bp_ubuntu-22.04.env
 │
 ├── docker/
-│   ├── dev-env-clientside/           Multi-stage Dockerfile (5 stages)
-│   │   ├── Dockerfile
-│   │   └── build.sh
-│   └── libs/                         Reusable Dockerfile fragments & scripts
+│   └── dev-env-clientside/           Multi-stage Dockerfile (5 stages)
+│       ├── Dockerfile
+│       └── build.sh
 │
 ├── project_handover/
-│   ├── clientside/ubuntu/
-│   │   ├── ubuntu_only_entrance.sh   Container lifecycle manager
-│   │   └── harbor.crt                Harbor CA cert (install once per host)
+│   └── clientside/ubuntu/
+│       ├── ubuntu_only_entrance.sh   Container lifecycle manager
+│       └── harbor.crt                Harbor CA cert (install once per host)
 │
 └── docs/
     ├── architecture/                 AI-first documentation system
@@ -113,12 +113,15 @@ HarborPilot/
 
 | Platform | Ubuntu | SSH Port | GDB Port | Notes |
 |---|---|---|---|---|
-| `rk3588s` | 24.04 | 2109 | 2345 | NVIDIA GPU enabled by default |
-| `rv1126bp` | 22.04 | 2119 | 2355 | |
-| `rk3568` | 20.04 | 2129 | 2365 | |
-| `rv1126` | 22.04 | 2139 | 2375 | |
-| `rk3568-ubuntu22` | 22.04 | 2149 | 2385 | |
-| `rk3588s-ubuntu-24` | 24.04 | 2159 | 2395 | Without NVIDIA GPU |
+| `rk3588-rk3588s_ubuntu-22.04` | 22.04 | 2109 | 2345 | NVIDIA GPU supported |
+| `rv1126-rv1126bp_ubuntu-22.04` | 22.04 | 2119 | 2355 | |
+| `rk3568-rk3568_ubuntu-20.04` | 20.04 | 2129 | 2365 | |
+| `rv1126-rv1126_ubuntu-22.04` | 22.04 | 2139 | 2375 | |
+| `rk3568-rk3568_ubuntu-22.04` | 22.04 | 2149 | 2385 | |
+| `rk3588-rk3588s_ubuntu-24.04` | 24.04 | 2159 | 2395 | Without NVIDIA GPU |
+
+Ports are auto-calculated from `PORT_SLOT` — adding a new platform is conflict-free by design.
+Create a new platform with `./scripts/create_platform.sh` (interactive) or `--non-interactive` mode for CI.
 
 ---
 
