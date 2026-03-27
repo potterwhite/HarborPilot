@@ -98,6 +98,8 @@ Based on `refactoring_plan.md`, priorities:
 | setup_workspace.sh_template: local vars replaced by envsubst → empty | `6f505a6` | CRITICAL: escape \${dir_path} etc. |
 | setup_workspace.sh_template: \\${var} escape broke bash syntax (syntax error at 'then') | `987265c` | CRITICAL: use $1/$2/$3 positional params |
 | ARG USE_NVIDIA_GPU missing; duplicate ARG ENABLE_SYSLOG | `4cc03db` | Lint fix + correctness |
+| CHIP_FAMILY for Harbor/GitLab URL grouping | `9dd8d36` | REGISTRY_URL and SDK_GIT_REPO use ${CHIP_FAMILY} |
+| ubuntu_only_entrance.sh modularized (6 modules) | `fe46132` | Auto-init for volumes symlink; numbered prefix naming |
 
 ---
 
@@ -107,3 +109,4 @@ Based on `refactoring_plan.md`, priorities:
 - Vagrant + Ansible for non-Docker virtualization
 - CI/CD pipeline for automated platform image builds
 - Nix flake as alternative to Docker (experimental)
+| ubuntu_only_entrance.sh modularized (6 modules) | `fe46132` | Auto-init for volumes symlink; numbered prefix naming |

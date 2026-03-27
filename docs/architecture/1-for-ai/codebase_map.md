@@ -188,7 +188,7 @@ Single monolithic Dockerfile, 5 stages. Each stage has sub-stages for template p
 | `03_tools.env` | `INSTALL_CUDA=false`, `INSTALL_OPENCV=false`, `INSTALL_HOST_CMAKE=true`, `NPM_USE_CHINA_MIRROR=false`, `CUDA_VERSION=12.0`, `OPENCV_VERSION=4.9.0`, `CONAN_VERSION=2.0.17` | Version pinning for reproducibility |
 | `04_workspace.env` | `WORKSPACE_ROOT=/development`, subdirs: `i_src`…`vi_tools`, `WORKSPACE_BUILD_THREADS=4`, `WORKSPACE_LOG_LEVEL=INFO`, `WORKSPACE_DEBUG_PORT=3000` | 6 workspace subdirectories |
 | `05_registry.env` | `HAVE_GITLAB_SERVER=TRUE`, `HAVE_HARBOR_SERVER=TRUE`, `HARBOR_SERVER_PORT=9000` | `REGISTRY_URL` depends on CONTAINER_NAME |
-| `06_sdk.env` | `INSTALL_SDK=false` | SDK paths are platform-dependent |
+| `06_sdk.env` | `INSTALL_SDK=false`, `CHIP_FAMILY=${PRODUCT_NAME}` | `CHIP_FAMILY` groups same-silicon variants; `REGISTRY_URL` and `SDK_GIT_REPO` use `${CHIP_FAMILY}` |
 | `07_volumes.env` | `VOLUMES_ROOT=${WORKSPACE_ROOT}` | `HOST_VOLUME_DIR` has no default — REQUIRED per platform |
 | `08_samba.env` | `SAMBA_SERVER_IP=""`, `SAMBA_PUBLIC_ACCOUNT_NAME/PASSWORD=sambashare`, `SAMBA_FILE_MODE=0777`, `SAMBA_DIR_MODE=0777` | Default Samba credentials + permissions |
 | `09_runtime.env` | `ENABLE_SSH=true`, `ENABLE_GDB_SERVER=true`, `USE_NVIDIA_GPU=false`, `ENABLE_CORE_DUMPS=true`, `CONTAINER_RESTART_POLICY=unless-stopped`, `CONTAINER_PRIVILEGED=true`, `CONTAINER_SERIAL_DEVICE=/dev/ttyUSB0`, `CONTAINER_SHM_SIZE=8g`, `NVIDIA_VISIBLE_DEVICES=all`, `NVIDIA_DRIVER_CAPABILITIES=all` | Ports from port_calc.sh; compose overrides for container runtime |
@@ -210,14 +210,14 @@ Only override what differs. Required fields: `PRODUCT_NAME`, `OS_VERSION`, `PORT
 
 **Current platforms:**
 
-| Platform | Slot | SSH | GDB | Ubuntu | NVIDIA | Proxy | GitLab |
+| Platform | Slot | CHIP_FAMILY | SSH | GDB | Ubuntu | NVIDIA | Proxy | GitLab |
 |---|---|---|---|---|---|---|---|
-| `rk3588s` | 0 | 2109 | 2345 | 24.04 | ✅ | — | — |
-| `rv1126bp` | 1 | 2119 | 2355 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
-| `rk3568` | 2 | 2129 | 2365 | 20.04 | — | ✅ | ✅ 192.168.3.67 |
-| `rv1126` | 3 | 2139 | 2375 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
-| `rk3568-ubuntu22` | 4 | 2149 | 2385 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
-| `rk3588s-ubuntu-24` | 5 | 2159 | 2395 | 24.04 | — | ✅ | ✅ 192.168.3.67 |
+| `rk3588s` | 0 | rk3588s | 2109 | 2345 | 24.04 | ✅ | — | — |
+| `rv1126bp` | 1 | rv1126bp | 2119 | 2355 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
+| `rk3568` | 2 | rk3568 | 2129 | 2365 | 20.04 | — | ✅ | ✅ 192.168.3.67 |
+| `rv1126` | 3 | rv1126 | 2139 | 2375 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
+| `rk3568-ubuntu22` | 4 | rk3568 | 2149 | 2385 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
+| `rk3588s-ubuntu-24` | 5 | rk3588s | 2159 | 2395 | 24.04 | — | ✅ | ✅ 192.168.3.67 |
 
 ### `configs/platform_schema.json`
 JSON Schema for platform `.env` validation. Required: `PRODUCT_NAME`, `OS_VERSION`, `PORT_SLOT`. Defines enums (OS_VERSION: 20.04/22.04/24.04/11/12), ranges (PORT_SLOT: 0–99), patterns (PRODUCT_NAME: `[a-zA-Z0-9_-]+`). Conditional: if `HAVE_GITLAB_SERVER=TRUE` → requires `GITLAB_SERVER_IP` + `GITLAB_SERVER_PORT`. `additionalProperties: true`.
