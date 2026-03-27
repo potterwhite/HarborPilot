@@ -1,5 +1,75 @@
 - **改完就把下面的checkbox checked**
 
+Mar27.2026 10:00
+- [x] 还是有错，但应该刚才的已经解决
+    ```bash
+
+    #58 [stage_5th_template-processor 1/5] RUN echo -e "\n========= Stage 5th =========\n\n"
+    #58 0.075
+    #58 0.075 ========= Stage 5th =========
+    #58 0.075
+    #58 0.075
+    #58 DONE 0.1s
+
+    #59 [stage_5th_template-processor 2/5] COPY ./stage_5_final/configs/ /tmp/configs/
+    #59 DONE 0.0s
+
+    #60 [stage_5th_template-processor 3/5] COPY ./stage_5_final/scripts/ /tmp/scripts/
+    #60 DONE 0.0s
+
+    #61 [stage_5th_template-processor 4/5] WORKDIR /tmp
+    #61 DONE 0.0s
+
+    #62 [stage_5th_template-processor 5/5] RUN for template in $(find /tmp/configs /tmp/scripts -name "*_template" 2>/dev/null); do         output_file="${template%_template}";         echo "Processing $template -> $output_file";         envsubst < "$template" > "$output_file";         chmod +x "$output_file";     done
+    #62 0.075 Processing /tmp/configs/entrypoint.conf_template -> /tmp/configs/entrypoint.conf
+    #62 0.079 Processing /tmp/configs/workspace.conf_template -> /tmp/configs/workspace.conf
+    #62 0.081 Processing /tmp/scripts/setup_workspace.sh_template -> /tmp/scripts/setup_workspace.sh
+    #62 0.085 Processing /tmp/scripts/entrypoint.sh_template -> /tmp/scripts/entrypoint.sh
+    #62 DONE 0.1s
+
+    #63 [stage_5th_final  1/10] COPY --from=stage_5th_template-processor /tmp/configs/workspace.conf /etc/workspace.conf
+    #63 DONE 0.0s
+
+    #64 [stage_5th_final  2/10] COPY --from=stage_5th_template-processor /tmp/configs/entrypoint.conf /etc/entrypoint.conf
+    #64 DONE 0.0s
+
+    #65 [stage_5th_final  3/10] COPY --from=stage_5th_template-processor /tmp/scripts/setup_workspace.sh /usr/local/bin/
+    #65 DONE 0.0s
+
+    #66 [stage_5th_final  4/10] COPY --from=stage_5th_template-processor /tmp/scripts/entrypoint.sh /usr/local/bin/
+    #66 DONE 0.0s
+
+    #67 [stage_5th_final  5/10] RUN chmod +x /usr/local/bin/setup_workspace.sh     && chmod +x /usr/local/bin/entrypoint.sh
+    #67 DONE 0.1s
+
+    #68 [stage_5th_final  6/10] RUN set -ex &&     /usr/local/bin/setup_workspace.sh
+    #68 0.074 + /usr/local/bin/setup_workspace.sh
+    #68 0.075 /usr/local/bin/setup_workspace.sh: line 21: syntax error near unexpected token `then'
+    #68 ERROR: process "/bin/bash -c set -ex &&     /usr/local/bin/setup_workspace.sh" did not complete successfully: exit code: 2
+    ------
+    > [stage_5th_final  6/10] RUN set -ex &&     /usr/local/bin/setup_workspace.sh:
+    0.074 + /usr/local/bin/setup_workspace.sh
+    0.075 /usr/local/bin/setup_workspace.sh: line 21: syntax error near unexpected token `then'
+    ------
+
+    3 warnings found (use docker --debug to expand):
+    - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "DEV_USER_PASSWORD") (line 47)
+    - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "DEV_USER_ROOT_PASSWORD") (line 48)
+    - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SAMBA_PRIVATE_ACCOUNT_PASSWORD") (line 125)
+    Dockerfile:531
+    --------------------
+    530 |     # Setup workspace and permissions
+    531 | >>> RUN set -ex && \
+    532 | >>>     /usr/local/bin/setup_workspace.sh
+    533 |
+    --------------------
+    ERROR: failed to build: failed to solve: process "/bin/bash -c set -ex &&     /usr/local/bin/setup_workspace.sh" did not complete successfully: exit code: 2
+    In /mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git/docker/dev-env-clientside/build.sh, Docker build failed with exit status: 1
+    Error: Failed to build clientside image
+    james@Anastasia:/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git$
+
+    ```
+
 Mar27.2026 09:25
 - [x] 编了opencv之后出现这个，这个是开了install-opencv才有的
     ```bash

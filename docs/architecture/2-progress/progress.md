@@ -96,6 +96,7 @@ Based on `refactoring_plan.md`, priorities:
 | OpenCV build fails: cmake not found (dev_tools ran after OpenCV) | `189a7f6` | Reorder: install dev_tools → OpenCV |
 | pip3 externally-managed-environment on Ubuntu 24.04 (PEP 668) | `90611c0` | Add --break-system-packages |
 | setup_workspace.sh_template: local vars replaced by envsubst → empty | `6f505a6` | CRITICAL: escape \${dir_path} etc. |
+| setup_workspace.sh_template: \\${var} escape broke bash syntax (syntax error at 'then') | `987265c` | CRITICAL: use $1/$2/$3 positional params |
 | ARG USE_NVIDIA_GPU missing; duplicate ARG ENABLE_SYSLOG | `4cc03db` | Lint fix + correctness |
 
 ---
