@@ -285,7 +285,7 @@ _print_next_steps() {
     echo "Now we have below platforms:"
     i=0
     for platform in "${platforms_array[@]}"; do
-        ((i++))
+        ((++i))
         echo -e "  [${i}].${platform}"
     done
     local create_idx=$(( i + 1 ))
