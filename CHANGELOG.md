@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0](https://github.com/potterwhite/HarborPilot/compare/v1.7.1...v1.8.0) (2026-03-27)
+
+
+### ✨ Added
+
+* CHIP_FAMILY/CHIP_EXTRACT_NAME migration, harbor grouping, competitive analysis, Phase 4 MCP plan ([f198be9](https://github.com/potterwhite/HarborPilot/commit/f198be9af8b06d0ddfcd60e59e8f4493fae3dfa1))
+
 ## [1.7.1](https://github.com/potterwhite/HarborPilot/compare/v1.7.0...v1.7.1) (2026-03-19)
 
 
