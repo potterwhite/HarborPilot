@@ -1,6 +1,6 @@
 # HarborPilot — Documentation Index
 
-> Last updated: 2026-03-26 · Status: Phase 2 (AI docs system) in progress
+> Last updated: 2026-03-27 · Status: Phase 3 (Architecture Modernization) in progress
 
 ---
 
