@@ -36,13 +36,13 @@ HarborPilot.git/
 │   │   └── 11_proxy.env                ←     HTTP/HTTPS proxy (default: off)
 │   ├── platform-independent/
 │   │   └── common.env                  ←   Layer 2: project version, maintainer, dates
-│   ├── platforms/                      ←   Layer 3: per-platform overrides (only differences)
-│   │   ├── rk3588s.env                 ←     PORT_SLOT=0, Ubuntu 24.04, NVIDIA GPU
-│   │   ├── rv1126bp.env                ←     PORT_SLOT=1, Ubuntu 22.04
-│   │   ├── rk3568.env                  ←     PORT_SLOT=2, Ubuntu 20.04
-│   │   ├── rv1126.env                  ←     PORT_SLOT=3, Ubuntu 22.04
-│   │   ├── rk3568-ubuntu22.env         ←     PORT_SLOT=4, Ubuntu 22.04
-│   │   └── rk3588s-ubuntu-24.env       ←     PORT_SLOT=5, Ubuntu 24.04, no NVIDIA
+│   ├── platforms/                           ←   Layer 3: per-platform overrides (only differences)
+│   │   ├── rk3588-rk3588s_ubuntu-22.04.env  ←     PORT_SLOT=0, Ubuntu 22.04, NVIDIA GPU
+│   │   ├── rv1126bp.env                     ←     PORT_SLOT=1, Ubuntu 22.04
+│   │   ├── rk3568.env                       ←     PORT_SLOT=2, Ubuntu 20.04
+│   │   ├── rv1126.env                       ←     PORT_SLOT=3, Ubuntu 22.04
+│   │   ├── rk3568-ubuntu22.env              ←     PORT_SLOT=4, Ubuntu 22.04
+│   │   └── rk3588-rk3588s_ubuntu-24.04.env  ←     PORT_SLOT=5, Ubuntu 24.04, no NVIDIA
 │   └── platform_schema.json            ←   JSON Schema for validating platform .env files
 │
 ├── scripts/                            ← ★ Host-side utilities
@@ -210,14 +210,14 @@ Only override what differs. Required fields: `PRODUCT_NAME`, `OS_VERSION`, `PORT
 
 **Current platforms:**
 
-| Platform | Slot | CHIP_FAMILY | SSH | GDB | Ubuntu | NVIDIA | Proxy | GitLab |
-|---|---|---|---|---|---|---|---|
-| `rk3588s` | 0 | rk3588s | 2109 | 2345 | 24.04 | ✅ | — | — |
-| `rv1126bp` | 1 | rv1126bp | 2119 | 2355 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
-| `rk3568` | 2 | rk3568 | 2129 | 2365 | 20.04 | — | ✅ | ✅ 192.168.3.67 |
-| `rv1126` | 3 | rv1126 | 2139 | 2375 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
-| `rk3568-ubuntu22` | 4 | rk3568 | 2149 | 2385 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
-| `rk3588s-ubuntu-24` | 5 | rk3588s | 2159 | 2395 | 24.04 | — | ✅ | ✅ 192.168.3.67 |
+| Platform file | Slot | CHIP_FAMILY | PRODUCT_NAME (derived) | SSH | GDB | Ubuntu | NVIDIA | Proxy | GitLab |
+|---|---|---|---|---|---|---|---|---|---|
+| `rk3588-rk3588s_ubuntu-22.04` | 0 | rk3588 | rk3588-rk3588s_ubuntu-22.04 | 2109 | 2345 | 22.04 | ✅ | — | — |
+| `rv1126bp` | 1 | rv1126 | rv1126-rv1126bp_ubuntu-22.04 | 2119 | 2355 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
+| `rk3568` | 2 | rk3568 | rk3568-rk3568_ubuntu-20.04 | 2129 | 2365 | 20.04 | — | ✅ | ✅ 192.168.3.67 |
+| `rv1126` | 3 | rv1126 | rv1126-rv1126_ubuntu-22.04 | 2139 | 2375 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
+| `rk3568-ubuntu22` | 4 | rk3568 | rk3568-rk3568_ubuntu-22.04 | 2149 | 2385 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
+| `rk3588-rk3588s_ubuntu-24.04` | 5 | rk3588 | rk3588-rk3588s_ubuntu-24.04 | 2159 | 2395 | 24.04 | — | ✅ | ✅ 192.168.3.67 |
 
 ### `configs/platform_schema.json`
 JSON Schema for platform `.env` validation. Required: `PRODUCT_NAME`, `OS_VERSION`, `PORT_SLOT`. Defines enums (OS_VERSION: 20.04/22.04/24.04/11/12), ranges (PORT_SLOT: 0–99), patterns (PRODUCT_NAME: `[a-zA-Z0-9_-]+`). Conditional: if `HAVE_GITLAB_SERVER=TRUE` → requires `GITLAB_SERVER_IP` + `GITLAB_SERVER_PORT`. `additionalProperties: true`.
