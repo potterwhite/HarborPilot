@@ -1,5 +1,18 @@
 - **改完就把下面的checkbox checked**
 
+Mar28.2026
+- [x] docker compose project name 含 `.` 报错（如 rk3588-rk3588s_ubuntu-24.04）
+    ```
+    invalid project name "rk3588-rk3588s_ubuntu-24.04": must consist only of lowercase
+    alphanumeric characters, hyphens, and underscores...
+    ```
+    → 已修复：新增 OS_VERSION_ID（点换连字符），PRODUCT_NAME 改用 OS_VERSION_ID 拼装，
+      所有 platform .env + 01_base.env + create_platform.sh 同步更新。
+      结果：rk3588-rk3588s_ubuntu-24-04（无点），Dockerfile FROM 仍用 OS_VERSION="24.04"。
+- [x] docs/ 下有 3 份文档树（docs/architecture/ + docs/en/ + docs/zh/）
+    → 已修复：docs/architecture/ 是迁移到 en/zh 双语结构后的遗留目录，仅剩一个
+      NEED_TO_DO.md。该文件内容已合并至此文件，旧目录已删除。
+
 Mar27.2026 17:00
 - [x] 看看这个
     ```bash

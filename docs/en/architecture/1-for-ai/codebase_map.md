@@ -7,7 +7,7 @@
 > **Maintenance rule:** Any AI agent that modifies a file listed here MUST update
 > the relevant section in this document in the same commit/session.
 >
-> Last updated: 2026-03-27 (platform files renamed to chip-os convention; CHIP_EXTRACT_NAME added; docs/ split into en/zh bilingual trees)
+> Last updated: 2026-03-28 (OS_VERSION_ID added; PRODUCT_NAME now dot-free; all platform .env + create_platform.sh updated)
 
 ---
 
@@ -197,7 +197,7 @@ Single monolithic Dockerfile, 5 stages. Each stage has sub-stages for template p
 
 | File | Key Variables | Notes |
 |---|---|---|
-| `01_base.env` | `OS_DISTRIBUTION=ubuntu`, `OS_VERSION=22.04`, `DEV_USERNAME=developer`, `DEV_GROUP=developer`, `DEV_UID/GID=1000`, `TIMEZONE=Asia/Hong_Kong`, `DEBIAN_FRONTEND=noninteractive` | Password defaults: `123` |
+| `01_base.env` | `OS_DISTRIBUTION=ubuntu`, `OS_VERSION=22.04`, `OS_VERSION_ID=22-04`, `DEV_USERNAME=developer`, `DEV_GROUP=developer`, `DEV_UID/GID=1000`, `TIMEZONE=Asia/Hong_Kong`, `DEBIAN_FRONTEND=noninteractive` | `OS_VERSION_ID`: dots→dashes, safe for PRODUCT_NAME/CONTAINER_NAME (docker compose forbids dots). Password defaults: `123` |
 | `02_build.env` | `DOCKER_BUILDKIT=1` | Single variable |
 | `03_tools.env` | `INSTALL_CUDA=false`, `INSTALL_OPENCV=false`, `INSTALL_HOST_CMAKE=true`, `NPM_USE_CHINA_MIRROR=false`, `CUDA_VERSION=12.0`, `OPENCV_VERSION=4.9.0`, `CONAN_VERSION=2.0.17` | Version pinning for reproducibility |
 | `04_workspace.env` | `WORKSPACE_ROOT=/development`, subdirs: `i_src`…`vi_tools`, `WORKSPACE_BUILD_THREADS=4`, `WORKSPACE_LOG_LEVEL=INFO`, `WORKSPACE_DEBUG_PORT=3000` | 6 workspace subdirectories |
@@ -220,21 +220,21 @@ Single monolithic Dockerfile, 5 stages. Each stage has sub-stages for template p
 
 ### Layer 3: `configs/platforms/<name>.env`
 
-Only override what differs. Required fields: `PRODUCT_NAME`, `OS_VERSION`, `PORT_SLOT`, `HOST_VOLUME_DIR`.
+Only override what differs. Required fields: `PRODUCT_NAME`, `OS_VERSION`, `OS_VERSION_ID`, `PORT_SLOT`, `HOST_VOLUME_DIR`.
 
 **Current platforms:**
 
 | Platform file | Slot | CHIP_FAMILY | CHIP_EXTRACT_NAME | PRODUCT_NAME | SSH | GDB | Ubuntu | NVIDIA | Proxy | GitLab |
 |---|---|---|---|---|---|---|---|---|---|---|
-| `rk3588-rk3588s_ubuntu-22.04` | 0 | rk3588 | rk3588s | rk3588-rk3588s_ubuntu-22.04 | 2109 | 2345 | 22.04 | ✅ | — | — |
-| `rv1126-rv1126bp_ubuntu-22.04` | 1 | rv1126 | rv1126bp | rv1126-rv1126bp_ubuntu-22.04 | 2119 | 2355 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
-| `rk3568-rk3568_ubuntu-20.04` | 2 | rk3568 | rk3568 | rk3568-rk3568_ubuntu-20.04 | 2129 | 2365 | 20.04 | — | ✅ | ✅ 192.168.3.67 |
-| `rv1126-rv1126_ubuntu-22.04` | 3 | rv1126 | rv1126 | rv1126-rv1126_ubuntu-22.04 | 2139 | 2375 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
-| `rk3568-rk3568_ubuntu-22.04` | 4 | rk3568 | rk3568 | rk3568-rk3568_ubuntu-22.04 | 2149 | 2385 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
-| `rk3588-rk3588s_ubuntu-24.04` | 5 | rk3588 | rk3588s | rk3588-rk3588s_ubuntu-24.04 | 2159 | 2395 | 24.04 | — | ✅ | ✅ 192.168.3.67 |
+| `rk3588-rk3588s_ubuntu-22.04` | 0 | rk3588 | rk3588s | rk3588-rk3588s_ubuntu-22-04 | 2109 | 2345 | 22.04 | ✅ | — | — |
+| `rv1126-rv1126bp_ubuntu-22.04` | 1 | rv1126 | rv1126bp | rv1126-rv1126bp_ubuntu-22-04 | 2119 | 2355 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
+| `rk3568-rk3568_ubuntu-20.04` | 2 | rk3568 | rk3568 | rk3568-rk3568_ubuntu-20-04 | 2129 | 2365 | 20.04 | — | ✅ | ✅ 192.168.3.67 |
+| `rv1126-rv1126_ubuntu-22.04` | 3 | rv1126 | rv1126 | rv1126-rv1126_ubuntu-22-04 | 2139 | 2375 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
+| `rk3568-rk3568_ubuntu-22.04` | 4 | rk3568 | rk3568 | rk3568-rk3568_ubuntu-22-04 | 2149 | 2385 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
+| `rk3588-rk3588s_ubuntu-24.04` | 5 | rk3588 | rk3588s | rk3588-rk3588s_ubuntu-24-04 | 2159 | 2395 | 24.04 | — | ✅ | ✅ 192.168.3.67 |
 
 ### `configs/platform_schema.json`
-JSON Schema for platform `.env` validation. Required: `PRODUCT_NAME`, `OS_VERSION`, `PORT_SLOT`. Defines enums (OS_VERSION: 20.04/22.04/24.04/11/12), ranges (PORT_SLOT: 0–99), patterns (PRODUCT_NAME: `[a-zA-Z0-9_-]+`). Conditional: if `HAVE_GITLAB_SERVER=TRUE` → requires `GITLAB_SERVER_IP` + `GITLAB_SERVER_PORT`. `additionalProperties: true`.
+JSON Schema for platform `.env` validation. Required: `PRODUCT_NAME`, `OS_VERSION`, `OS_VERSION_ID`, `PORT_SLOT`. Defines enums (OS_VERSION: 20.04/22.04/24.04/11/12), ranges (PORT_SLOT: 0–99), patterns (PRODUCT_NAME: `[a-zA-Z0-9_-]+`). Conditional: if `HAVE_GITLAB_SERVER=TRUE` → requires `GITLAB_SERVER_IP` + `GITLAB_SERVER_PORT`. `additionalProperties: true`.
 
 ---
 

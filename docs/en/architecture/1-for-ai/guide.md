@@ -95,6 +95,7 @@
 | Modify a `*_template` file without testing envsubst | Always verify rendered output matches intent |
 | Forget OS_VERSION conditionals | Ubuntu 20.04 / 22.04 / 24.04 have different packages and apt formats |
 | Use `sed` for template rendering | Use `envsubst` — the sed-based system has been removed |
+| Use `OS_VERSION` in PRODUCT_NAME / CONTAINER_NAME | Use `OS_VERSION_ID` (dots→dashes) — docker compose forbids dots in project names |
 
 ---
 
