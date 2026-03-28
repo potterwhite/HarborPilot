@@ -3,7 +3,7 @@
 Mar28.2026
 
 11:30
-- [ ]
+- [x]
 ```bash
                                                                                                           11:07 AM claude-sonnet-4.6
 ● 好，让我再看一下 docs/zh 的最新结构，以及 docs/en 中的几个关键文件内容：
@@ -291,8 +291,16 @@ Mar28.2026
 
 ```
 
+    → 已完成（bbb418c）：
+      - EN: docs/en/architecture/ → docs/en/（扁平化）
+      - ZH: docs/zh/architecture/ → docs/zh/（扁平化，git mv）
+      - 删除 generalization_and_ai_era_analysis.md（en+zh）
+      - 删除 zh/refactoring_plan.md
+      - NEED_TO_DO.md 移至 docs/zh/2-progress/（本文件当前位置）
+      - 修复 CLAUDE.md + 所有 00_INDEX.md + codebase_map.md + cross-links
+
 11:05
-- [ ] 我对整个docs目录进行了重构
+- [x] 我对整个docs目录进行了重构
     以docs/en为试验田，但这并非是最终定论，你可以有建议
     你需要按照我在docs/en里的设置，进行分析，告诉我这样做好不好，有什么更好的做法，为什么？
     我的核心思想：
