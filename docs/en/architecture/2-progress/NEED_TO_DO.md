@@ -1,6 +1,41 @@
 - **改完就把下面的checkbox checked**
 
 Mar28.2026
+10:15
+- [x] 为什么有两个volumes，应该删掉一个；
+```bash
+james@Anastasia:/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git$ ls -lha project_handover/clientside/*
+project_handover/clientside/ubuntu:
+total 32K
+drwxrwxr-x 3 james james 4.0K Mar 28 08:18 .
+drwxrwxr-x 4 james james 4.0K Mar 27 16:37 ..
+-rw-rw-r-- 1 james james 1.1K Mar 28 09:22 docker-compose.yaml
+-rw-rw-r-- 1 james james 1.8K Jun 10  2025 harbor.crt
+drwxrwxr-x 2 james james 4.0K Mar 28 08:59 scripts
+-rwxrwxr-x 1 james james 5.3K Mar 27 17:22 ubuntu_only_entrance.sh
+lrwxrwxrwx 1 james james   83 Mar 28 08:18 volumes -> /mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/volumes/n8
+
+project_handover/clientside/volumes:
+total 12K
+drwxrwxr-x 2 james james 4.0K Mar 28 09:13 .
+drwxrwxr-x 4 james james 4.0K Mar 27 16:37 ..
+-rw-rw-r-- 1 james james    0 Mar 27 16:37 .gitkeep
+lrwxrwxrwx 1 james james   83 Mar 28 09:13 n8 -> /mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/volumes/n8
+james@Anastasia:/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git$
+
+
+```
+    → 已修复：`clientside/volumes/` 是旧设计遗留（供 archive_tarball.sh 使用），现在
+      打包已集成进 harbor 的 7_package_handover()，不再依赖此目录。
+      删除 clientside/volumes/.gitkeep（git rm），删除 harbor 中 1_1_setup_volume_soft_link()
+      调用及函数本体，更新 .gitignore 规则。ubuntu/volumes 保留（由 03_volumes_init.sh 自动创建，
+      是客户端运行时实际使用的 symlink）。
+- [ ] 这里的harbor.crt到底有没有用，可能是没用的吧，也处理掉，docker-compose.yaml会不会也一起压缩到整个tarball里交付了呢？应该压缩tarball前想办法别放进tarball里。
+- [ ] 这里HarborPilot.git/project_handover/scripts/archive_tarball.sh应该也没用了？把没用的文件都精简掉，留下只对user有意义的，最理想就是user只有一个文件，那就最完美了（这只是一个比喻）。
+- [ ] 把我这里的docs目录下的config_layers.md/port-map-calculation.md/quick_start.md/也融合进architecture吧，我认为应该某种程度上说，他们也是介绍我的架构的一种信息。你需要同步改所有的相关的文档的ref link。（这一步会消耗很多token,请单独做，把其他做完了，单独做这个，大概率会context limit）
+
+
+
 09:35
 - [x] volume gitignore
     ```bash

@@ -100,8 +100,6 @@ main() {
 
     0_check_registry_login || exit 1
 
-    1_1_setup_volume_soft_link || exit 1
-
     2_build_images || exit 1
 
     3_prepare_version_info || exit 1
@@ -536,19 +534,6 @@ _print_next_steps() {
     echo
     echo "--- Setup env files (${target_platform}) Successfully ---"
     echo
-}
-
-1_1_setup_volume_soft_link(){
-    VOLUME_SRC_DIR="${HOST_VOLUME_DIR}"
-    VOLUME_DEST_DIR="${HANDOVER_DIR}/clientside/volumes"
-
-    if [ ! -d ${VOLUME_SRC_DIR} ]; then
-        echo "fault: VOLUME_SRC_DIR=${VOLUME_SRC_DIR}, it is not exist"
-        exit 1
-    fi
-
-    ln -nsf ${VOLUME_SRC_DIR} ${VOLUME_DEST_DIR}
-    ls -lha ${VOLUME_DEST_DIR}
 }
 
 ################################################################################

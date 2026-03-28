@@ -45,14 +45,10 @@ docker/dev-env-clientside/stage_5_final/configs/workspace.conf
 project_handover/clientside/windows/docker-compose.yaml
 project_handover/clientside/ubuntu/docker-compose.yaml
 
-# volumes directory - symlink is managed by 03_volumes_init.sh
-# content is ignored, but .gitkeep is tracked to preserve directory structure
-project_handover/clientside/volumes/*
-!project_handover/clientside/volumes/.gitkeep
-!project_handover/clientside/volumes/WelcomeToVolumesRoot
-
 # ubuntu/volumes is a symlink auto-created by 03_volumes_init.sh — ignore it
 project_handover/clientside/ubuntu/volumes
+# clientside/volumes/ is auto-created by 7_package_handover staging; ignore it
+project_handover/clientside/volumes
 
 project_handover/scripts/*
 !project_handover/scripts/archive_tarball.sh
