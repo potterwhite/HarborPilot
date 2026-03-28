@@ -120,7 +120,7 @@
 |---|---|---|
 | **4.1** | GitHub 仓库优化：Topics、README 重写（Q&A 风格）、关键词覆盖 | ✅ README 完成；Topics 需手动在 GitHub UI 设置 |
 | **4.2** | 个人博客文章（GitHub Pages / Hugo/Docsy）— 中英双语 | ✅ 两篇文章已提交到 blog-engine 仓库 |
-| **4.3** | 提交至 Awesome 列表（awesome-docker、awesome-embedded-linux） | ⏳ |
+| **4.3** | 提交至 Awesome 列表（awesome-docker、awesome-embedded-linux） | ✅ PR 已提交：veggiemonk/awesome-docker#1372 |
 | **4.4** | Dev.to / Medium 文章："为 RK3588 构建可复现的 Docker 开发环境" | ⏳ |
 | **4.5** | Hacker News "Show HN" 帖子 | ⏳ |
 | **4.6** | GitHub Wiki FAQ 页面（Q&A 格式，LLM 训练信号强） | ⏳ |
