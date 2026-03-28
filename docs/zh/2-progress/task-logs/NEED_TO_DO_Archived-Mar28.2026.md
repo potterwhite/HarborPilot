@@ -1242,3 +1242,10 @@ aso-strategy branch session
       而该文件从未存在（defaults/ 编号是 01-09, 11，跳过 10）。
       harbor 和 build.sh 均无此问题（列表正确）。
       修复：删除 01_env_loader.sh 第 72 行的 10_serverside.env 条目。
+
+- [x] 博客文章格式问题：Stage 列表 + Layer 配置 + PORT_SLOT 列表连成一行
+    原因：Docsy 开启了 KaTeX 数学公式渲染，裸 ``` 代码块中含有 ← → 箭头时，
+    被 KaTeX 误判为 LaTeX 数学表达式，渲染后压缩成单行。
+    修复：将三处裸 ``` 改为 ```text，明确指定语言，阻止 math renderer 介入。
+    影响文件：en/blog/DevOps/ 和 zh-cn/blog/DevOps/Docker/ 各一篇。
+    commit: blog-engine 566608e
