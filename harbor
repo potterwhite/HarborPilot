@@ -276,6 +276,9 @@ prompt_with_timeout() {
           "${stage}/project_handover/clientside/ubuntu"
     # Remove the volumes symlink from the copied ubuntu dir (it's a local symlink)
     rm -f "${stage}/project_handover/clientside/ubuntu/volumes"
+    # Remove docker-compose.yaml — it is dynamically generated at runtime by
+    # 04_compose_generator.sh and should not be included in the delivery package
+    rm -f "${stage}/project_handover/clientside/ubuntu/docker-compose.yaml"
 
     # 3. Preserve volumes/.gitkeep placeholder
     touch "${stage}/project_handover/clientside/volumes/.gitkeep"
