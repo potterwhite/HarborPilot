@@ -19,26 +19,32 @@ fi
 ################################################################################
 main() {
     SECONDS=0
-    echo "Build process started at: "
+    echo "HarborPilot started at:"
     echo "###################################"
     echo "#   $(LC_ALL=C date +%a\ %b%d.%Y\ %H:%M:%S)"
     echo "###################################"
 
     BUILD_SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
-    # echo "BUILD_SCRIPT_PATH=${BUILD_SCRIPT_PATH}"
     BUILD_SCRIPT_DIR="$(dirname ${BUILD_SCRIPT_PATH})"
-    # echo "BUILD_SCRIPT_DIR=${BUILD_SCRIPT_DIR}"
     TOP_ROOT_DIR="${BUILD_SCRIPT_DIR}"
     TOP_CONFIGS_DIR="${TOP_ROOT_DIR}/configs"
     HANDOVER_DIR="${TOP_ROOT_DIR}/project_handover"
     # src env means they are the original files
     PLATFORM_ENV_SRC_DIR="${TOP_CONFIGS_DIR}/platforms"
-    # PLATFORM_ENV_SRC_PATH="${PLATFORM_ENV_SRC_DIR}/.env"
     PLATFORM_INDEPENDENT_ENV_SRC_DIR="${TOP_CONFIGS_DIR}/platform-independent"
     PLATFORM_INDEPENDENT_ENV_SRC_PATH="${PLATFORM_INDEPENDENT_ENV_SRC_DIR}/common.env"
-    # dest env means destination files, which are used for
+    # dest env means destination files, which are used for runtime
     PLATFORM_ENV_DEST_PATH="${HANDOVER_DIR}/.env"
     PLATFORM_INDEPENDENT_ENV_DEST_PATH="${HANDOVER_DIR}/.env-independent"
+
+    ##################################################################
+    # Top-level menu: choose action before platform selection
+    ##################################################################
+    _HARBOR_MODE="build"
+    0_show_main_menu
+
+    ##################################################################
+    # Platform selection (creates .env symlinks for selected platform)
     ##################################################################
     while true; do
         1_specify_platform
@@ -73,14 +79,24 @@ main() {
 
     # Layer 2: Project constants (version, maintainer …)
     echo "Loading environment variables from ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}"
-    source ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}
+    source "${PLATFORM_INDEPENDENT_ENV_DEST_PATH}"
 
     # Layer 3: Platform-specific overrides (only what differs from defaults)
     echo "Loading environment variables from ${PLATFORM_ENV_DEST_PATH}"
-    source ${PLATFORM_ENV_DEST_PATH}
+    source "${PLATFORM_ENV_DEST_PATH}"
 
     # Port calculation: auto-derive ports from PORT_SLOT (or validate explicit ports)
     source "${TOP_ROOT_DIR}/scripts/port_calc.sh"
+
+    ##################################################################
+    # Dispatch: package mode exits early; build mode continues
+    ##################################################################
+    if [ "${_HARBOR_MODE}" = "package" ]; then
+        7_package_handover || exit 1
+        local duration=$SECONDS
+        echo "Total execution time: $((duration / 3600))h $((duration % 3600 / 60))m $((duration % 60))s"
+        return 0
+    fi
 
     0_check_registry_login || exit 1
 
@@ -153,6 +169,160 @@ prompt_with_timeout() {
     trap - SIGINT
     echo -e "\nProceeding with default action..."
     return 0
+}
+
+################################################################################
+# 0. Top-level action menu: Build or Package
+# Sets _HARBOR_MODE to "build" or "package"
+################################################################################
+0_show_main_menu() {
+    echo ""
+    echo "  ╔══════════════════════════════════════════════════════════════════╗"
+    echo "  ║                      HarborPilot — Main Menu                    ║"
+    echo "  ╠══════════════════════════════════════════════════════════════════╣"
+    echo "  ║                                                                  ║"
+    echo "  ║  [1]  Build & Push          — build image and push to registry  ║"
+    echo "  ║  [2]  Package Handover      — create client delivery tarball    ║"
+    echo "  ║                                                                  ║"
+    echo "  ╚══════════════════════════════════════════════════════════════════╝"
+    echo ""
+
+    while true; do
+        read -p "  Please select [1-2]: " _menu_choice
+        case "${_menu_choice}" in
+            1)
+                _HARBOR_MODE="build"
+                echo "  → Build & Push selected."
+                echo ""
+                break
+                ;;
+            2)
+                _HARBOR_MODE="package"
+                echo "  → Package Handover selected."
+                echo ""
+                break
+                ;;
+            *)
+                echo "  ✗ Invalid choice. Please enter 1 or 2."
+                ;;
+        esac
+    done
+}
+
+################################################################################
+# 7. Package handover: create a self-contained client delivery tarball
+#
+# Archive layout (extracted to any directory):
+#   <output>/
+#   ├── project_handover/
+#   │   ├── .env                     ← platform config (dereferenced)
+#   │   ├── .env-independent         ← version constants (dereferenced)
+#   │   ├── clientside/
+#   │   │   └── ubuntu/              ← entrance script + 6 modules + harbor.crt
+#   │   └── clientside/volumes/
+#   │       └── .gitkeep
+#   ├── configs/
+#   │   └── defaults/                ← 10 default .env files
+#   └── scripts/
+#       └── port_calc.sh             ← port formula script
+#
+# The relative path from ubuntu/ to configs/defaults and scripts/ is preserved
+# so 01_env_loader.sh resolves TOP_ROOT_DIR correctly after extraction.
+################################################################################
+7_package_handover() {
+    echo -e "\n=== Packaging Client Handover ==="
+
+    local timestamp
+    timestamp="$(date +%m.%d.%Y_%H.%M.%S)"
+    local archive_name="${TOP_ROOT_DIR}/project_handover_${PRODUCT_NAME}_${timestamp}.tar.gz"
+
+    echo "  Platform : ${PRODUCT_NAME}"
+    echo "  Output   : ${archive_name}"
+    echo ""
+
+    # Verify required source files exist
+    if [ ! -f "${PLATFORM_ENV_DEST_PATH}" ]; then
+        echo "✗ Error: .env symlink not found at ${PLATFORM_ENV_DEST_PATH}"
+        return 1
+    fi
+    if [ ! -f "${PLATFORM_INDEPENDENT_ENV_DEST_PATH}" ]; then
+        echo "✗ Error: .env-independent symlink not found at ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}"
+        return 1
+    fi
+
+    # ── Assemble archive in a temp staging directory ──────────────────────────
+    # This avoids the GNU tar limitation that -r cannot append to compressed
+    # archives, and gives us full control over the layout.
+    local tmp_dir
+    tmp_dir="$(mktemp -d)"
+    local stage="${tmp_dir}/stage"
+
+    # Mirror the directory structure that 01_env_loader.sh expects:
+    #   ubuntu/ → ../../.. → stage/   (TOP_ROOT_DIR equivalent)
+    #   ENTRY_DEFAULTS_DIR = TOP_ROOT_DIR/configs/defaults
+    #   port_calc.sh       = TOP_ROOT_DIR/scripts/port_calc.sh
+    mkdir -p "${stage}/project_handover/clientside/volumes"
+    mkdir -p "${stage}/configs"
+    mkdir -p "${stage}/scripts"
+
+    # 1. Dereference .env and .env-independent (copy real file content)
+    cp -L "${PLATFORM_ENV_DEST_PATH}"             "${stage}/project_handover/.env"
+    cp -L "${PLATFORM_INDEPENDENT_ENV_DEST_PATH}" "${stage}/project_handover/.env-independent"
+
+    # 2. Copy ubuntu client directory (dereference symlinks with cp -rL)
+    #    Exclude the volumes symlink inside ubuntu/
+    cp -rL --no-dereference \
+        "${HANDOVER_DIR}/clientside/ubuntu" \
+        "${stage}/project_handover/clientside/ubuntu" 2>/dev/null || \
+    cp -r "${HANDOVER_DIR}/clientside/ubuntu" \
+          "${stage}/project_handover/clientside/ubuntu"
+    # Remove the volumes symlink from the copied ubuntu dir (it's a local symlink)
+    rm -f "${stage}/project_handover/clientside/ubuntu/volumes"
+
+    # 3. Preserve volumes/.gitkeep placeholder
+    touch "${stage}/project_handover/clientside/volumes/.gitkeep"
+
+    # 4. Copy configs/defaults (all .env files)
+    cp -r "${TOP_ROOT_DIR}/configs/defaults" "${stage}/configs/defaults"
+
+    # 5. Copy scripts/port_calc.sh
+    cp "${TOP_ROOT_DIR}/scripts/port_calc.sh" "${stage}/scripts/port_calc.sh"
+
+    # ── Create the final tarball from the staging directory ───────────────────
+    tar -czf "${archive_name}" \
+        -C "${stage}" \
+        "project_handover" \
+        "configs" \
+        "scripts"
+
+    # Clean up staging area
+    rm -rf "${tmp_dir}"
+
+    if [ ! -f "${archive_name}" ]; then
+        echo "✗ Error: archive was not created."
+        return 1
+    fi
+
+    local size
+    size="$(du -sh "${archive_name}" | cut -f1)"
+
+    echo ""
+    echo "  ╔══════════════════════════════════════════════════════════════════╗"
+    echo "  ║              HANDOVER PACKAGE CREATED SUCCESSFULLY              ║"
+    echo "  ╠══════════════════════════════════════════════════════════════════╣"
+    echo "  ║                                                                  ║"
+    printf "  ║  File     : %-51s║\n" "$(basename "${archive_name}")"
+    printf "  ║  Size     : %-51s║\n" "${size}"
+    printf "  ║  Platform : %-51s║\n" "${PRODUCT_NAME}"
+    echo "  ║                                                                  ║"
+    echo "  ║  Deliver this tarball to the client Ubuntu host, then:          ║"
+    echo "  ║                                                                  ║"
+    printf "  ║    tar -xzf %-51s║\n" "$(basename "${archive_name}")"
+    echo "  ║    cd project_handover/clientside/ubuntu/                        ║"
+    echo "  ║    ./ubuntu_only_entrance.sh start                               ║"
+    echo "  ║                                                                  ║"
+    echo "  ╚══════════════════════════════════════════════════════════════════╝"
+    echo ""
 }
 
 ################################################################################

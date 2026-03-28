@@ -17,12 +17,586 @@ Mar28.2026
     它本身只是一个soft link。我都是脚本自动建立的。
     → 已修复：在 .gitignore 加入 `project_handover/clientside/ubuntu/volumes`。
       soft link 由 03_volumes_init.sh 自动创建，无需 git track，加入 ignore 完全不影响使用。
-- [ ] 我要增加一个打包的功能
+- [x] 我要增加一个打包的功能
     为什么叫project_handover，就是希望能够把这个目录下一次性打包给user.
     请你帮我把这个部分的功能做好。
     你被授权一切权限，能够改我这里的一切文件和文件夹名称
     打包办法我希望融入./harbor的引导脚本
     你的重构这部分的工作如果有多个方案可选，请让我选择，再开始
+    → 已实现：
+      - harbor 启动时显示顶级菜单：[1] Build & Push / [2] Package Handover
+      - 新增 0_show_main_menu() 和 7_package_handover() 函数
+      - 打包使用临时 staging 目录，包含：
+          project_handover/.env + .env-independent（真实内容，非 symlink）
+          project_handover/clientside/ubuntu/（6个模块脚本 + entrance + harbor.crt）
+          project_handover/clientside/volumes/.gitkeep
+          configs/defaults/（10个默认 .env 文件）
+          scripts/port_calc.sh
+      - 解压后路径关系正确（01_env_loader.sh 可正确解析 TOP_ROOT_DIR）
+      - 输出文件名：project_handover_<PRODUCT_NAME>_<timestamp>.tar.gz
+- [ ] 又 context limit
+    ```bash
+    ❯ 开始工作
+
+                                                                                                                                                                09:38 AM claude-sonnet-4.6
+    ● 好的，按照会话启动协议，先读取必要文档。
+
+    ● Read(/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git/docs/en/architecture/1-for-ai/guide.md)
+    ⎿  Read 153 lines
+
+    ● Read(/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git/docs/en/architecture/1-for-ai/codebase_map.md)
+    ⎿  Read 303 lines
+
+    ● Read(/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git/docs/en/architecture/2-progress/progress.md)
+    ⎿  Read 135 lines
+
+                                                                                                                                                                09:38 AM claude-sonnet-4.6
+    ● 文档读取完毕，当前状态如下：
+
+    ---
+    📊 项目现状（2026-03-28）
+
+    - Phase 3（架构现代化 + 代码质量审计）：🔄 进行中
+        - 大部分 Code Quality Audit 修复已完成（CRITICAL bug 已全部修复）
+        - 剩余未完成项：
+            - Extend devcontainer.json for end-user platforms ⏳
+        - setup_base.sh → Ansible playbook ⏳（长期目标）
+        - Unified error format across all scripts ⏳
+    - Phase 4（MCP Server + AI Agent 集成）：📋 计划中，尚未开始
+        - 前提条件：Phase 3 稳定 + harbor 支持 HARBORPILOT_NON_INTERACTIVE=1
+
+    ---
+
+    ● User answered Claude's questions:
+    ⎿  · 接下来想做什么？ → 查看 NEED_TO_DO 任务积压
+
+    ● Read(/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git/docs/en/architecture/2-progress/NEED_TO_DO.md)
+
+    ● Read(/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git/docs/en/architecture/2-progress/NEED_TO_DO.md · lines 1-120)
+    ⎿  Read 120 lines
+
+    ● Read(/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git/docs/en/architecture/2-progress/NEED_TO_DO.md · lines 120-219)
+    ⎿  Read 100 lines
+
+    ● Read(/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git/docs/en/architecture/2-progress/NEED_TO_DO.md · lines 220-319)
+    ⎿  Read 100 lines
+
+                                                                                                                                                                09:40 AM claude-sonnet-4.6
+    ● 已阅读完 NEED_TO_DO.md，以下是当前未完成的待办事项：
+
+    ---
+    📋 待处理任务（2026-03-28）
+
+    1. [ ] volumes 加入 .gitignore
+
+    - project_handover/clientside/ubuntu/volumes 是 git 看得到的 untracked 目录（实际是 soft link）
+    - 希望加入 .gitignore，需要确认是否影响使用
+    - 脚本会自动建立 soft link，不依赖 git track
+
+    2. [ ] 打包功能融入 ./harbor 引导脚本
+
+    - project_handover/ 目录需要能一键打包交付给用户
+    - 打包入口集成进 ./harbor（而不是单独调用 archive_tarball.sh）
+    - 允许修改文件/文件夹名称
+    - 有多个方案时先让你选择
+
+    ---
+
+    ● User answered Claude's questions:
+    ⎿  · 两个 open 任务，先做哪个？ → 先做 volumes gitignore
+
+                                                                                                                                                                09:40 AM claude-sonnet-4.6
+    ● 先来研究清楚 volumes 的情况。
+
+    ● Bash(ls -la project_handover/clientside/ubuntu/volumes 2>/dev/null || echo "NOT FOUND")
+    ⎿  lrwxrwxrwx 1 james james 83 Mar 28 08:18 project_handover/clientside/ubuntu/volumes -> /mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/volumes/n8
+
+    ● Bash(cat .gitignore 2>/dev/null || echo "NO .gitignore")
+    ⎿  ################################################################################
+        # Ignore everything in offline_packages except scripts and .gitkeep
+        #
+        #
+        # Created Date: 2024-11-21
+        # Last Modified: 2024-11-21
+        # Author: MrJames
+        #
+        # Copyright (c) 2024 [Your Company/Name]
+        # License: MIT
+        ################################################################################
+
+
+        # Ignore everything in offline_packages except scripts and .gitkeep
+        **/offline_packages/**/*
+        # do not ignore offline_packages directory
+        !**/offline_packages/
+        # do not ignore offline_packages subdirectories
+        !**/offline_packages/**/
+        # do not ignore .sh files in offline_packages
+        !**/offline_packages/**/*.sh
+        # do not ignore .gitkeep file in offline_packages
+        !**/offline_packages/**/.gitkeep
+
+        # do not ignore .gitkeep file in all directories
+        !**/.gitkeep
+
+        # Ignore temporary symlinks
+        docker/dev-env-clientside/libs
+
+        # Ignore generated config files
+        docker/dev-env-clientside/stage_3_sdk/configs/*
+        !docker/dev-env-clientside/stage_3_sdk/configs/*_template
+        docker/dev-env-clientside/stage_3_sdk/scripts/install_sdk.sh
+
+        docker/dev-env-clientside/stage_4_config/configs/env_config.conf
+        docker/dev-env-clientside/stage_5_final/configs/entrypoint.conf
+        docker/dev-env-clientside/stage_5_final/configs/workspace.conf
+
+        # Ignore build log files in all directories
+        **/build_log.txt
+
+        # Ignore docker-compose.yaml file in project_handover directory
+        # for this file is generated by start_dev_env.sh script
+        project_handover/clientside/windows/docker-compose.yaml
+        project_handover/clientside/ubuntu/docker-compose.yaml
+
+        # volumes directory - symlink is managed by 03_volumes_init.sh
+        # content is ignored, but .gitkeep is tracked to preserve directory structure
+        project_handover/clientside/volumes/*
+        !project_handover/clientside/volumes/.gitkeep
+        !project_handover/clientside/volumes/WelcomeToVolumesRoot
+
+        project_handover/scripts/*
+        !project_handover/scripts/archive_tarball.sh
+
+        # Ignore all files in docker/dev-env-serverside directory except build.sh and dockerfile_modules
+        docker/dev-env-serverside/*
+        !docker/dev-env-serverside/build.sh
+        !docker/dev-env-serverside/new_build.sh
+        !docker/dev-env-serverside/old_build.sh
+        !docker/dev-env-serverside/dockerfile_modules
+        !docker/dev-env-serverside/dockerfile_modules/**
+
+        # Ignore all files in .vscode directory
+        .vscode/*
+
+        **/project_handover_*.tar*
+        configs/platforms/.env
+        project_handover/.env
+        project_handover/.env-independent
+
+                                                                                                                                                                09:40 AM claude-sonnet-4.6
+    ● 现在我清楚了情况。来仔细分析一下：
+
+    ● Bash(git status --short)
+    ⎿   M docs/en/architecture/2-progress/NEED_TO_DO.md
+        ?? project_handover/clientside/ubuntu/volumes
+
+    ● Bash(git check-ignore -v project_handover/clientside/ubuntu/volumes 2>&1 || echo "NOT IGNORED")
+    ⎿  NOT IGNORED
+
+    ● Bash(grep -n "volumes" .gitignore)
+    ⎿  48:# volumes directory - symlink is managed by 03_volumes_init.sh
+        50:project_handover/clientside/volumes/*
+        51:!project_handover/clientside/volumes/.gitkeep
+        52:!project_handover/clientside/volumes/WelcomeToVolumesRoot
+
+    ● Bash(ls -la project_handover/clientside/ 2>/dev/null)
+    ⎿  total 16
+        drwxrwxr-x 4 james james 4096 Mar 27 16:37 .
+        drwxrwxr-x 4 james james 4096 Mar 28 09:13 ..
+        drwxrwxr-x 3 james james 4096 Mar 28 08:18 ubuntu
+        drwxrwxr-x 2 james james 4096 Mar 28 09:13 volumes
+
+    ● Bash(ls -la project_handover/clientside/volumes/ && ls -la project_handover/clientside/ubuntu/)
+    ⎿  total 12
+        drwxrwxr-x 2 james james 4096 Mar 28 09:13 .
+        drwxrwxr-x 4 james james 4096 Mar 27 16:37 ..
+        -rw-rw-r-- 1 james james    0 Mar 27 16:37 .gitkeep
+        lrwxrwxrwx 1 james james   83 Mar 28 09:13 n8 -> /mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/volumes/n8
+        total 32
+        drwxrwxr-x 3 james james 4096 Mar 28 08:18 .
+        drwxrwxr-x 4 james james 4096 Mar 27 16:37 ..
+        -rw-rw-r-- 1 james james 1079 Mar 28 09:22 docker-compose.yaml
+        -rw-rw-r-- 1 james james 1842 Jun 10  2025 harbor.crt
+        drwxrwxr-x 2 james james 4096 Mar 28 08:59 scripts
+        -rwxrwxr-x 1 james james 5329 Mar 27 17:22 ubuntu_only_entrance.sh
+        lrwxrwxrwx 1 james james   83 Mar 28 08:18 volumes -> /mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/volumes/n8
+
+                                                                                                                                                                09:41 AM claude-sonnet-4.6
+    ● 现在分析清楚了：
+
+    - .gitignore 里已有 project_handover/clientside/volumes/* 的规则（对应另一个位置的 volumes 目录）
+    - 但 project_handover/clientside/ubuntu/volumes（soft link 本身）没有被 ignore
+    - 需要在 .gitignore 加一条规则
+
+    先确认一下是哪个脚本创建这个 soft link 的：
+
+    ● Bash(ls project_handover/clientside/ubuntu/scripts/)
+    ⎿  01_env_loader.sh
+        02_docker_check.sh
+        03_volumes_init.sh
+        04_compose_generator.sh
+        05_container_lifecycle.sh
+        utils.sh
+
+    ● Bash(grep -n "volumes" project_handover/clientside/ubuntu/scripts/03_volumes_init.sh | head -30)
+    ⎿  24:# File: 03_volumes_init.sh
+        26:#              Creates/repairs volumes symlink automatically when missing or broken
+        30:# 3rd_group_1st_branch: Check if volumes symlink is valid
+        32:volumes_init_3rd_1st_check_symlink() {
+        34:    local volumes_link="${BUILD_SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}/volumes"
+        36:    if [ -L "${volumes_link}" ] && [ -e "${volumes_link}" ]; then
+        37:        export VOLUMES_DIR="$(realpath "${volumes_link}")"
+        44:# 3rd_group_2nd_branch: Create volumes symlink with auto-detection
+        46:volumes_init_3rd_2nd_create_symlink() {
+        47:    local volumes_link="${BUILD_SCRIPT_DIR}/volumes"
+        48:    local volumes_target="${HOST_VOLUME_DIR}"
+        50:    if [ -z "${volumes_target}" ]; then
+        51:        utils_print_error "HOST_VOLUME_DIR is not set. Cannot create volumes symlink."
+        55:    if [ -L "${volumes_link}" ]; then
+        56:        rm -f "${volumes_link}"
+        59:    if [ ! -d "${volumes_target}" ]; then
+        60:        utils_print_warning "Volumes directory does not exist: ${volumes_target}"
+        62:            if mkdir -p "${volumes_target}"; then
+        63:                utils_print_success "Created volumes directory: ${volumes_target}"
+        65:                utils_print_error "Failed to create volumes directory: ${volumes_target}"
+        69:            utils_print_error "Cannot proceed without volumes directory"
+        74:    if ln -sf "${volumes_target}" "${volumes_link}"; then
+        75:        export VOLUMES_DIR="$(realpath "${volumes_link}")"
+        76:        utils_print_success "Created volumes symlink: ${volumes_link} -> ${volumes_target}"
+        79:        utils_print_error "Failed to create volumes symlink"
+        87:volumes_init_3rd_3rd_repair_symlink() {
+        88:    local volumes_link="${BUILD_SCRIPT_DIR}/volumes"
+        90:    utils_print_warning "Volumes symlink is broken: ${volumes_link}"
+        93:        rm -f "${volumes_link}"
+        94:        if ln -sf "${HOST_VOLUME_DIR}" "${volumes_link}"; then
+
+                                                                                                                                                                09:41 AM claude-sonnet-4.6
+    ● 分析清楚了。结论如下：
+
+    volumes 是 soft link，由 03_volumes_init.sh 脚本自动创建，无需 git track。
+
+    .gitignore 目前只有 project_handover/clientside/volumes/*（没有 ubuntu/ 层），需要额外加一条针对 project_handover/clientside/ubuntu/volumes 的规则。
+
+    直接加入：
+
+    ● Read(/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git/.gitignore)
+    ⎿  Read 72 lines
+
+    ● Update(/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git/.gitignore)
+    ⎿  Added 3 lines
+        51  !project_handover/clientside/volumes/.gitkeep
+        52  !project_handover/clientside/volumes/WelcomeToVolumesRoot
+        53
+        54 +# ubuntu/volumes is a symlink auto-created by 03_volumes_init.sh — ignore it
+        55 +project_handover/clientside/ubuntu/volumes
+        56 +
+        57  project_handover/scripts/*
+        58  !project_handover/scripts/archive_tarball.sh
+        59
+    ⎿  1 PostToolUse hook ran
+
+    ● Bash(git check-ignore -v project_handover/clientside/ubuntu/volumes)
+    ⎿  .gitignore:55:project_handover/clientside/ubuntu/volumes   project_handover/clientside/ubuntu/volumes
+
+    ● Bash(git status --short)
+    ⎿   M .gitignore
+        M docs/en/architecture/2-progress/NEED_TO_DO.md
+
+                                                                                                                                                                09:42 AM claude-sonnet-4.6
+    ● volumes 软链接已不再出现在 git status 中。现在更新 NEED_TO_DO.md 勾掉这个 checkbox，然后 commit：
+
+    ● Read(/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git/docs/en/architecture/2-progress/NEED_TO_DO.md · lines 1-25)
+    ⎿  Read 25 lines
+
+    ● Update(/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git/docs/en/architecture/2-progress/NEED_TO_DO.md)
+    ⎿  Added 3 lines, removed 1 line
+        2
+        3  Mar28.2026
+        4  09:35
+        5 -- [ ] volume gitignore
+        5 +- [x] volume gitignore
+        6      ```bash
+        7      git status
+        8      On branch docs/bilingual-split
+        ...
+        15      ```
+        16      帮我研究清楚，我希望volumes这个目录能够加入.gitignore。是否会影响使用？
+        17      它本身只是一个soft link。我都是脚本自动建立的。
+        18 +    → 已修复：在 .gitignore 加入 `project_handover/clientside/ubuntu/volumes`。
+        19 +      soft link 由 03_volumes_init.sh 自动创建，无需 git track，加入 ignore 完全不影响使用。
+        20  - [ ] 我要增加一个打包的功能
+        21      为什么叫project_handover，就是希望能够把这个目录下一次性打包给user.
+        22      请你帮我把这个部分的功能做好。
+    ⎿  1 PostToolUse hook ran
+
+    ● Bash(git add .gitignore docs/en/architecture/2-progress/NEED_TO_DO.md && git commit -m "$(cat <<'EOF'
+        chore: ignore ubuntu/volumes symlink in .gitignore
+
+        - Add `project_handover/clientside/ubuntu/volumes` to .gitignore
+        - Symlink is auto-created by 03_volumes_init.sh; no git tracking needed
+        - Does not affect runtime behavior
+
+        EOF
+        )")
+    ⎿  [docs/bilingual-split 7682364] chore: ignore ubuntu/volumes symlink in .gitignore
+        2 files changed, 27 insertions(+)
+
+                                                                                                                                                                09:42 AM claude-sonnet-4.6
+    ● volumes gitignore 任务完成。现在来分析打包功能，给你几个方案选择。
+
+    ● Read(/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git/project_handover/scripts/archive_tarball.sh)
+    ⎿  Read 261 lines
+
+    ● Read(/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git/harbor)
+    ⎿  Read 656 lines
+
+                                                                                                                                                                09:42 AM claude-sonnet-4.6
+    ● 现在我对整个打包需求有了完整了解。来给你展示几个集成方案：
+
+    ● User answered Claude's questions:
+    ⎿  · 打包功能如何集成进 ./harbor？ → 顶级菜单（推荐）
+        · 默认打包内容是什么？ → Ubuntu客户端（默认）
+
+                                                                                                                                                                09:46 AM claude-sonnet-4.6
+    ● 好的，方案已确定：顶级菜单，Ubuntu 客户端打包。我先查清几个细节再开始实现。
+
+    ● Bash(ls -la project_handover/clientside/volumes/ && ls -la project_handover/clientside/ubuntu/)
+    ⎿  total 12
+        drwxrwxr-x 2 james james 4096 Mar 28 09:13 .
+        drwxrwxr-x 4 james james 4096 Mar 27 16:37 ..
+        -rw-rw-r-- 1 james james    0 Mar 27 16:37 .gitkeep
+        lrwxrwxrwx 1 james james   83 Mar 28 09:13 n8 -> /mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/volumes/n8
+        total 32
+        drwxrwxr-x 3 james james 4096 Mar 28 08:18 .
+        drwxrwxr-x 4 james james 4096 Mar 27 16:37 ..
+        -rw-rw-r-- 1 james james 1079 Mar 28 09:22 docker-compose.yaml
+        -rw-rw-r-- 1 james james 1842 Jun 10  2025 harbor.crt
+        drwxrwxr-x 2 james james 4096 Mar 28 08:59 scripts
+        -rwxrwxr-x 1 james james 5329 Mar 27 17:22 ubuntu_only_entrance.sh
+        lrwxrwxrwx 1 james james   83 Mar 28 08:18 volumes -> /mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/volumes/n8
+
+    ● Bash(git ls-files project_handover/)
+    ⎿  project_handover/clientside/ubuntu/harbor.crt
+        project_handover/clientside/ubuntu/scripts/01_env_loader.sh
+        project_handover/clientside/ubuntu/scripts/02_docker_check.sh
+        project_handover/clientside/ubuntu/scripts/03_volumes_init.sh
+        project_handover/clientside/ubuntu/scripts/04_compose_generator.sh
+        project_handover/clientside/ubuntu/scripts/05_container_lifecycle.sh
+        project_handover/clientside/ubuntu/scripts/utils.sh
+        project_handover/clientside/ubuntu/ubuntu_only_entrance.sh
+        project_handover/clientside/volumes/.gitkeep
+        project_handover/scripts/archive_tarball.sh
+
+                                                                                                                                                                09:47 AM claude-sonnet-4.6
+    ● 好，现在我看一下 ubuntu_only_entrance.sh 加载 .env 的路径逻辑，确保打包结构符合客户端使用：
+
+    ● Bash(grep -n "\.env\|HANDOVER\|env_loader\|source" project_handover/clientside/ubuntu/scripts/01_env_loader.sh | head -40)
+    ⎿  24:# File: 01_env_loader.sh
+        32:env_loader_1st_1st_setup_paths() {
+        34:    local source="${BASH_SOURCE[0]}"
+        35:    while [ -h "${source}" ]; do
+        36:        local dir="$(cd -P "$(dirname "${source}")" && pwd)"
+        37:        source="$(readlink "${source}")"
+        38:        [[ "${source}" != /* ]] && source="${dir}/${source}"
+        42:    local scripts_dir="$(cd -P "$(dirname "${source}")" && pwd)"
+        53:    export ENTRY_ENV_PATH="${project_handover_dir}/.env"
+        54:    export ENTRY_ENV_INDEPENDENT_PATH="${project_handover_dir}/.env-independent"
+        61:env_loader_1st_2nd_load_defaults() {
+        63:        "${ENTRY_DEFAULTS_DIR}/01_base.env"
+        64:        "${ENTRY_DEFAULTS_DIR}/02_build.env"
+        65:        "${ENTRY_DEFAULTS_DIR}/03_tools.env"
+        66:        "${ENTRY_DEFAULTS_DIR}/04_workspace.env"
+        67:        "${ENTRY_DEFAULTS_DIR}/05_registry.env"
+        68:        "${ENTRY_DEFAULTS_DIR}/06_sdk.env"
+        69:        "${ENTRY_DEFAULTS_DIR}/07_volumes.env"
+        70:        "${ENTRY_DEFAULTS_DIR}/08_samba.env"
+        71:        "${ENTRY_DEFAULTS_DIR}/09_runtime.env"
+        72:        "${ENTRY_DEFAULTS_DIR}/10_serverside.env"
+        73:        "${ENTRY_DEFAULTS_DIR}/11_proxy.env"
+        78:            source "${defaults_file}"
+        88:env_loader_1st_3rd_load_independent() {
+        90:        source "${ENTRY_ENV_INDEPENDENT_PATH}"
+        97:env_loader_1st_4th_load_platform() {
+        99:        source "${ENTRY_ENV_PATH}"
+        100:        echo -e "Done source .env\n"
+        110:env_loader_1st_5th_calc_ports() {
+        111:    source "${TOP_ROOT_DIR}/scripts/port_calc.sh"
+        117:env_loader_1st_6th_derive_values() {
+        128:env_loader_1st_load_all() {
+        129:    env_loader_1st_1st_setup_paths
+        130:    env_loader_1st_2nd_load_defaults
+        131:    env_loader_1st_3rd_load_independent
+        132:    env_loader_1st_4th_load_platform
+        133:    env_loader_1st_5th_calc_ports
+        134:    env_loader_1st_6th_derive_values
+
+    ● Bash(grep -n "project_handover_dir\|TOP_ROOT_DIR\|ENTRY_DEFAULTS_DIR" project_handover/clientside/ubuntu/scripts/01_env_loader.sh | head -20)
+    ⎿  46:    local project_handover_dir
+        47:    project_handover_dir="$(cd -P "${ubuntu_dir}/../.." && pwd)"
+        49:    top_root_dir="$(cd -P "${project_handover_dir}/.." && pwd)"
+        52:    export TOP_ROOT_DIR="${top_root_dir}"
+        53:    export ENTRY_ENV_PATH="${project_handover_dir}/.env"
+        54:    export ENTRY_ENV_INDEPENDENT_PATH="${project_handover_dir}/.env-independent"
+        55:    export ENTRY_DEFAULTS_DIR="${top_root_dir}/configs/defaults"
+        63:        "${ENTRY_DEFAULTS_DIR}/01_base.env"
+        64:        "${ENTRY_DEFAULTS_DIR}/02_build.env"
+        65:        "${ENTRY_DEFAULTS_DIR}/03_tools.env"
+        66:        "${ENTRY_DEFAULTS_DIR}/04_workspace.env"
+        67:        "${ENTRY_DEFAULTS_DIR}/05_registry.env"
+        68:        "${ENTRY_DEFAULTS_DIR}/06_sdk.env"
+        69:        "${ENTRY_DEFAULTS_DIR}/07_volumes.env"
+        70:        "${ENTRY_DEFAULTS_DIR}/08_samba.env"
+        71:        "${ENTRY_DEFAULTS_DIR}/09_runtime.env"
+        72:        "${ENTRY_DEFAULTS_DIR}/10_serverside.env"
+        73:        "${ENTRY_DEFAULTS_DIR}/11_proxy.env"
+        111:    source "${TOP_ROOT_DIR}/scripts/port_calc.sh"
+
+    ● Bash(ls configs/defaults/)
+    ⎿  01_base.env
+        02_build.env
+        03_tools.env
+        04_workspace.env
+        05_registry.env
+        06_sdk.env
+        07_volumes.env
+        08_samba.env
+        09_runtime.env
+        11_proxy.env
+
+                                                                                                                                                                09:49 AM claude-sonnet-4.6
+    ● 好，我现在完全清楚了打包的结构需求。让我整理方案：
+
+    打包需要包含的文件（用于 client 独立运行）：
+    project_handover/
+    ├── .env                         ← 平台配置（symlink 打包时 -h 解引用）
+    ├── .env-independent             ← 版本信息
+    ├── clientside/
+    │   └── ubuntu/
+    │       ├── ubuntu_only_entrance.sh
+    │       ├── harbor.crt
+    │       └── scripts/             ← 6个模块脚本
+
+    但注意 01_env_loader.sh 引用了 TOP_ROOT_DIR/configs/defaults/ 和 TOP_ROOT_DIR/scripts/port_calc.sh，说明打包时必须包含这两块。现在开始实现：
+
+    实现计划：
+    1. 在 harbor 中新增顶级菜单函数 0_main_menu()
+    2. 新增打包入口函数 7_package_handover()，调用 archive_tarball.sh，并包含必要的 configs/defaults/ 和 scripts/port_calc.sh
+    3. 主流程从 main() 中的 1_specify_platform 之前先走顶级菜单
+
+    先确认 archive_tarball.sh 包含的内容是否覆盖了 configs/defaults 和 scripts：
+
+    ● Bash(grep -n "configs\|scripts\|port_calc" project_handover/scripts/archive_tarball.sh)
+    ⎿  No matches found
+
+                                                                                                                                                                09:50 AM claude-sonnet-4.6
+    ● archive_tarball.sh 没有包含 configs/defaults/ 和 scripts/port_calc.sh！这说明现在的打包是不完整的（客户端解压后 01_env_loader.sh 找不到 defaults 文件）。
+
+    打包时需要包含：
+    - project_handover/.env + .env-independent
+    - clientside/ubuntu/（ubuntu 全目录）
+    - clientside/volumes/.gitkeep（保留占位文件）
+    - configs/defaults/（8个 .env 文件）
+    - scripts/port_calc.sh
+
+    因为 01_env_loader.sh 路径逻辑是 ubuntu_dir/../../../configs/defaults（即 TOP_ROOT_DIR），打包后解压出来的结构要保持这个相对关系。
+
+    来设计打包后的目录结构：
+    project_handover_<timestamp>.tar.gz
+    └── project_handover/
+        ├── .env
+        ├── .env-independent
+        ├── clientside/ubuntu/
+        │   ├── ubuntu_only_entrance.sh
+        │   ├── harbor.crt
+        │   └── scripts/
+        ├── clientside/volumes/.gitkeep
+        ├── configs/defaults/          ← 新增
+        └── scripts/port_calc.sh       ← 新增
+
+    这样解压后路径关系正确：ubuntu/../../.. = project_handover/，TOP_ROOT_DIR/../configs = configs/。
+
+    现在开始在 harbor 里实现顶级菜单和打包功能：
+
+    ● Read(/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git/harbor · lines 1-50)
+    ⎿  Read 50 lines
+
+    ∴ Thinking…
+
+    Now I understand the full picture. I need to:
+
+    1. Modify harbor to add a top-level menu before 1_specify_platform
+    2. Add a 7_package_handover() function that packages the client-side files
+    3. The packaging path needs to include:
+        - project_handover/.env + .env-independent
+        - clientside/ubuntu/ (full directory, excluding volumes symlink)
+        - clientside/volumes/.gitkeep
+        - configs/defaults/ (all .env files)
+        - scripts/port_calc.sh
+
+    4. I'll create a new 7_package_handover() function in harbor that handles all the packaging logic, keeping archive_tarball.sh unchanged for now.
+
+    Looking more closely at how archive_tarball.sh works, it's actually running from the repo root and using tar's transform option to add the project_handover/ prefix to everything it
+    bundles. Let me trace through what it's actually including... The archive is missing configs/defaults/ and scripts/port_calc.sh from the repo root. I need to either update
+    archive_tarball.sh to include these files or create a new packaging function in harbor. Since the user wants this integrated into harbor, I'll add a top-level menu option and a packaging
+    function that handles the complete handover, then update the tarball script to capture the missing directories so the extracted package has the right structure.
+
+    Looking at how the directory resolution works when users untar and run the entrance script, TOP_ROOT_DIR points to the parent of project_handover/, which means the configs and scripts
+    directories need to exist at that level for the paths to resolve correctly. Now I'm mapping out the archive structure to ensure everything extracts at the right level, with configs and
+    scripts at the root alongside the project_handover directory. For the implementation, I need to add a main menu function that branches to different operations, including a new packaging
+    function that creates this tarball with the correct directory layout, then refactor the main flow to start with that menu. Writing the main menu function... Writing the packaging
+    function... Building the archive with specific exclusions and inclusions...
+
+    Once the tar command completes successfully, I'm displaying the archive details including its size, then providing deployment instructions for extracting it on the client's Ubuntu host.
+
+    Now I need to refactor the main() function to incorporate the top-level menu system. After setting up the build script path and initial logging, I'll call the main menu function, then
+    conditionally execute either the build flow or the packaging flow based on the user's selection. Setting up the environment file paths and then entering the main menu loop to let the user
+    choose between build or package actions, followed by platform selection and loading configuration defaults from multiple layers. Loading the platform-specific environment variables, then
+    sourcing the port calculation script before dispatching to either the packaging flow or the main build sequence, which runs through registry login, volume setup, image building,
+    versioning, tagging, pushing, and cleanup before reporting the total execution time.
+
+    Now I'm reconsidering how the .env-independent symlink gets handled during the tarball creation—the -h flag in tar dereferences symlinks, so both .env and .env-independent will have their
+    actual file contents copied into the archive rather than remaining as symlinks.
+
+    I also need to be careful about the volumes directory structure. The project_handover/clientside/volumes/n8 symlink should be excluded since it points to an external mount, but I want to
+    preserve the .gitkeep file that marks the directory. I'm refining the tar command to use a more targeted exclusion approach. I'm realizing the exclude patterns won't work the way I need
+    them to—tar applies excludes globally, so I can't selectively include .gitkeep after excluding the parent directory. I should either use a separate tar command for the volumes directory or
+    restructure the exclusion logic to only exclude the subdirectories I don't want while keeping .gitkeep.
+
+    Let me reconsider: if I specify project_handover/clientside/volumes/.gitkeep as an explicit path, it should be included even though the parent directory has symlinks I want to skip. And I
+    should definitely include docker-compose.yaml from the ubuntu directory since it's useful as a reference, even though it's generated and will be regenerated anyway.
+
+    Now I need to figure out what 10_serverside.env represents in the defaults and how the env_loader uses it.
+
+                                                                                                                                                                09:51 AM claude-sonnet-4.6
+    ● 现在我清楚了整体设计，开始实现。需要修改两个文件：
+    1. harbor — 加顶级菜单 + 7_package_handover() 函数
+    2. archive_tarball.sh 不需要改（打包逻辑直接写在 harbor）
+
+    ● Bash(ls configs/defaults/ && ls scripts/)
+    ⎿  01_base.env
+        02_build.env
+        03_tools.env
+        04_workspace.env
+        05_registry.env
+        06_sdk.env
+        07_volumes.env
+        08_samba.env
+        09_runtime.env
+        11_proxy.env
+        create_platform.sh
+        port_calc.sh
+
+                                                                                                                                                                    09:51 AM <synthetic>
+    ⎿  Context limit reached · /compact or /clear to continue
+
+    ✻ Crunched for 10m 54s
+
+    ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    Showing detailed transcript · ctrl+o to toggle · ctrl+e to collapse
+
+
+    ```
 
 Mar28.2026 09:30
 - [x] context limit，请继续之前的工作
