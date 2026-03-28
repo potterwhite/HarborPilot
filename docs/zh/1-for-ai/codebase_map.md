@@ -6,8 +6,8 @@
 >
 > **维护规则：** 任何修改本文中所列文件的 AI Agent，必须在同一次提交/会话中更新本文档的相关章节。
 >
-> 最后更新：2026-03-27（平台文件重命名为 chip-os 命名规范；新增 CHIP_EXTRACT_NAME；docs/ 目录拆分为 en/zh 双语）
-> **Related:** [English Version →](../../../../en/1-for-ai/codebase_map.md)
+> 最后更新：2026-03-28（docs 结构完全与 en 对齐：去掉 architecture/ 层；4-reference → 4-for-beginner；phase4 → 2-progress；NEED_TO_DO → zh）
+> **Related:** [English Version →](../../en/1-for-ai/codebase_map.md)
 
 ---
 
@@ -66,20 +66,19 @@ HarborPilot.git/
 │       └── scripts/                    ←   6 个模块化辅助脚本
 │
 ├── docs/                               ← ★ 文档（双语分离）
+│   ├── assets/                         ←   共享图片（暗/亮背景）
 │   ├── en/                             ←   英文文档树
-│   │   ├── architecture/
-│   │   │   ├── 00_INDEX.md             ←     导航中心（英文）
-│   │   │   ├── 1-for-ai/              ←     AI Agent 参考文件
-│   │   │   ├── 2-progress/            ←     阶段追踪
-│   │   │   ├── 3-highlights/          ←     架构决策与分析
-│   │   │   └── 4-reference/           ←     参考文档（quick_start、config_layers、port-map）
+│   │   ├── 00_INDEX.md                 ←     导航中心（英文）
+│   │   ├── 1-for-ai/                  ←     AI Agent 参考文件
+│   │   ├── 2-progress/                ←     阶段追踪 + Phase 4 计划
+│   │   ├── 3-highlights/              ←     架构分析（竞品、config_layers、port-map）
+│   │   └── 4-for-beginner/            ←     快速上手指南
 │   └── zh/                             ←   中文文档树
-│       ├── architecture/
-│       │   ├── 00_INDEX.md             ←     导航中心（中文）
-│       │   ├── 1-for-ai/              ←     AI Agent 参考文件（中文）
-│       │   ├── 2-progress/            ←     阶段追踪（中文）
-│       │   ├── 3-highlights/          ←     架构决策与分析（中文）
-│       │   └── 4-reference/           ←     参考文档（中文）
+│       ├── 00_INDEX.md                 ←     导航中心（中文）
+│       ├── 1-for-ai/                  ←     AI Agent 参考文件（中文）
+│       ├── 2-progress/                ←     阶段追踪（中文）+ NEED_TO_DO.md
+│       ├── 3-highlights/              ←     架构分析（中文）
+│       ├── 4-for-beginner/            ←     快速上手指南（中文）
 │       └── readme.md                  ←   中文 README
 │
 └── .devcontainer/

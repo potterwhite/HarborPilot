@@ -11,7 +11,7 @@ tags:
 
 # HarborPilot — Competitive Analysis & Unique Value Proposition
 
-> **Related:** [中文版 →](../../../../zh/3-highlights/competitive_analysis.md)
+> **Related:** [中文版 →](../../zh/3-highlights/competitive_analysis.md)
 >
 > **Purpose of this document**: Answer the question — "If I want to achieve the same goal as
 > HarborPilot, what existing/open-source tools would I use? And what makes HarborPilot worth

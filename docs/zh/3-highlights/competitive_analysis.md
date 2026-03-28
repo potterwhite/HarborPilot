@@ -11,7 +11,7 @@ tags:
 
 # HarborPilot — 竞品分析与独特价值主张
 
-> **Related:** [English Version →](../../../../en/3-highlights/competitive_analysis.md)
+> **Related:** [English Version →](../../en/3-highlights/competitive_analysis.md)
 >
 > **本文档目的**：回答这个问题 —— "如果要实现与 HarborPilot 相同的目标，我会使用哪些现有/开源工具？HarborPilot 在 AI 时代有什么值得使用的地方？"
 

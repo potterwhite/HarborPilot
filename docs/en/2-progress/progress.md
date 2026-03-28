@@ -1,7 +1,7 @@
 # HarborPilot — Project Progress
 
 > Last updated: 2026-03-28 (OS_VERSION_ID fix committed; platform table + codebase_map updated)
-> **Related:** [中文版 →](../../../../zh/2-progress/progress.md)
+> **Related:** [中文版 →](../../zh/2-progress/progress.md)
 
 ---
 

@@ -12,7 +12,7 @@ status: "Draft — pending approval"
 
 # HarborPilot Phase 4 — MCP Server 与 AI Agent 集成
 
-> **Related:** [English Version →](../../../../en/2-progress/phase4_mcp_ai_agent_plan.md)
+> **Related:** [English Version →](../../en/2-progress/phase4_mcp_ai_agent_plan.md)
 >
 > **目标**：让 HarborPilot 成为 AI 编码 Agent（Claude、Cursor、Copilot）
 > 与嵌入式 Linux 开发环境供应之间的一等接口。

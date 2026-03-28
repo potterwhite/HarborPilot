@@ -1,7 +1,7 @@
 
 # Port Mapping — PORT_SLOT System
 
-> **Related:** [中文版 →](../../../../zh/4-reference/port-map-calculation.md)
+> **Related:** [中文版 →](../../zh/3-highlights/port-map-calculation.md)
 
 Ports are now auto-calculated from a single `PORT_SLOT` number.
 No manual port arithmetic is needed.

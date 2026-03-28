@@ -7,8 +7,8 @@
 > **Maintenance rule:** Any AI agent that modifies a file listed here MUST update
 > the relevant section in this document in the same commit/session.
 >
-> Last updated: 2026-03-28 (docs restructured: en/zh drop architecture/ layer; NEED_TO_DO moved to zh; generalization + refactoring_plan removed)
-> **Related:** [中文版 →](../../../../zh/1-for-ai/codebase_map.md)
+> Last updated: 2026-03-28 (docs restructured: en/zh drop architecture/ layer; NEED_TO_DO moved to zh; zh aligned to en: 4-reference→4-for-beginner, phase4→2-progress)
+> **Related:** [中文版 →](../../zh/1-for-ai/codebase_map.md)
 
 ---
 

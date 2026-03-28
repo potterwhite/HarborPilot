@@ -1,6 +1,6 @@
 # 三层配置系统详解
 
-> **Related:** [English Version →](../../../../en/3-highlights/config_layers.md)
+> **Related:** [English Version →](../../en/3-highlights/config_layers.md)
 
 本文档解释 HarborPilot 配置系统的工作原理、为什么采用三层结构，以及如何在新增平台或新增全局配置项时使用它。
 
