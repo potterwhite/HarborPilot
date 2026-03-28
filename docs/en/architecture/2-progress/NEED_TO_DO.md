@@ -1,5 +1,29 @@
 - **改完就把下面的checkbox checked**
 
+Mar28.2026
+09:35
+- [x] volume gitignore
+    ```bash
+    git status
+    On branch docs/bilingual-split
+    Untracked files:
+    (use "git add <file>..." to include in what will be committed)
+        project_handover/clientside/ubuntu/volumes
+
+    nothing added to commit but untracked files present (use "git add" to track)
+
+    ```
+    帮我研究清楚，我希望volumes这个目录能够加入.gitignore。是否会影响使用？
+    它本身只是一个soft link。我都是脚本自动建立的。
+    → 已修复：在 .gitignore 加入 `project_handover/clientside/ubuntu/volumes`。
+      soft link 由 03_volumes_init.sh 自动创建，无需 git track，加入 ignore 完全不影响使用。
+- [ ] 我要增加一个打包的功能
+    为什么叫project_handover，就是希望能够把这个目录下一次性打包给user.
+    请你帮我把这个部分的功能做好。
+    你被授权一切权限，能够改我这里的一切文件和文件夹名称
+    打包办法我希望融入./harbor的引导脚本
+    你的重构这部分的工作如果有多个方案可选，请让我选择，再开始
+
 Mar28.2026 09:30
 - [x] context limit，请继续之前的工作
     ```bash
