@@ -1,7 +1,7 @@
 # HarborPilot — 项目进度
 
 > 最后更新：2026-03-27（Phase 3 审计日志更新；平台迁移 + harbor 分组提交已添加）
-> **Related:** [English Version →](../../../../en/architecture/2-progress/progress.md)
+> **Related:** [English Version →](../../../../en/2-progress/progress.md)
 
 ---
 
@@ -110,7 +110,7 @@
 
 ## Phase 4 — MCP Server & AI Agent 集成（计划中）
 
-完整计划：[`docs/zh/architecture/3-highlights/phase4_mcp_ai_agent_plan.md`](../3-highlights/phase4_mcp_ai_agent_plan.md)
+完整计划：[`docs/zh/3-highlights/phase4_mcp_ai_agent_plan.md`](../3-highlights/phase4_mcp_ai_agent_plan.md)
 
 | 步骤 | 描述 | 状态 |
 |---|---|---|

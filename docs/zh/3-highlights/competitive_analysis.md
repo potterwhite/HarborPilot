@@ -11,7 +11,7 @@ tags:
 
 # HarborPilot — 竞品分析与独特价值主张
 
-> **Related:** [English Version →](../../../../en/architecture/3-highlights/competitive_analysis.md)
+> **Related:** [English Version →](../../../../en/3-highlights/competitive_analysis.md)
 >
 > **本文档目的**：回答这个问题 —— "如果要实现与 HarborPilot 相同的目标，我会使用哪些现有/开源工具？HarborPilot 在 AI 时代有什么值得使用的地方？"
 
@@ -224,4 +224,4 @@ HarborPilot 最可防御的定位是：
 
 `.env` 文件 + CLI 接口使这成为 AI 驱动的嵌入式开发环境供应的最低摩擦路径。
 
-参见 `docs/zh/architecture/2-progress/progress.md` Phase 4（计划中）了解 MCP/Agent 集成路线图。
+参见 `docs/zh/2-progress/progress.md` Phase 4（计划中）了解 MCP/Agent 集成路线图。

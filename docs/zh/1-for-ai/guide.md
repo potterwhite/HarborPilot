@@ -2,7 +2,7 @@
 
 > **目标读者：** AI 编码 Agent（Claude Code、Cursor 等）
 > **在接触任何代码之前，请先阅读本文。**
-> **Related:** [English Version →](../../../../en/architecture/1-for-ai/guide.md)
+> **Related:** [English Version →](../../../../en/1-for-ai/guide.md)
 
 ---
 
@@ -61,7 +61,7 @@
 
 ### "新增功能"
 1. 提问澄清（受影响的脚本、配置变更、平台影响）
-2. 在 `docs/architecture/` 中写计划 — **尚不写代码**
+2. 在 `docs/en/` 或 `docs/zh/` 下的 2-progress/ 或 3-highlights/ 中写计划 — **尚不写代码**
 3. 等待批准
 4. 分步实现，每步一次提交
 
@@ -71,7 +71,7 @@
 3. 用 `fix:` 前缀提交
 
 ### "重构 / 优化某事"
-1. 在 `docs/architecture/` 中写重构计划
+1. 在 `docs/en/` 或 `docs/zh/` 下的 3-highlights/ 中写重构计划
 2. 等待批准
 3. 分步执行
 

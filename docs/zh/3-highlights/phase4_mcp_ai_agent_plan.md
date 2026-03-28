@@ -12,7 +12,7 @@ status: "Draft — pending approval"
 
 # HarborPilot Phase 4 — MCP Server 与 AI Agent 集成
 
-> **Related:** [English Version →](../../../../en/architecture/3-highlights/phase4_mcp_ai_agent_plan.md)
+> **Related:** [English Version →](../../../../en/2-progress/phase4_mcp_ai_agent_plan.md)
 >
 > **目标**：让 HarborPilot 成为 AI 编码 Agent（Claude、Cursor、Copilot）
 > 与嵌入式 Linux 开发环境供应之间的一等接口。
@@ -296,7 +296,7 @@ if __name__ == "__main__":
    - "检查 rk3588s 镜像是否在 Registry 中是最新的"
    - "为 rk3568-ubuntu22 启用 CUDA 并重新构建"
 
-4. **`docs/architecture/2-progress/progress.md`** — 更新 Phase 4 状态
+4. **`docs/zh/2-progress/progress.md`** — 更新 Phase 4 状态
 
 **提交目标**：`feat: add Claude Code MCP integration guide and example prompts`
 
@@ -365,9 +365,9 @@ Phase 4 构建技术能力。Phase 5 是营销/可发现性。
 | `mcp/claude_code_config.json` | 创建 | 可直接粘贴的配置片段 |
 | `mcp/README.md` | 创建 | 安装指南 + 示例提示词 |
 | `harbor` | 修改 | 添加 `HARBORPILOT_NON_INTERACTIVE` 检查以绕过提示 |
-| `docs/en/architecture/2-progress/progress.md` | 修改 | 添加 Phase 4 章节 |
-| `docs/en/architecture/00_INDEX.md` | 修改 | 添加 `mcp/README.md` 条目 |
-| `docs/en/architecture/1-for-ai/codebase_map.md` | 修改 | 添加 `mcp/` 目录章节 |
+| `docs/en/2-progress/progress.md` | 修改 | 添加 Phase 4 章节 |
+| `docs/en/00_INDEX.md` | 修改 | 添加 `mcp/README.md` 条目 |
+| `docs/en/1-for-ai/codebase_map.md` | 修改 | 添加 `mcp/` 目录章节 |
 
 ---
 
@@ -375,7 +375,7 @@ Phase 4 构建技术能力。Phase 5 是营销/可发现性。
 
 如果你是开始实施 Phase 4 的 AI Agent，请按此顺序操作：
 
-1. 阅读 `docs/en/architecture/1-for-ai/guide.md` 和 `codebase_map.md`（会话协议）
+1. 阅读 `docs/en/1-for-ai/guide.md` 和 `codebase_map.md`（会话协议）
 2. 检查 `progress.md` — 若 Phase 4 步骤 X 标记为 ✅，跳到步骤 X+1
 3. 安装 MCP SDK：`pip install mcp`（或 `uv add mcp`）
 4. 从 **Phase 4.1** 开始 — 仅脚手架，暂不添加工具
