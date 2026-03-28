@@ -119,8 +119,8 @@ external content distribution.
 
 | Step | Description | Status |
 |---|---|---|
-| **4.1** | GitHub repo optimization: Topics, README rewrite (Q&A style), keyword coverage | ⏳ |
-| **4.2** | Blog post on GitHub Pages (personal site) — Hugo/Docsy, bilingual EN+ZH | ⏳ |
+| **4.1** | GitHub repo optimization: Topics, README rewrite (Q&A style), keyword coverage | ✅ README done; Topics: manual GitHub UI step |
+| **4.2** | Blog post on GitHub Pages (personal site) — Hugo/Docsy, bilingual EN+ZH | ✅ Both articles committed to blog-engine repo |
 | **4.3** | Submit to Awesome lists (awesome-docker, awesome-embedded-linux) | ⏳ |
 | **4.4** | Dev.to / Medium article: "Building reproducible Docker dev envs for RK3588" | ⏳ |
 | **4.5** | Hacker News "Show HN" post | ⏳ |
