@@ -40,7 +40,12 @@ james@Anastasia:/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Developmen
       已 git rm 删除，project_handover/scripts/ 目录随之消失。
       同步清理：.gitignore 的 project_handover/scripts/* 规则，
       codebase_map.md（EN + ZH），refactoring_plan.md（EN + ZH）均已更新。
-- [ ] 把我这里的docs目录下的config_layers.md/port-map-calculation.md/quick_start.md/也融合进architecture吧，我认为应该某种程度上说，他们也是介绍我的架构的一种信息。你需要同步改所有的相关的文档的ref link。（这一步会消耗很多token,请单独做，把其他做完了，单独做这个，大概率会context limit）
+- [x] 把我这里的docs目录下的config_layers.md/port-map-calculation.md/quick_start.md/也融合进architecture吧，我认为应该某种程度上说，他们也是介绍我的架构的一种信息。你需要同步改所有的相关的文档的ref link。（这一步会消耗很多token,请单独做，把其他做完了，单独做这个，大概率会context limit）
+    → 已完成：git mv 将 docs/{en,zh}/config_layers.md、quick_start.md、port-map-calculation.md
+      移入 docs/{en,zh}/architecture/4-reference/。
+      同步更新所有引用（CLAUDE.md、README.md、docs/zh/readme.md、00_INDEX.md EN+ZH、
+      codebase_map.md EN+ZH、guide.md EN+ZH、6个文件内部 Related cross-link）。
+      commit: c3b4387
 
 
 
