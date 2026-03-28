@@ -22,7 +22,8 @@ Start here every session. Read in this order before touching any code.
 |---|---|
 | [`2-progress/progress.md`](2-progress/progress.md) | All phase details, current status, future roadmap |
 | [`../zh/2-progress/NEED_TO_DO.md`](../zh/2-progress/NEED_TO_DO.md) | Active bug/task backlog (working notes, in Chinese) |
-| [`2-progress/phase4_mcp_ai_agent_plan.md`](2-progress/phase4_mcp_ai_agent_plan.md) | ⭐ Phase 4 roadmap: MCP server design, AI Agent integration |
+| [`2-progress/phase4_aso_plan.md`](2-progress/phase4_aso_plan.md) | Phase 4 roadmap: ASO & content distribution |
+| [`2-progress/phase5_mcp_ai_agent_plan.md`](2-progress/phase5_mcp_ai_agent_plan.md) | Phase 5 roadmap: MCP server design, AI Agent integration |
 
 ---
 

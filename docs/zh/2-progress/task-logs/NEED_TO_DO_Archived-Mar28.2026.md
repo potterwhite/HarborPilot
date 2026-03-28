@@ -1222,6 +1222,17 @@ aso-strategy branch session
     用中文写。
     → 已生成 ASO_strategy.md（repo 根目录，加入 .gitignore，不进仓库）
 
+- [x] phase4_aso_plan 只有 en，帮我在 zh 里也加上
+    → 已新建 docs/zh/2-progress/phase4_aso_plan.md（中文全文翻译版）
+    → zh/progress.md 链接已更新为指向中文版
+    → zh/codebase_map.md 已加入条目
+
+- [x] 现在 mcp 已经成为 phase5，但是 plan 还是 phase4 文件名
+    → docs/en/2-progress/phase4_mcp_ai_agent_plan.md → phase5_mcp_ai_agent_plan.md
+    → docs/zh/2-progress/phase4_mcp_ai_agent_plan.md → phase5_mcp_ai_agent_plan.md
+    → en/zh progress.md、00_INDEX.md、codebase_map.md 所有引用全部同步更新
+    → 两个 plan 文件内部的 frontmatter title + Related 链接也已修正
+
 - [x] ubuntu_only_entrance.sh出现，要处理
     ```bash
     ./project_handover/clientside/ubuntu/ubuntu_only_entrance.sh recreate

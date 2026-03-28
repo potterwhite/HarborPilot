@@ -133,7 +133,7 @@ external content distribution.
 
 ## Phase 5 — MCP Server & AI Agent Integration (Planned)
 
-Full plan: [`docs/en/2-progress/phase4_mcp_ai_agent_plan.md`](phase4_mcp_ai_agent_plan.md)
+Full plan: [`docs/en/2-progress/phase5_mcp_ai_agent_plan.md`](phase5_mcp_ai_agent_plan.md)
 
 | Step | Description | Status |
 |---|---|---|

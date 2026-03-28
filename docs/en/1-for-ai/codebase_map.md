@@ -73,7 +73,7 @@ HarborPilot.git/
 │   │   ├── 1-for-ai/                  ←     AI agent reference files
 │   │   ├── 2-progress/                ←     Phase tracking + phase plans
 │   │   │   ├── phase4_aso_plan.md     ←       Phase 4: ASO & content distribution plan
-│   │   │   └── phase4_mcp_ai_agent_plan.md ← Phase 5: MCP Server & AI Agent plan
+│   │   │   └── phase5_mcp_ai_agent_plan.md ← Phase 5: MCP Server & AI Agent plan
 │   │   ├── 3-highlights/              ←     Architecture analysis (competitive, config_layers, port-map)
 │   │   └── 4-for-beginner/            ←     Quick start guide
 │   └── zh/                             ←   Chinese documentation tree

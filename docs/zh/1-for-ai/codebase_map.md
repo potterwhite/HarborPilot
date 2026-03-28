@@ -72,7 +72,7 @@ HarborPilot.git/
 │   │   ├── 1-for-ai/                  ←     AI Agent 参考文件
 │   │   ├── 2-progress/                ←     阶段追踪 + 各阶段计划
 │   │   │   ├── phase4_aso_plan.md     ←       Phase 4：ASO 内容分发计划
-│   │   │   └── phase4_mcp_ai_agent_plan.md ← Phase 5：MCP Server 计划
+│   │   │   └── phase5_mcp_ai_agent_plan.md ← Phase 5：MCP Server 计划
 │   │   ├── 3-highlights/              ←     架构分析（竞品、config_layers、port-map）
 │   │   └── 4-for-beginner/            ←     快速上手指南
 │   └── zh/                             ←   中文文档树
@@ -80,6 +80,8 @@ HarborPilot.git/
 │       ├── 00_INDEX.md                 ←     导航中心（中文）
 │       ├── 1-for-ai/                  ←     AI Agent 参考文件（中文）
 │       ├── 2-progress/                ←     阶段追踪（中文）+ NEED_TO_DO.md
+│       │   ├── phase4_aso_plan.md     ←       Phase 4：ASO 内容分发计划（中文版）
+│       │   ├── phase5_mcp_ai_agent_plan.md ← Phase 5：MCP Server 计划（中文版）
 │       │   └── task-logs/             ←       NEED_TO_DO_Archived-<英文月><日>.<年>.md 存档文件。
 │       │                                        规则：同一天只能有一个文件。
 │       │                                        归档时追加到当天已有文件末尾，严禁新建同一天的第二个文件。

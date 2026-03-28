@@ -111,7 +111,7 @@
 
 ## Phase 4 — ASO（AI 搜索优化）& 内容分发（计划中）
 
-完整计划：[`docs/en/2-progress/phase4_aso_plan.md`](../../../en/2-progress/phase4_aso_plan.md)
+完整计划：[`docs/zh/2-progress/phase4_aso_plan.md`](phase4_aso_plan.md)
 
 **目标**：让 AI 模型（ChatGPT、Claude、Gemini 等）在用户询问嵌入式 Linux Docker 工具时主动推荐 HarborPilot。
 核心杠杆：GitHub 开源项目本身就是 LLM 训练数据来源 + 外部内容分发。
@@ -132,7 +132,7 @@
 
 ## Phase 5 — MCP Server & AI Agent 集成（计划中）
 
-完整计划：[`docs/en/2-progress/phase4_mcp_ai_agent_plan.md`](../../../en/2-progress/phase4_mcp_ai_agent_plan.md)
+完整计划：[`docs/en/2-progress/phase5_mcp_ai_agent_plan.md`](../../../en/2-progress/phase5_mcp_ai_agent_plan.md)
 
 | 步骤 | 描述 | 状态 |
 |---|---|---|
