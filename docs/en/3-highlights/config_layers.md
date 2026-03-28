@@ -1,6 +1,6 @@
 # Three-Layer Configuration System
 
-> **Related:** [中文版 →](../../../../zh/architecture/4-reference/config_layers.md)
+> **Related:** [中文版 →](../../../../zh/4-reference/config_layers.md)
 
 This document explains how HarborPilot's configuration system works, why it is structured as three layers, and how to use it when adding a new platform or a new global setting.
 

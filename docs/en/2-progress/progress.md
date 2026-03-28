@@ -1,7 +1,7 @@
 # HarborPilot — Project Progress
 
 > Last updated: 2026-03-28 (OS_VERSION_ID fix committed; platform table + codebase_map updated)
-> **Related:** [中文版 →](../../../../zh/architecture/2-progress/progress.md)
+> **Related:** [中文版 →](../../../../zh/2-progress/progress.md)
 
 ---
 
@@ -110,7 +110,7 @@ Based on `refactoring_plan.md`, priorities:
 
 ## Phase 4 — MCP Server & AI Agent Integration (Planned)
 
-Full plan: [`docs/architecture/3-highlights/phase4_mcp_ai_agent_plan.md`](../3-highlights/phase4_mcp_ai_agent_plan.md)
+Full plan: [`docs/en/2-progress/phase4_mcp_ai_agent_plan.md`](phase4_mcp_ai_agent_plan.md)
 
 | Step | Description | Status |
 |---|---|---|

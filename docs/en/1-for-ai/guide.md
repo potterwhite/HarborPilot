@@ -2,7 +2,7 @@
 
 > **Target audience:** AI coding agents (Claude Code, Cursor, etc.)
 > **Read this before touching any code.**
-> **Related:** [中文版 →](../../../../zh/architecture/1-for-ai/guide.md)
+> **Related:** [中文版 →](../../../../zh/1-for-ai/guide.md)
 
 ---
 
@@ -61,7 +61,7 @@
 
 ### "Build a new feature"
 1. Ask clarifying questions (affected scripts, config changes, platform impact)
-2. Write a plan in `docs/architecture/` — **no code yet**
+2. Write a plan in `docs/en/` (under 2-progress/ or 3-highlights/) — **no code yet**
 3. Wait for approval
 4. Implement step by step, one commit per step
 
@@ -71,7 +71,7 @@
 3. Commit with `fix:` prefix
 
 ### "Refactor / optimize something"
-1. Write a refactor plan in `docs/architecture/`
+1. Write a refactor plan in `docs/en/` (under 3-highlights/)
 2. Wait for approval
 3. Execute step by step
 

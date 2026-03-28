@@ -12,7 +12,7 @@ status: "Draft — pending approval"
 
 # HarborPilot Phase 4 — MCP Server & AI Agent Integration
 
-> **Related:** [中文版 →](../../../../zh/architecture/3-highlights/phase4_mcp_ai_agent_plan.md)
+> **Related:** [中文版 →](../../../../zh/3-highlights/phase4_mcp_ai_agent_plan.md)
 >
 > **Goal**: Make HarborPilot the first-class interface between AI coding agents
 > (Claude, Cursor, Copilot) and embedded Linux dev environment provisioning.
@@ -316,7 +316,7 @@ in under 5 minutes.
    - "Check if the rk3588s image is up to date in the registry"
    - "Enable CUDA for rk3568-ubuntu22 and rebuild"
 
-4. **`docs/architecture/2-progress/progress.md`** — update Phase 4 status
+4. **`docs/en/2-progress/progress.md`** — update Phase 4 status
 
 **Commit target**: `feat: add Claude Code MCP integration guide and example prompts`
 
@@ -390,9 +390,9 @@ Do not mix them — build it first, market it second.
 | `mcp/claude_code_config.json` | Create | Ready-to-paste config snippet |
 | `mcp/README.md` | Create | Setup guide + example prompts |
 | `harbor` | Modify | Add `HARBORPILOT_NON_INTERACTIVE` check to bypass prompts |
-| `docs/architecture/2-progress/progress.md` | Modify | Add Phase 4 section |
-| `docs/architecture/00_INDEX.md` | Modify | Add `mcp/README.md` entry |
-| `docs/architecture/1-for-ai/codebase_map.md` | Modify | Add `mcp/` directory section |
+| `docs/en/2-progress/progress.md` | Modify | Add Phase 4 section |
+| `docs/en/00_INDEX.md` | Modify | Add `mcp/README.md` entry |
+| `docs/en/1-for-ai/codebase_map.md` | Modify | Add `mcp/` directory section |
 
 ---
 
@@ -400,7 +400,7 @@ Do not mix them — build it first, market it second.
 
 If you are an AI agent starting Phase 4 implementation, do this in order:
 
-1. Read `docs/architecture/1-for-ai/guide.md` and `codebase_map.md` (session protocol)
+1. Read `docs/en/1-for-ai/guide.md` and `codebase_map.md` (session protocol)
 2. Check `progress.md` — if Phase 4 Step X is marked ✅, skip to Step X+1
 3. Install the MCP SDK: `pip install mcp` (or `uv add mcp`)
 4. Start with **Phase 4.1** — scaffold only, no tools yet

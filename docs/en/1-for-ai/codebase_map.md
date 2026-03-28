@@ -7,8 +7,8 @@
 > **Maintenance rule:** Any AI agent that modifies a file listed here MUST update
 > the relevant section in this document in the same commit/session.
 >
-> Last updated: 2026-03-28 (OS_VERSION_ID added; PRODUCT_NAME now dot-free; all platform .env + create_platform.sh updated)
-> **Related:** [中文版 →](../../../../zh/architecture/1-for-ai/codebase_map.md)
+> Last updated: 2026-03-28 (docs restructured: en/zh drop architecture/ layer; NEED_TO_DO moved to zh; generalization + refactoring_plan removed)
+> **Related:** [中文版 →](../../../../zh/1-for-ai/codebase_map.md)
 
 ---
 
@@ -67,20 +67,19 @@ HarborPilot.git/
 │       └── scripts/                    ←   6 modular helper scripts
 │
 ├── docs/                               ← ★ Documentation (bilingual)
+│   ├── assets/                         ←   Shared images (dark/light backgrounds)
 │   ├── en/                             ←   English documentation tree
-│   │   ├── architecture/
-│   │   │   ├── 00_INDEX.md             ←     Navigation hub (EN)
-│   │   │   ├── 1-for-ai/              ←     AI agent reference files
-│   │   │   ├── 2-progress/            ←     Phase tracking
-│   │   │   ├── 3-highlights/          ←     Architecture decisions & analysis
-│   │   │   └── 4-reference/           ←     Reference docs (quick_start, config_layers, port-map)
+│   │   ├── 00_INDEX.md                 ←     Navigation hub (EN)
+│   │   ├── 1-for-ai/                  ←     AI agent reference files
+│   │   ├── 2-progress/                ←     Phase tracking + Phase 4 plan
+│   │   ├── 3-highlights/              ←     Architecture analysis (competitive, config_layers, port-map)
+│   │   └── 4-for-beginner/            ←     Quick start guide
 │   └── zh/                             ←   Chinese documentation tree
-│       ├── architecture/
-│       │   ├── 00_INDEX.md             ←     Navigation hub (ZH)
-│       │   ├── 1-for-ai/              ←     AI agent reference files (ZH)
-│       │   ├── 2-progress/            ←     Phase tracking (ZH)
-│       │   ├── 3-highlights/          ←     Architecture decisions & analysis (ZH)
-│       │   └── 4-reference/           ←     Reference docs (ZH)
+│       ├── 00_INDEX.md                 ←     Navigation hub (ZH)
+│       ├── 1-for-ai/                  ←     AI agent reference files (ZH)
+│       ├── 2-progress/                ←     Phase tracking (ZH) + NEED_TO_DO.md
+│       ├── 3-highlights/              ←     Architecture analysis (ZH)
+│       ├── 4-reference/               ←     Reference docs (ZH)
 │       └── readme.md                  ←   Chinese README
 │
 └── .devcontainer/
