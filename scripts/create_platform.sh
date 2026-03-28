@@ -405,7 +405,10 @@ CHIP_FAMILY="${chip_family}"
 CHIP_EXTRACT_NAME="${chip_extract_name}"
 OS_DISTRIBUTION="${os_distro}"
 OS_VERSION="${os_version}"
-PRODUCT_NAME="\${CHIP_FAMILY}-\${CHIP_EXTRACT_NAME}_\${OS_DISTRIBUTION}-\${OS_VERSION}"
+# OS_VERSION_ID: dots replaced by dashes — safe for PRODUCT_NAME / CONTAINER_NAME
+# (docker compose project names forbid dots; image tags allow them but dash is consistent)
+OS_VERSION_ID="${os_version//./-}"
+PRODUCT_NAME="\${CHIP_FAMILY}-\${CHIP_EXTRACT_NAME}_\${OS_DISTRIBUTION}-\${OS_VERSION_ID}"
 
 # Derived from PRODUCT_NAME (keep in sync)
 IMAGE_NAME="\${PRODUCT_NAME}-dev-env"
@@ -613,7 +616,10 @@ CHIP_FAMILY="${chip_family}"
 CHIP_EXTRACT_NAME="${chip_extract_name}"
 OS_DISTRIBUTION="${os_distro}"
 OS_VERSION="${os_version}"
-PRODUCT_NAME="\${CHIP_FAMILY}-\${CHIP_EXTRACT_NAME}_\${OS_DISTRIBUTION}-\${OS_VERSION}"
+# OS_VERSION_ID: dots replaced by dashes — safe for PRODUCT_NAME / CONTAINER_NAME
+# (docker compose project names forbid dots; image tags allow them but dash is consistent)
+OS_VERSION_ID="${os_version//./-}"
+PRODUCT_NAME="\${CHIP_FAMILY}-\${CHIP_EXTRACT_NAME}_\${OS_DISTRIBUTION}-\${OS_VERSION_ID}"
 
 # Derived from PRODUCT_NAME (keep in sync)
 IMAGE_NAME="\${PRODUCT_NAME}-dev-env"

@@ -1,5 +1,15 @@
 - **改完就把下面的checkbox checked**
 
+Mar27.2026 17:00
+- [x] 看看这个
+    ```bash
+    james@Anastasia:/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git$ ./project_handover/clientside/ubuntu/ubuntu_only_entrance.sh recreate
+    ...
+    ERROR: VOLUMES_DIR is not set and volumes symlink is not available
+    ```
+    → 已修复：main_entry_5th_cmd_recreate() 缺少 volumes_init_3rd_init_if_needed 调用，
+      与 start 命令保持一致后问题消除。
+
 Mar27.2026 16:00
 - [x] 做了很多事情，一直没修改doc,请你接下来修改的时候，验证一个item，就check一个，然后commit，不许等全部都做完，context很快就用完了。
     ```bash

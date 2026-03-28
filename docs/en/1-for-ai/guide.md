@@ -2,6 +2,7 @@
 
 > **Target audience:** AI coding agents (Claude Code, Cursor, etc.)
 > **Read this before touching any code.**
+> **Related:** [中文版 →](../../zh/1-for-ai/guide.md)
 
 ---
 
@@ -10,7 +11,7 @@
 1. **This file** — understand how to work in this repo
 2. **[`codebase_map.md`](codebase_map.md)** — full codebase structure (replaces scanning, saves 50%+ time)
 3. **[`../2-progress/progress.md`](../2-progress/progress.md)** — current phase status and active tasks
-4. **Relevant reference doc** — only if your task requires it (`../config_layers.md`, etc.)
+4. **Relevant reference doc** — only if your task requires it (`../4-reference/config_layers.md`, etc.)
 
 ---
 
@@ -60,7 +61,7 @@
 
 ### "Build a new feature"
 1. Ask clarifying questions (affected scripts, config changes, platform impact)
-2. Write a plan in `docs/architecture/` — **no code yet**
+2. Write a plan in `docs/en/` (under 2-progress/ or 3-highlights/) — **no code yet**
 3. Wait for approval
 4. Implement step by step, one commit per step
 
@@ -70,7 +71,7 @@
 3. Commit with `fix:` prefix
 
 ### "Refactor / optimize something"
-1. Write a refactor plan in `docs/architecture/`
+1. Write a refactor plan in `docs/en/` (under 3-highlights/)
 2. Wait for approval
 3. Execute step by step
 
@@ -95,6 +96,7 @@
 | Modify a `*_template` file without testing envsubst | Always verify rendered output matches intent |
 | Forget OS_VERSION conditionals | Ubuntu 20.04 / 22.04 / 24.04 have different packages and apt formats |
 | Use `sed` for template rendering | Use `envsubst` — the sed-based system has been removed |
+| Use `OS_VERSION` in PRODUCT_NAME / CONTAINER_NAME | Use `OS_VERSION_ID` (dots→dashes) — docker compose forbids dots in project names |
 
 ---
 

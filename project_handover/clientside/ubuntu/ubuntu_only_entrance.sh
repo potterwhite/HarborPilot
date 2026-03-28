@@ -100,8 +100,10 @@ main_entry_4th_cmd_restart() {
 ################################################################################
 main_entry_5th_cmd_recreate() {
     main_entry_1st_load_modules
-    
+
     env_loader_1st_load_all
+    docker_check_2nd_do_checks
+    volumes_init_3rd_init_if_needed
     container_lifecycle_5th_recreate
 }
 
