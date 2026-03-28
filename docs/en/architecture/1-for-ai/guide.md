@@ -11,7 +11,7 @@
 1. **This file** — understand how to work in this repo
 2. **[`codebase_map.md`](codebase_map.md)** — full codebase structure (replaces scanning, saves 50%+ time)
 3. **[`../2-progress/progress.md`](../2-progress/progress.md)** — current phase status and active tasks
-4. **Relevant reference doc** — only if your task requires it (`../config_layers.md`, etc.)
+4. **Relevant reference doc** — only if your task requires it (`../4-reference/config_layers.md`, etc.)
 
 ---
 

@@ -36,13 +36,12 @@
 
 ---
 
-## 面向用户的文档（项目根目录 `docs/zh/`）
+## 4 · 参考文档（`4-reference/`）
 
 | 文档 | 用途 |
 |---|---|
-| [`../config_layers.md`](../config_layers.md) | 三层配置系统详解（中文） |
-| [`../quick_start.md`](../quick_start.md) | 分步上手指南（中文） |
-| [`../port-map-calculation.md`](../port-map-calculation.md) | 端口计算公式与平台端口映射表 |
-| [`../readme.md`](../readme.md) | 中文 README |
+| [`4-reference/quick_start.md`](4-reference/quick_start.md) | 分步上手指南 — Docker 安装 → 构建镜像 → 启动容器 |
+| [`4-reference/config_layers.md`](4-reference/config_layers.md) | 三层配置系统深度解析 |
+| [`4-reference/port-map-calculation.md`](4-reference/port-map-calculation.md) | PORT_SLOT 公式与当前平台端口映射表 |
 
 > **English documentation →** [`docs/en/architecture/00_INDEX.md`](../../../en/architecture/00_INDEX.md)

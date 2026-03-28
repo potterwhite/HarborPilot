@@ -1,6 +1,6 @@
 # 快速上手指南
 
-> **Related:** [English Version →](../../en/quick_start.md)
+> **Related:** [English Version →](../../../../en/architecture/4-reference/quick_start.md)
 
 本指南带你从零开始，在一台全新的 Ubuntu 宿主机上完成 HarborPilot 的配置，直到开发容器成功运行。
 

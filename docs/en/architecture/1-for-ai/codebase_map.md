@@ -72,18 +72,15 @@ HarborPilot.git/
 │   │   │   ├── 00_INDEX.md             ←     Navigation hub (EN)
 │   │   │   ├── 1-for-ai/              ←     AI agent reference files
 │   │   │   ├── 2-progress/            ←     Phase tracking
-│   │   │   └── 3-highlights/          ←     Architecture decisions & analysis
-│   │   ├── config_layers.md           ←   Three-layer config explained (EN)
-│   │   ├── quick_start.md             ←   Setup guide (EN)
-│   │   └── port-map-calculation.md    ←   Port formula documentation
+│   │   │   ├── 3-highlights/          ←     Architecture decisions & analysis
+│   │   │   └── 4-reference/           ←     Reference docs (quick_start, config_layers, port-map)
 │   └── zh/                             ←   Chinese documentation tree
 │       ├── architecture/
 │       │   ├── 00_INDEX.md             ←     Navigation hub (ZH)
 │       │   ├── 1-for-ai/              ←     AI agent reference files (ZH)
 │       │   ├── 2-progress/            ←     Phase tracking (ZH)
-│       │   └── 3-highlights/          ←     Architecture decisions & analysis (ZH)
-│       ├── config_layers.md           ←   Three-layer config explained (ZH)
-│       ├── quick_start.md             ←   Setup guide (ZH)
+│       │   ├── 3-highlights/          ←     Architecture decisions & analysis (ZH)
+│       │   └── 4-reference/           ←     Reference docs (ZH)
 │       └── readme.md                  ←   Chinese README
 │
 └── .devcontainer/

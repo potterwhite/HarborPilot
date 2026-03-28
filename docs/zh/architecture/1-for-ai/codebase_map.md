@@ -71,18 +71,15 @@ HarborPilot.git/
 │   │   │   ├── 00_INDEX.md             ←     导航中心（英文）
 │   │   │   ├── 1-for-ai/              ←     AI Agent 参考文件
 │   │   │   ├── 2-progress/            ←     阶段追踪
-│   │   │   └── 3-highlights/          ←     架构决策与分析
-│   │   ├── config_layers.md           ←   三层配置说明（英文）
-│   │   ├── quick_start.md             ←   上手指南（英文）
-│   │   └── port-map-calculation.md    ←   端口公式说明
+│   │   │   ├── 3-highlights/          ←     架构决策与分析
+│   │   │   └── 4-reference/           ←     参考文档（quick_start、config_layers、port-map）
 │   └── zh/                             ←   中文文档树
 │       ├── architecture/
 │       │   ├── 00_INDEX.md             ←     导航中心（中文）
 │       │   ├── 1-for-ai/              ←     AI Agent 参考文件（中文）
 │       │   ├── 2-progress/            ←     阶段追踪（中文）
-│       │   └── 3-highlights/          ←     架构决策与分析（中文）
-│       ├── config_layers.md           ←   三层配置说明（中文）
-│       ├── quick_start.md             ←   上手指南（中文）
+│       │   ├── 3-highlights/          ←     架构决策与分析（中文）
+│       │   └── 4-reference/           ←     参考文档（中文）
 │       └── readme.md                  ←   中文 README
 │
 └── .devcontainer/

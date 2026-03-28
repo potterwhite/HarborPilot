@@ -57,4 +57,6 @@ V=1 ./harbor
 | Phase progress + roadmap | `docs/en/architecture/2-progress/progress.md` |
 | Active task backlog | `docs/en/architecture/2-progress/NEED_TO_DO.md` |
 | Architecture vision + decisions | `docs/en/architecture/3-highlights/refactoring_plan.md` |
-| Config system deep-dive | `docs/en/config_layers.md` |
+| Config system deep-dive | `docs/en/architecture/4-reference/config_layers.md` |
+| Setup / quick start | `docs/en/architecture/4-reference/quick_start.md` |
+| Port formula reference | `docs/en/architecture/4-reference/port-map-calculation.md` |

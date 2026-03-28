@@ -11,7 +11,7 @@
 1. **本文件** — 了解如何在本仓库工作
 2. **[`codebase_map.md`](codebase_map.md)** — 完整代码库结构（替代扫描源码，节省 50%+ token）
 3. **[`../2-progress/progress.md`](../2-progress/progress.md)** — 当前阶段状态与活跃任务
-4. **相关参考文档** — 仅在任务需要时查阅（`../config_layers.md` 等）
+4. **相关参考文档** — 仅在任务需要时查阅（`../4-reference/config_layers.md` 等）
 
 ---
 

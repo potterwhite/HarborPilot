@@ -98,14 +98,11 @@ HarborPilot/
     │   ├── 00_INDEX.md               Navigation hub
     │   ├── 1-for-ai/                 AI agent reference files
     │   ├── 2-progress/               Phase tracking
-    │   └── 3-highlights/             Architecture decisions & analysis
-    ├── quick_start.md                Step-by-step setup guide (EN)
-    ├── quick_start_cn.md             Step-by-step setup guide (ZH)
-    ├── config_layers.md              Three-layer config system explained (EN)
-    └── config_layers_cn.md           Three-layer config system explained (ZH)
+    │   ├── 3-highlights/             Architecture decisions & analysis
+    │   └── 4-reference/              Reference docs (quick_start, config_layers, port-map)
 ```
 
-> **How the three-layer config works →** [docs/en/config_layers.md](docs/en/config_layers.md)
+> **How the three-layer config works →** [docs/en/architecture/4-reference/config_layers.md](docs/en/architecture/4-reference/config_layers.md)
 
 ---
 
@@ -127,11 +124,11 @@ Create a new platform with `./scripts/create_platform.sh` (interactive) or `--no
 
 ## Quick Start
 
-→ **Full guide: [docs/en/quick_start.md](docs/en/quick_start.md)**
+→ **Full guide: [docs/en/architecture/4-reference/quick_start.md](docs/en/architecture/4-reference/quick_start.md)**
 
 ```bash
 # 1. Install Docker and trust the Harbor CA cert  (once per host)
-#    → see docs/quick_start.md
+#    → see docs/en/architecture/4-reference/quick_start.md
 
 # 2. Log in to your Harbor registry
 docker login <registry-ip>:<registry-port>

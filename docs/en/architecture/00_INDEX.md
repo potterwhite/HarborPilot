@@ -36,12 +36,12 @@ Start here every session. Read in this order before touching any code.
 
 ---
 
-## Human-Facing Documentation (`docs/en/`)
+## 4 · Reference Documentation (`4-reference/`)
 
 | Document | Purpose |
 |---|---|
-| [`../config_layers.md`](../config_layers.md) | Three-layer config system explained (EN) |
-| [`../quick_start.md`](../quick_start.md) | Step-by-step setup guide (EN) |
-| [`../port-map-calculation.md`](../port-map-calculation.md) | Port calculation formula and platform port map |
+| [`4-reference/quick_start.md`](4-reference/quick_start.md) | Step-by-step setup guide — Docker install → build → run container |
+| [`4-reference/config_layers.md`](4-reference/config_layers.md) | Three-layer config system explained in depth |
+| [`4-reference/port-map-calculation.md`](4-reference/port-map-calculation.md) | PORT_SLOT formula and current platform port map |
 
 > **Chinese documentation →** [`docs/zh/architecture/00_INDEX.md`](../../../zh/architecture/00_INDEX.md)
