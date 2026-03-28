@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0](https://github.com/potterwhite/HarborPilot/compare/v1.8.0...v1.9.0) (2026-03-28)
+
+
+### ✨ Added
+
+* add harbor main menu, handover packaging, and docs bilingual restructuring ([#15](https://github.com/potterwhite/HarborPilot/issues/15)) ([0606d08](https://github.com/potterwhite/HarborPilot/commit/0606d086f599314cbbfcdf7d9f3a2dcd7785bdce))
+
 ## [1.8.0](https://github.com/potterwhite/HarborPilot/compare/v1.7.1...v1.8.0) (2026-03-27)
 
 
