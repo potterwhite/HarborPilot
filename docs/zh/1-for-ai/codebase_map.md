@@ -6,7 +6,7 @@
 >
 > **维护规则：** 任何修改本文中所列文件的 AI Agent，必须在同一次提交/会话中更新本文档的相关章节。
 >
-> 最后更新：2026-03-28（docs 结构完全与 en 对齐：去掉 architecture/ 层；4-reference → 4-for-beginner；phase4 → 2-progress；NEED_TO_DO → zh）
+> 最后更新：2026-03-28（新增 Phase 4 ASO 计划；task-logs 存档规则已文档化；MCP 重新编号为 Phase 5）
 > **Related:** [English Version →](../../en/1-for-ai/codebase_map.md)
 
 ---
@@ -70,7 +70,9 @@ HarborPilot.git/
 │   │   ├── assets/                     ←     英文文档图片（暗背景）
 │   │   ├── 00_INDEX.md                 ←     导航中心（英文）
 │   │   ├── 1-for-ai/                  ←     AI Agent 参考文件
-│   │   ├── 2-progress/                ←     阶段追踪 + Phase 4 计划
+│   │   ├── 2-progress/                ←     阶段追踪 + 各阶段计划
+│   │   │   ├── phase4_aso_plan.md     ←       Phase 4：ASO 内容分发计划
+│   │   │   └── phase4_mcp_ai_agent_plan.md ← Phase 5：MCP Server 计划
 │   │   ├── 3-highlights/              ←     架构分析（竞品、config_layers、port-map）
 │   │   └── 4-for-beginner/            ←     快速上手指南
 │   └── zh/                             ←   中文文档树

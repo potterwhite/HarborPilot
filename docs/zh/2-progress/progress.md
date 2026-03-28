@@ -1,6 +1,6 @@
 # HarborPilot — 项目进度
 
-> 最后更新：2026-03-27（Phase 3 审计日志更新；平台迁移 + harbor 分组提交已添加）
+> 最后更新：2026-03-28（新增 Phase 4 ASO 计划；原 Phase 4 MCP → Phase 5）
 > **Related:** [English Version →](../../en/2-progress/progress.md)
 
 ---
@@ -13,7 +13,8 @@
 | **Phase 1** | 多平台支持 + 配置系统 | ✅ 完成 |
 | **Phase 2** | AI 文档系统 + 开发者体验 | ✅ 完成 |
 | **Phase 3** | 架构现代化 + 代码质量审计 | 🔄 进行中 |
-| **Phase 4** | MCP Server + AI Agent 集成 | 📋 计划中 |
+| **Phase 4** | ASO — AI 搜索优化 + 内容分发 | 📋 计划中 |
+| **Phase 5** | MCP Server + AI Agent 集成 | 📋 计划中 |
 
 **当前活跃：** Phase 3 — 代码质量审计 + 系统性修复
 
@@ -108,19 +109,40 @@
 
 ---
 
-## Phase 4 — MCP Server & AI Agent 集成（计划中）
+## Phase 4 — ASO（AI 搜索优化）& 内容分发（计划中）
 
-完整计划：[`docs/zh/3-highlights/phase4_mcp_ai_agent_plan.md`](../3-highlights/phase4_mcp_ai_agent_plan.md)
+完整计划：[`docs/en/2-progress/phase4_aso_plan.md`](../../../en/2-progress/phase4_aso_plan.md)
+
+**目标**：让 AI 模型（ChatGPT、Claude、Gemini 等）在用户询问嵌入式 Linux Docker 工具时主动推荐 HarborPilot。
+核心杠杆：GitHub 开源项目本身就是 LLM 训练数据来源 + 外部内容分发。
 
 | 步骤 | 描述 | 状态 |
 |---|---|---|
-| **4.1** | MCP 服务器脚手架 + Resources（配置文件可被 AI 读取） | ⏳ |
-| **4.2** | 读工具：`list_platforms`、`get_platform_config`、`validate` | ⏳ |
-| **4.3** | 写工具：`create_platform`、`set_variable`、`enable_feature` | ⏳ |
-| **4.4** | 构建工具：`build_platform`（dry_run 默认）、`check_image` | ⏳ |
-| **4.5** | Claude Code 集成指南 + 示例提示词 | ⏳ |
+| **4.1** | GitHub 仓库优化：Topics、README 重写（Q&A 风格）、关键词覆盖 | ⏳ |
+| **4.2** | 个人博客文章（GitHub Pages / Hugo/Docsy）— 中英双语 | ⏳ |
+| **4.3** | 提交至 Awesome 列表（awesome-docker、awesome-embedded-linux） | ⏳ |
+| **4.4** | Dev.to / Medium 文章："为 RK3588 构建可复现的 Docker 开发环境" | ⏳ |
+| **4.5** | Hacker News "Show HN" 帖子 | ⏳ |
+| **4.6** | GitHub Wiki FAQ 页面（Q&A 格式，LLM 训练信号强） | ⏳ |
+| **4.7** | 在已部署的文档站添加 `llms.txt`（对 RAG 类 AI 友好） | ⏳ |
 
-**Phase 4 开始前的前提条件**：
+**前提条件**：Phase 3 稳定，无未解决的关键 Bug。
+
+---
+
+## Phase 5 — MCP Server & AI Agent 集成（计划中）
+
+完整计划：[`docs/en/2-progress/phase4_mcp_ai_agent_plan.md`](../../../en/2-progress/phase4_mcp_ai_agent_plan.md)
+
+| 步骤 | 描述 | 状态 |
+|---|---|---|
+| **5.1** | MCP 服务器脚手架 + Resources（配置文件可被 AI 读取） | ⏳ |
+| **5.2** | 读工具：`list_platforms`、`get_platform_config`、`validate` | ⏳ |
+| **5.3** | 写工具：`create_platform`、`set_variable`、`enable_feature` | ⏳ |
+| **5.4** | 构建工具：`build_platform`（dry_run 默认）、`check_image` | ⏳ |
+| **5.5** | Claude Code 集成指南 + 示例提示词 | ⏳ |
+
+**Phase 5 开始前的前提条件**：
 - Phase 3 必须稳定（无未解决的关键 Bug）
 - `harbor` 需要 `HARBORPILOT_NON_INTERACTIVE=1` 支持以绕过提示
 

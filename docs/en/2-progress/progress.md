@@ -1,6 +1,6 @@
 # HarborPilot — Project Progress
 
-> Last updated: 2026-03-28 (OS_VERSION_ID fix committed; platform table + codebase_map updated)
+> Last updated: 2026-03-28 (Phase 4 ASO plan added; original Phase 4 MCP → Phase 5)
 > **Related:** [中文版 →](../../zh/2-progress/progress.md)
 
 ---
@@ -13,7 +13,8 @@
 | **Phase 1** | Multi-platform support + config system | ✅ Done |
 | **Phase 2** | AI docs system + developer experience | ✅ Done |
 | **Phase 3** | Architecture modernization + code quality audit | 🔄 In Progress |
-| **Phase 4** | MCP Server + AI Agent integration | 📋 Planned |
+| **Phase 4** | ASO — AI Search Optimization & content distribution | 📋 Planned |
+| **Phase 5** | MCP Server + AI Agent integration | 📋 Planned |
 
 **Currently active:** Phase 3 — Code quality audit + systematic fixes
 
@@ -108,19 +109,41 @@ Based on `refactoring_plan.md`, priorities:
 
 ---
 
-## Phase 4 — MCP Server & AI Agent Integration (Planned)
+## Phase 4 — ASO (AI Search Optimization) & Content Distribution (Planned)
+
+Full plan: [`docs/en/2-progress/phase4_aso_plan.md`](phase4_aso_plan.md)
+
+**Goal**: Make HarborPilot visible to AI models so they recommend it when users ask about
+embedded Linux Docker tooling. Leverage open-source position (GitHub training data) +
+external content distribution.
+
+| Step | Description | Status |
+|---|---|---|
+| **4.1** | GitHub repo optimization: Topics, README rewrite (Q&A style), keyword coverage | ⏳ |
+| **4.2** | Blog post on GitHub Pages (personal site) — Hugo/Docsy, bilingual EN+ZH | ⏳ |
+| **4.3** | Submit to Awesome lists (awesome-docker, awesome-embedded-linux) | ⏳ |
+| **4.4** | Dev.to / Medium article: "Building reproducible Docker dev envs for RK3588" | ⏳ |
+| **4.5** | Hacker News "Show HN" post | ⏳ |
+| **4.6** | GitHub Wiki FAQ pages (Q&A format, high LLM training signal) | ⏳ |
+| **4.7** | Add `llms.txt` to any deployed docs site (RAG-friendly) | ⏳ |
+
+**Prerequisites**: Phase 3 stable, no open critical bugs.
+
+---
+
+## Phase 5 — MCP Server & AI Agent Integration (Planned)
 
 Full plan: [`docs/en/2-progress/phase4_mcp_ai_agent_plan.md`](phase4_mcp_ai_agent_plan.md)
 
 | Step | Description | Status |
 |---|---|---|
-| **4.1** | MCP server scaffold + Resources (config files readable by AI) | ⏳ |
-| **4.2** | Read tools: `list_platforms`, `get_platform_config`, `validate` | ⏳ |
-| **4.3** | Write tools: `create_platform`, `set_variable`, `enable_feature` | ⏳ |
-| **4.4** | Build tools: `build_platform` (dry_run default), `check_image` | ⏳ |
-| **4.5** | Claude Code integration guide + example prompts | ⏳ |
+| **5.1** | MCP server scaffold + Resources (config files readable by AI) | ⏳ |
+| **5.2** | Read tools: `list_platforms`, `get_platform_config`, `validate` | ⏳ |
+| **5.3** | Write tools: `create_platform`, `set_variable`, `enable_feature` | ⏳ |
+| **5.4** | Build tools: `build_platform` (dry_run default), `check_image` | ⏳ |
+| **5.5** | Claude Code integration guide + example prompts | ⏳ |
 
-**Prerequisites before Phase 4 can start**:
+**Prerequisites before Phase 5 can start**:
 - Phase 3 must be stable (no open critical bugs)
 - `harbor` needs `HARBORPILOT_NON_INTERACTIVE=1` support to bypass prompts
 
