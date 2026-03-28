@@ -1221,3 +1221,13 @@ aso-strategy branch session
     md里告诉我aso用什么方式做，仔细拆解训练模型时候是怎么找数据集，进而能够去从这个训练数据集的搜集办法去反向影响，推荐我的代码。
     用中文写。
     → 已生成 ASO_strategy.md（repo 根目录，加入 .gitignore，不进仓库）
+
+- [x] ubuntu_only_entrance.sh出现，要处理
+    ```bash
+    ./project_handover/clientside/ubuntu/ubuntu_only_entrance.sh recreate
+    Warning: defaults file not found, skipping: .../configs/defaults/10_serverside.env
+    ```
+    → Root cause: 01_env_loader.sh 的 defaults_files 列表中多了 10_serverside.env 条目，
+      而该文件从未存在（defaults/ 编号是 01-09, 11，跳过 10）。
+      harbor 和 build.sh 均无此问题（列表正确）。
+      修复：删除 01_env_loader.sh 第 72 行的 10_serverside.env 条目。

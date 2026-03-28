@@ -69,7 +69,6 @@ env_loader_1st_2nd_load_defaults() {
         "${ENTRY_DEFAULTS_DIR}/07_volumes.env"
         "${ENTRY_DEFAULTS_DIR}/08_samba.env"
         "${ENTRY_DEFAULTS_DIR}/09_runtime.env"
-        "${ENTRY_DEFAULTS_DIR}/10_serverside.env"
         "${ENTRY_DEFAULTS_DIR}/11_proxy.env"
     )
     
