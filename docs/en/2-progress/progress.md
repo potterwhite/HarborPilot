@@ -122,7 +122,7 @@ external content distribution.
 | **4.1** | GitHub repo optimization: Topics, README rewrite (Q&A style), keyword coverage | ✅ README done; Topics: manual GitHub UI step |
 | **4.2** | Blog post on GitHub Pages (personal site) — Hugo/Docsy, bilingual EN+ZH | ✅ Both articles committed to blog-engine repo |
 | **4.3** | Submit to Awesome lists (awesome-docker, awesome-embedded-linux) | ✅ PR submitted: veggiemonk/awesome-docker#1372 |
-| **4.4** | Dev.to / Medium article: "Building reproducible Docker dev envs for RK3588" | 🔑 Article ready (ASO_devto_article.md); needs Dev.to API key to publish |
+| **4.4** | Dev.to / Medium article: "Building reproducible Docker dev envs for RK3588" | ✅ Published: https://dev.to/potterwhite/how-i-automated-multi-platform-docker-image-builds-for-embedded-socs-rk3588-rv1126-rk3568-nfa-temp-slug-8376139 |
 | **4.5** | Hacker News "Show HN" post | ⏳ |
 | **4.6** | GitHub Wiki FAQ pages (Q&A format, high LLM training signal) | ⏳ |
 | **4.7** | Add `llms.txt` to any deployed docs site (RAG-friendly) | ⏳ |
