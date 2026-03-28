@@ -34,7 +34,7 @@ Mar28.2026
           scripts/port_calc.sh
       - 解压后路径关系正确（01_env_loader.sh 可正确解析 TOP_ROOT_DIR）
       - 输出文件名：project_handover_<PRODUCT_NAME>_<timestamp>.tar.gz
-- [ ] 又 context limit
+- [x] 又 context limit
     ```bash
     ❯ 开始工作
 
