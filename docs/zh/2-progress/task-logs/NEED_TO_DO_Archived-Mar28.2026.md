@@ -4,15 +4,25 @@
 Mar28.2026
 
 12:00
-- [ ] 你以docs/en的hierarchy为标准，照搬到docs/zh里面去。
+- [x] 你以docs/en的hierarchy为标准，照搬到docs/zh里面去。
     我要en和zh完全一致，bitwise的那种等级（比喻）
-- [ ] 我的背景图有两张，一张是中文用的，一张是英文用的
+- [x] 我的背景图有两张，一张是中文用的，一张是英文用的
     你把docs/assets拆分到docs/en和docs/zh里去，这样顶层非常干净。
-- [ ] 我的need_to_do.md很发愁，你给我出一个好的存留方式。
+- [x] 我的need_to_do.md很发愁，你给我出一个好的存留方式。
     我希望留下自己做了什么的痕迹，有点像github里的issues
     但是呢，单纯文本md又很冗长，无法达到github的效果
     保存后的md又感觉打乱了docs的整洁。
     是不是我不应该尝试把todo和bugs放进项目的repo里？
+
+13:40
+- [x] docs/zh 下面还有一个 architecture 目录 — 删除掉
+- [x] NEED_TO_DO_Archived-Mar27.2026.md 放在 docs/en 下面 — 挪到正确位置 docs/zh/2-progress/task-logs/
+- [x] 建立专门存放 archived need_to_do 的文件夹 task-logs/
+- [x] 确认 Mar28 大量 checked 的内容去向（在 task-logs/ 存档文件里）
+
+14:00
+- [x] 13:40 的 todo items 被直接删除未进存档 — 补录到存档并标 [x]
+- [x] Archived-Mar28.2026.md 里有未 checked 的 items — 全部补为 [x]
 
 11:30
 - [x]
