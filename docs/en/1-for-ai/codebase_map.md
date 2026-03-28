@@ -79,7 +79,11 @@ HarborPilot.git/
 │       ├── 00_INDEX.md                 ←     Navigation hub (ZH)
 │       ├── 1-for-ai/                  ←     AI agent reference files (ZH)
 │       ├── 2-progress/                ←     Phase tracking (ZH) + NEED_TO_DO.md
-│       │   └── task-logs/             ←       Archived NEED_TO_DO files (moved when fully done)
+│       │   └── task-logs/             ←       NEED_TO_DO_Archived-<Mon><Day>.<Year>.md files.
+│       │                                        RULE: one file per calendar day.
+│       │                                        When tasks are done → APPEND to today's archive file.
+│       │                                        Do NOT create a second file for the same date.
+│       │                                        NEED_TO_DO.md itself is NEVER deleted or git-mv'd.
 │       ├── 3-highlights/              ←     Architecture analysis (ZH)
 │       ├── 4-for-beginner/            ←     Quick start guide (ZH)
 │       └── readme.md                  ←   Chinese README
