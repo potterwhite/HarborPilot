@@ -37,20 +37,20 @@
 
 | Step | Description | Commit |
 |---|---|---|
-| **1.1** | PORT_SLOT auto-calculation system | `b9424fd` |
-| **1.2** | Migrate all platforms to PORT_SLOT | `f633569` |
-| **1.3** | Interactive platform creation wizard | `408d340` |
-| **1.4** | Sort platform list by PORT_SLOT order | `2b5aa14` |
-| **1.5** | Split GitLab/Harbor into separate IP+port vars | `2ca4cff` |
-| **1.6** | Add OS_DISTRIBUTION field to platform config | `476caf1` |
-| **1.7** | Fix apt source replacement for Ubuntu 22.04/24.04+ and Debian | `a53f597` |
-| **1.8** | Fix libncursesw5 → libncursesw6 cross-version | `be98dcf` |
-| **1.9** | Handle pre-existing UID/GID for Ubuntu 24.04 | `ebe08ca` |
-| **1.10** | Skip python2.7 on Ubuntu ≥ 22.04, use libncurses-dev | `22b9086` |
-| **1.11** | Replace sed template rendering with envsubst in all 3 stages | `306e121` |
-| **1.12** | Add JSON Schema for platform configuration | `793a7f8` |
-| **1.13** | Add .devcontainer/devcontainer.json | `8a7d52b` |
-| **1.14** | Add --non-interactive mode to create_platform.sh | `ba33bf1` |
+| **1.1** | ✅ PORT_SLOT auto-calculation system | `b9424fd` |
+| **1.2** | ✅ Migrate all platforms to PORT_SLOT | `f633569` |
+| **1.3** | ✅ Interactive platform creation wizard | `408d340` |
+| **1.4** | ✅ Sort platform list by PORT_SLOT order | `2b5aa14` |
+| **1.5** | ✅ Split GitLab/Harbor into separate IP+port vars | `2ca4cff` |
+| **1.6** | ✅ Add OS_DISTRIBUTION field to platform config | `476caf1` |
+| **1.7** | ✅ Fix apt source replacement for Ubuntu 22.04/24.04+ and Debian | `a53f597` |
+| **1.8** | ✅ Fix libncursesw5 → libncursesw6 cross-version | `be98dcf` |
+| **1.9** | ✅ Handle pre-existing UID/GID for Ubuntu 24.04 | `ebe08ca` |
+| **1.10** | ✅ Skip python2.7 on Ubuntu ≥ 22.04, use libncurses-dev | `22b9086` |
+| **1.11** | ✅ Replace sed template rendering with envsubst in all 3 stages | `306e121` |
+| **1.12** | ✅ Add JSON Schema for platform configuration | `793a7f8` |
+| **1.13** | ✅ Add .devcontainer/devcontainer.json | `8a7d52b` |
+| **1.14** | ✅ Add --non-interactive mode to create_platform.sh | `ba33bf1` |
 
 ---
 
@@ -86,25 +86,25 @@ Based on `refactoring_plan.md`, priorities:
 
 | Fix | Commit | Notes |
 |---|---|---|
-| Dockerfile ARG cross-stage loss (CUDA/OpenCV never installed) | `0dd8a0c` | CRITICAL: 13 ARGs now in ENV block |
-| eval injection in build.sh → `${!name}` | `2872784` | Security fix |
-| UBUNTU_SERVER_IP orphan reference in Samba CIFS mount | `2872784` | Runtime bug fix, add SAMBA_SERVER_IP |
-| Invalid bash expansion `${USE_NVIDIA_GPU,,:-false}` | `2872784` | Correctness fix |
-| harbor: set -e, dead functions, dead code (~100 lines removed) | `0f0e12e` | |
-| Shebangs moved to line 1 in 8 affected scripts | `d729c31` | |
-| Chinese comments translated to English in 5 files | `d729c31` | |
-| setup_workspace.sh: hardcoded "developer" → `${DEV_USERNAME}` | `d729c31` | |
-| Stale documentation updated (UBUNTU_SERVER_IP, SERVER_SSH_PORT refs) | `3a06a79` | |
-| OpenCV build fails: cmake not found (dev_tools ran after OpenCV) | `189a7f6` | Reorder: install dev_tools → OpenCV |
-| pip3 externally-managed-environment on Ubuntu 24.04 (PEP 668) | `90611c0` | Add --break-system-packages |
-| setup_workspace.sh_template: local vars replaced by envsubst → empty | `6f505a6` | CRITICAL: escape \${dir_path} etc. |
-| setup_workspace.sh_template: \\${var} escape broke bash syntax (syntax error at 'then') | `987265c` | CRITICAL: use $1/$2/$3 positional params |
-| ARG USE_NVIDIA_GPU missing; duplicate ARG ENABLE_SYSLOG | `4cc03db` | Lint fix + correctness |
-| CHIP_FAMILY for Harbor/GitLab URL grouping | `9dd8d36` | REGISTRY_URL and SDK_GIT_REPO use ${CHIP_FAMILY} |
-| ubuntu_only_entrance.sh modularized (6 modules) | `fe46132` | Auto-init for volumes symlink; numbered prefix naming |
-| All platform .env migrated to CHIP_FAMILY/CHIP_EXTRACT_NAME pattern | `16ec81f` `281bd96` | Platform files renamed to chip-os convention; REGISTRY_URL fixed |
-| docker compose project name dot error (PRODUCT_NAME contained `24.04`) | `(this commit)` | Add `OS_VERSION_ID` (dots→dashes); PRODUCT_NAME now uses `OS_VERSION_ID`; all platforms + create_platform.sh updated |
-| harbor: grouping + create_platform.sh CHIP_EXTRACT_NAME | `aad4e32` | Clean visual grouping; wizard updated with new field |
+| ✅ Dockerfile ARG cross-stage loss (CUDA/OpenCV never installed) | `0dd8a0c` | CRITICAL: 13 ARGs now in ENV block |
+| ✅ eval injection in build.sh → `${!name}` | `2872784` | Security fix |
+| ✅ UBUNTU_SERVER_IP orphan reference in Samba CIFS mount | `2872784` | Runtime bug fix, add SAMBA_SERVER_IP |
+| ✅ Invalid bash expansion `${USE_NVIDIA_GPU,,:-false}` | `2872784` | Correctness fix |
+| ✅ harbor: set -e, dead functions, dead code (~100 lines removed) | `0f0e12e` | |
+| ✅ Shebangs moved to line 1 in 8 affected scripts | `d729c31` | |
+| ✅ Chinese comments translated to English in 5 files | `d729c31` | |
+| ✅ setup_workspace.sh: hardcoded "developer" → `${DEV_USERNAME}` | `d729c31` | |
+| ✅ Stale documentation updated (UBUNTU_SERVER_IP, SERVER_SSH_PORT refs) | `3a06a79` | |
+| ✅ OpenCV build fails: cmake not found (dev_tools ran after OpenCV) | `189a7f6` | Reorder: install dev_tools → OpenCV |
+| ✅ pip3 externally-managed-environment on Ubuntu 24.04 (PEP 668) | `90611c0` | Add --break-system-packages |
+| ✅ setup_workspace.sh_template: local vars replaced by envsubst → empty | `6f505a6` | CRITICAL: escape \${dir_path} etc. |
+| ✅ setup_workspace.sh_template: \\${var} escape broke bash syntax (syntax error at 'then') | `987265c` | CRITICAL: use $1/$2/$3 positional params |
+| ✅ ARG USE_NVIDIA_GPU missing; duplicate ARG ENABLE_SYSLOG | `4cc03db` | Lint fix + correctness |
+| ✅ CHIP_FAMILY for Harbor/GitLab URL grouping | `9dd8d36` | REGISTRY_URL and SDK_GIT_REPO use ${CHIP_FAMILY} |
+| ✅ ubuntu_only_entrance.sh modularized (6 modules) | `fe46132` | Auto-init for volumes symlink; numbered prefix naming |
+| ✅ All platform .env migrated to CHIP_FAMILY/CHIP_EXTRACT_NAME pattern | `16ec81f` `281bd96` | Platform files renamed to chip-os convention; REGISTRY_URL fixed |
+| ✅ docker compose project name dot error (PRODUCT_NAME contained `24.04`) | `12deccc` | Add `OS_VERSION_ID` (dots→dashes); PRODUCT_NAME now uses `OS_VERSION_ID`; all platforms + create_platform.sh updated |
+| ✅ harbor: grouping + create_platform.sh CHIP_EXTRACT_NAME | `aad4e32` | Clean visual grouping; wizard updated with new field |
 
 ---
 

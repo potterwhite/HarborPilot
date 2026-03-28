@@ -37,20 +37,20 @@
 
 | 步骤 | 描述 | 提交 |
 |---|---|---|
-| **1.1** | PORT_SLOT 自动计算系统 | `b9424fd` |
-| **1.2** | 迁移所有平台到 PORT_SLOT | `f633569` |
-| **1.3** | 交互式平台创建向导 | `408d340` |
-| **1.4** | 按 PORT_SLOT 顺序排序平台列表 | `2b5aa14` |
-| **1.5** | GitLab/Harbor 拆分为独立的 IP+端口变量 | `2ca4cff` |
-| **1.6** | 向平台配置添加 OS_DISTRIBUTION 字段 | `476caf1` |
-| **1.7** | 修复 Ubuntu 22.04/24.04+ 和 Debian 的 apt 源替换 | `a53f597` |
-| **1.8** | 修复 libncursesw5 → libncursesw6 跨版本问题 | `be98dcf` |
-| **1.9** | 处理 Ubuntu 24.04 预占用的 UID/GID | `ebe08ca` |
-| **1.10** | Ubuntu ≥ 22.04 跳过 python2.7，使用 libncurses-dev | `22b9086` |
-| **1.11** | 用 envsubst 替换三个 stage 中的 sed 模板渲染 | `306e121` |
-| **1.12** | 添加平台配置的 JSON Schema | `793a7f8` |
-| **1.13** | 添加 .devcontainer/devcontainer.json | `8a7d52b` |
-| **1.14** | 为 create_platform.sh 添加 --non-interactive 模式 | `ba33bf1` |
+| **1.1** | ✅ PORT_SLOT 自动计算系统 | `b9424fd` |
+| **1.2** | ✅ 迁移所有平台到 PORT_SLOT | `f633569` |
+| **1.3** | ✅ 交互式平台创建向导 | `408d340` |
+| **1.4** | ✅ 按 PORT_SLOT 顺序排序平台列表 | `2b5aa14` |
+| **1.5** | ✅ GitLab/Harbor 拆分为独立的 IP+端口变量 | `2ca4cff` |
+| **1.6** | ✅ 向平台配置添加 OS_DISTRIBUTION 字段 | `476caf1` |
+| **1.7** | ✅ 修复 Ubuntu 22.04/24.04+ 和 Debian 的 apt 源替换 | `a53f597` |
+| **1.8** | ✅ 修复 libncursesw5 → libncursesw6 跨版本问题 | `be98dcf` |
+| **1.9** | ✅ 处理 Ubuntu 24.04 预占用的 UID/GID | `ebe08ca` |
+| **1.10** | ✅ Ubuntu ≥ 22.04 跳过 python2.7，使用 libncurses-dev | `22b9086` |
+| **1.11** | ✅ 用 envsubst 替换三个 stage 中的 sed 模板渲染 | `306e121` |
+| **1.12** | ✅ 添加平台配置的 JSON Schema | `793a7f8` |
+| **1.13** | ✅ 添加 .devcontainer/devcontainer.json | `8a7d52b` |
+| **1.14** | ✅ 为 create_platform.sh 添加 --non-interactive 模式 | `ba33bf1` |
 
 ---
 
@@ -86,24 +86,25 @@
 
 | 修复内容 | 提交 | 备注 |
 |---|---|---|
-| Dockerfile ARG 跨阶段丢失（CUDA/OpenCV 从未安装） | `0dd8a0c` | 关键：13 个 ARG 现在在 ENV 块中 |
-| build.sh 中 eval 注入 → `${!name}` | `2872784` | 安全修复 |
-| Samba CIFS 挂载中的 UBUNTU_SERVER_IP 孤儿引用 | `2872784` | 运行时 Bug 修复，添加 SAMBA_SERVER_IP |
-| 无效的 bash 展开 `${USE_NVIDIA_GPU,,:-false}` | `2872784` | 正确性修复 |
-| harbor：set -e、死函数、死代码（删除约 100 行） | `0f0e12e` | |
-| 8 个受影响脚本的 shebang 移到第 1 行 | `d729c31` | |
-| 5 个文件中的中文注释翻译为英文 | `d729c31` | |
-| setup_workspace.sh：硬编码的 "developer" → `${DEV_USERNAME}` | `d729c31` | |
-| 更新过时文档（UBUNTU_SERVER_IP、SERVER_SSH_PORT 引用） | `3a06a79` | |
-| OpenCV 构建失败：找不到 cmake（dev_tools 在 OpenCV 之后运行） | `189a7f6` | 重新排序：先安装 dev_tools → 再 OpenCV |
-| Ubuntu 24.04 上 pip3 externally-managed-environment（PEP 668） | `90611c0` | 添加 --break-system-packages |
-| setup_workspace.sh_template：本地变量被 envsubst 替换为空 | `6f505a6` | 关键：转义 \${dir_path} 等 |
-| setup_workspace.sh_template：\\${var} 转义破坏 bash 语法（'then' 处语法错误） | `987265c` | 关键：使用 $1/$2/$3 位置参数 |
-| ARG USE_NVIDIA_GPU 缺失；ARG ENABLE_SYSLOG 重复 | `4cc03db` | Lint 修复 + 正确性 |
-| Harbor/GitLab URL 分组的 CHIP_FAMILY | `9dd8d36` | REGISTRY_URL 和 SDK_GIT_REPO 使用 ${CHIP_FAMILY} |
-| ubuntu_only_entrance.sh 模块化（6 个模块） | `fe46132` | volumes 软链接自动初始化；数字前缀命名 |
-| 所有平台 .env 迁移到 CHIP_FAMILY/CHIP_EXTRACT_NAME 模式 | `16ec81f` `281bd96` | 平台文件重命名为 chip-os 命名规范；REGISTRY_URL 修复 |
-| harbor 平台列表按芯片系列分组；create_platform.sh + CHIP_EXTRACT_NAME | `aad4e32` | 清晰的视觉分组；向导更新新字段 |
+| ✅ Dockerfile ARG 跨阶段丢失（CUDA/OpenCV 从未安装） | `0dd8a0c` | 关键：13 个 ARG 现在在 ENV 块中 |
+| ✅ build.sh 中 eval 注入 → `${!name}` | `2872784` | 安全修复 |
+| ✅ Samba CIFS 挂载中的 UBUNTU_SERVER_IP 孤儿引用 | `2872784` | 运行时 Bug 修复，添加 SAMBA_SERVER_IP |
+| ✅ 无效的 bash 展开 `${USE_NVIDIA_GPU,,:-false}` | `2872784` | 正确性修复 |
+| ✅ harbor：set -e、死函数、死代码（删除约 100 行） | `0f0e12e` | |
+| ✅ 8 个受影响脚本的 shebang 移到第 1 行 | `d729c31` | |
+| ✅ 5 个文件中的中文注释翻译为英文 | `d729c31` | |
+| ✅ setup_workspace.sh：硬编码的 "developer" → `${DEV_USERNAME}` | `d729c31` | |
+| ✅ 更新过时文档（UBUNTU_SERVER_IP、SERVER_SSH_PORT 引用） | `3a06a79` | |
+| ✅ OpenCV 构建失败：找不到 cmake（dev_tools 在 OpenCV 之后运行） | `189a7f6` | 重新排序：先安装 dev_tools → 再 OpenCV |
+| ✅ Ubuntu 24.04 上 pip3 externally-managed-environment（PEP 668） | `90611c0` | 添加 --break-system-packages |
+| ✅ setup_workspace.sh_template：本地变量被 envsubst 替换为空 | `6f505a6` | 关键：转义 \${dir_path} 等 |
+| ✅ setup_workspace.sh_template：\\${var} 转义破坏 bash 语法（'then' 处语法错误） | `987265c` | 关键：使用 $1/$2/$3 位置参数 |
+| ✅ ARG USE_NVIDIA_GPU 缺失；ARG ENABLE_SYSLOG 重复 | `4cc03db` | Lint 修复 + 正确性 |
+| ✅ Harbor/GitLab URL 分组的 CHIP_FAMILY | `9dd8d36` | REGISTRY_URL 和 SDK_GIT_REPO 使用 ${CHIP_FAMILY} |
+| ✅ ubuntu_only_entrance.sh 模块化（6 个模块） | `fe46132` | volumes 软链接自动初始化；数字前缀命名 |
+| ✅ 所有平台 .env 迁移到 CHIP_FAMILY/CHIP_EXTRACT_NAME 模式 | `16ec81f` `281bd96` | 平台文件重命名为 chip-os 命名规范；REGISTRY_URL 修复 |
+| ✅ harbor 平台列表按芯片系列分组；create_platform.sh + CHIP_EXTRACT_NAME | `aad4e32` | 清晰的视觉分组；向导更新新字段 |
+| ✅ docker compose project name 含 `.` 报错（PRODUCT_NAME 含 `24.04`） | `12deccc` | 新增 OS_VERSION_ID（点→连字符）；所有平台 + create_platform.sh 同步更新 |
 
 ---
 

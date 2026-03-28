@@ -1,6 +1,229 @@
 - **改完就把下面的checkbox checked**
 
-Mar28.2026
+Mar28.2026 09:30
+- [x] context limit，请继续之前的工作
+    ```bash
+                                                                                                                                09:21 AM claude-sonnet-4.6
+    ● 现在处理 progress.md 的 emoji ✅ check icon。读完整的 EN 版 progress 文件：
+
+    ● Read(/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git/docs/en/architecture/2-progress/progress.md)
+    ⎿  Read 135 lines
+
+    ∴ Thinking…
+
+    The user wants to:
+    1. Add ✅ emoji check icons to items in progress.md that have commit hashes
+    2. The "this commit" entry for OS_VERSION_ID fix needs to be updated with the actual commit hash (12deccc)
+
+    Let me analyze what needs emoji check icons:
+    - Phase 0: All items have version numbers (v0.5.0, v1.0.0, etc.) but NO commit hashes → no check needed per user's instruction
+    - Phase 1: All items have commit hashes → ALL should get ✅
+    - Phase 2: All items already have ✅ Done status → they're already done
+
+    - Phase 3 top priorities table: items with ✅ Done already have it, ⏳ items don't have commits → no change needed
+    - Code Quality Audit table: all items have commit hashes → ALL should get ✅, but the "this commit" entry needs to be updated with the actual hash 12deccc
+
+    Wait, re-reading the user's request more carefully: they want me to add check marks to items that have commit hashes. So the rule is straightforward — if there's a commit hash, add ✅.
+
+    Now I'm looking at how each phase is structured. Phase 0 has version numbers rather than commit hashes, so those don't qualify. Phase 1 has commit hashes in every row, so those all need
+    ✅. Phase 2 already has a Status column. Phase 3's top table is mixed — some entries have ✅ already, others don't. The Code Quality Audit section has commit hashes across the board.
+
+    The question is where exactly to place the ✅. Looking at the column layouts, I could either prepend it to the Description or Fix column text, or add a dedicated Status column. Let me
+    check what Phase 2 does since it already has this pattern. Looking at the Code Quality Audit table, every row has a commit hash, so they all need the checkmark added to their Fix
+    descriptions. I also need to replace that "this commit" placeholder with the actual hash 12deccc. Since Phase 1 items all have commits too, I'll prepend ✅ to their descriptions as well.
+
+                                                                                                                                                                09:22 AM claude-sonnet-4.6
+    ● 现在给所有有 commit hash 的条目加 ✅，同时把 (this commit) 替换成实际 hash 12deccc：
+
+    ● Update(/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git/docs/en/architecture/2-progress/progress.md)
+    ⎿  Added 14 lines, removed 14 lines
+        37
+        38  | Step | Description | Commit |
+        39  |---|---|---|
+        40 -| **1.1** | PORT_SLOT auto-calculation system | `b9424fd` |
+        41 -| **1.2** | Migrate all platforms to PORT_SLOT | `f633569` |
+        42 -| **1.3** | Interactive platform creation wizard | `408d340` |
+        43 -| **1.4** | Sort platform list by PORT_SLOT order | `2b5aa14` |
+        44 -| **1.5** | Split GitLab/Harbor into separate IP+port vars | `2ca4cff` |
+        45 -| **1.6** | Add OS_DISTRIBUTION field to platform config | `476caf1` |
+        46 -| **1.7** | Fix apt source replacement for Ubuntu 22.04/24.04+ and Debian | `a53f597` |
+        47 -| **1.8** | Fix libncursesw5 → libncursesw6 cross-version | `be98dcf` |
+        48 -| **1.9** | Handle pre-existing UID/GID for Ubuntu 24.04 | `ebe08ca` |
+        49 -| **1.10** | Skip python2.7 on Ubuntu ≥ 22.04, use libncurses-dev | `22b9086` |
+        50 -| **1.11** | Replace sed template rendering with envsubst in all 3 stages | `306e121` |
+        51 -| **1.12** | Add JSON Schema for platform configuration | `793a7f8` |
+        52 -| **1.13** | Add .devcontainer/devcontainer.json | `8a7d52b` |
+        53 -| **1.14** | Add --non-interactive mode to create_platform.sh | `ba33bf1` |
+        40 +| **1.1** | ✅ PORT_SLOT auto-calculation system | `b9424fd` |
+        41 +| **1.2** | ✅ Migrate all platforms to PORT_SLOT | `f633569` |
+        42 +| **1.3** | ✅ Interactive platform creation wizard | `408d340` |
+        43 +| **1.4** | ✅ Sort platform list by PORT_SLOT order | `2b5aa14` |
+        44 +| **1.5** | ✅ Split GitLab/Harbor into separate IP+port vars | `2ca4cff` |
+        45 +| **1.6** | ✅ Add OS_DISTRIBUTION field to platform config | `476caf1` |
+        46 +| **1.7** | ✅ Fix apt source replacement for Ubuntu 22.04/24.04+ and Debian | `a53f597` |
+        47 +| **1.8** | ✅ Fix libncursesw5 → libncursesw6 cross-version | `be98dcf` |
+        48 +| **1.9** | ✅ Handle pre-existing UID/GID for Ubuntu 24.04 | `ebe08ca` |
+        49 +| **1.10** | ✅ Skip python2.7 on Ubuntu ≥ 22.04, use libncurses-dev | `22b9086` |
+        50 +| **1.11** | ✅ Replace sed template rendering with envsubst in all 3 stages | `306e121` |
+        51 +| **1.12** | ✅ Add JSON Schema for platform configuration | `793a7f8` |
+        52 +| **1.13** | ✅ Add .devcontainer/devcontainer.json | `8a7d52b` |
+        53 +| **1.14** | ✅ Add --non-interactive mode to create_platform.sh | `ba33bf1` |
+        54
+        55  ---
+        56
+    ⎿  1 PostToolUse hook ran
+
+    ● Update(/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git/docs/en/architecture/2-progress/progress.md)
+    ⎿  Added 19 lines, removed 19 lines
+        86
+        87  | Fix | Commit | Notes |
+        88  |---|---|---|
+        89 -| Dockerfile ARG cross-stage loss (CUDA/OpenCV never installed) | `0dd8a0c` | CRITICAL: 13 ARGs now in ENV block |
+        90 -| eval injection in build.sh → `${!name}` | `2872784` | Security fix |
+        91 -| UBUNTU_SERVER_IP orphan reference in Samba CIFS mount | `2872784` | Runtime bug fix, add SAMBA_SERVER_IP |
+        92 -| Invalid bash expansion `${USE_NVIDIA_GPU,,:-false}` | `2872784` | Correctness fix |
+        93 -| harbor: set -e, dead functions, dead code (~100 lines removed) | `0f0e12e` | |
+        94 -| Shebangs moved to line 1 in 8 affected scripts | `d729c31` | |
+        95 -| Chinese comments translated to English in 5 files | `d729c31` | |
+        96 -| setup_workspace.sh: hardcoded "developer" → `${DEV_USERNAME}` | `d729c31` | |
+        97 -| Stale documentation updated (UBUNTU_SERVER_IP, SERVER_SSH_PORT refs) | `3a06a79` | |
+        98 -| OpenCV build fails: cmake not found (dev_tools ran after OpenCV) | `189a7f6` | Reorder: install dev_tools → OpenCV |
+        99 -| pip3 externally-managed-environment on Ubuntu 24.04 (PEP 668) | `90611c0` | Add --break-system-packages |
+        100 -| setup_workspace.sh_template: local vars replaced by envsubst → empty | `6f505a6` | CRITICAL: escape \${dir_path} etc. |
+        101 -| setup_workspace.sh_template: \\${var} escape broke bash syntax (syntax error at 'then') | `987265c` | CRITICAL: use $1/$2/$3 positional params |
+        102 -| ARG USE_NVIDIA_GPU missing; duplicate ARG ENABLE_SYSLOG | `4cc03db` | Lint fix + correctness |
+        103 -| CHIP_FAMILY for Harbor/GitLab URL grouping | `9dd8d36` | REGISTRY_URL and SDK_GIT_REPO use ${CHIP_FAMILY} |
+        104 -| ubuntu_only_entrance.sh modularized (6 modules) | `fe46132` | Auto-init for volumes symlink; numbered prefix naming |
+        105 -| All platform .env migrated to CHIP_FAMILY/CHIP_EXTRACT_NAME pattern | `16ec81f` `281bd96` | Platform files renamed to chip-os convention; REGISTRY_URL fixed |
+        106 -| docker compose project name dot error (PRODUCT_NAME contained `24.04`) | `(this commit)` | Add `OS_VERSION_ID` (dots→dashes); PRODUCT_NAME now uses `OS_VERSION_ID`; all p
+            -latforms + create_platform.sh updated |
+        107 -| harbor: grouping + create_platform.sh CHIP_EXTRACT_NAME | `aad4e32` | Clean visual grouping; wizard updated with new field |
+        89 +| ✅ Dockerfile ARG cross-stage loss (CUDA/OpenCV never installed) | `0dd8a0c` | CRITICAL: 13 ARGs now in ENV block |
+        90 +| ✅ eval injection in build.sh → `${!name}` | `2872784` | Security fix |
+        91 +| ✅ UBUNTU_SERVER_IP orphan reference in Samba CIFS mount | `2872784` | Runtime bug fix, add SAMBA_SERVER_IP |
+        92 +| ✅ Invalid bash expansion `${USE_NVIDIA_GPU,,:-false}` | `2872784` | Correctness fix |
+        93 +| ✅ harbor: set -e, dead functions, dead code (~100 lines removed) | `0f0e12e` | |
+        94 +| ✅ Shebangs moved to line 1 in 8 affected scripts | `d729c31` | |
+        95 +| ✅ Chinese comments translated to English in 5 files | `d729c31` | |
+        96 +| ✅ setup_workspace.sh: hardcoded "developer" → `${DEV_USERNAME}` | `d729c31` | |
+        97 +| ✅ Stale documentation updated (UBUNTU_SERVER_IP, SERVER_SSH_PORT refs) | `3a06a79` | |
+        98 +| ✅ OpenCV build fails: cmake not found (dev_tools ran after OpenCV) | `189a7f6` | Reorder: install dev_tools → OpenCV |
+        99 +| ✅ pip3 externally-managed-environment on Ubuntu 24.04 (PEP 668) | `90611c0` | Add --break-system-packages |
+        100 +| ✅ setup_workspace.sh_template: local vars replaced by envsubst → empty | `6f505a6` | CRITICAL: escape \${dir_path} etc. |
+        101 +| ✅ setup_workspace.sh_template: \\${var} escape broke bash syntax (syntax error at 'then') | `987265c` | CRITICAL: use $1/$2/$3 positional params |
+        102 +| ✅ ARG USE_NVIDIA_GPU missing; duplicate ARG ENABLE_SYSLOG | `4cc03db` | Lint fix + correctness |
+        103 +| ✅ CHIP_FAMILY for Harbor/GitLab URL grouping | `9dd8d36` | REGISTRY_URL and SDK_GIT_REPO use ${CHIP_FAMILY} |
+        104 +| ✅ ubuntu_only_entrance.sh modularized (6 modules) | `fe46132` | Auto-init for volumes symlink; numbered prefix naming |
+        105 +| ✅ All platform .env migrated to CHIP_FAMILY/CHIP_EXTRACT_NAME pattern | `16ec81f` `281bd96` | Platform files renamed to chip-os convention; REGISTRY_URL fixed |
+        106 +| ✅ docker compose project name dot error (PRODUCT_NAME contained `24.04`) | `12deccc` | Add `OS_VERSION_ID` (dots→dashes); PRODUCT_NAME now uses `OS_VERSION_ID`; all plat
+            +forms + create_platform.sh updated |
+        107 +| ✅ harbor: grouping + create_platform.sh CHIP_EXTRACT_NAME | `aad4e32` | Clean visual grouping; wizard updated with new field |
+        108
+        109  ---
+        110
+    ⎿  1 PostToolUse hook ran
+
+                                                                                                                                                                09:22 AM claude-sonnet-4.6
+    ● Phase 0 的步骤有版本号但没有 commit hash，根据你的要求（有 commit hash 的就加，没有的不加）：Phase 0 不加（只有 version，没有 hash）。Phase 2 所有条目都已经有 ✅ Done 状态但没有
+    hash，所以不加。Phase 3 的优先级表中两个 Done 条目没有专属 hash，但有 commit 有 notes，根据规则应跳过。
+
+    现在更新 ZH 版 progress.md 做同样的修改：
+
+    ● Read(/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git/docs/zh/architecture/2-progress/progress.md)
+    ⎿  Read 134 lines
+
+    ● Update(/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git/docs/zh/architecture/2-progress/progress.md)
+    ⎿  Added 14 lines, removed 14 lines
+        37
+        38  | 步骤 | 描述 | 提交 |
+        39  |---|---|---|
+        40 -| **1.1** | PORT_SLOT 自动计算系统 | `b9424fd` |
+        41 -| **1.2** | 迁移所有平台到 PORT_SLOT | `f633569` |
+        42 -| **1.3** | 交互式平台创建向导 | `408d340` |
+        43 -| **1.4** | 按 PORT_SLOT 顺序排序平台列表 | `2b5aa14` |
+        44 -| **1.5** | GitLab/Harbor 拆分为独立的 IP+端口变量 | `2ca4cff` |
+        45 -| **1.6** | 向平台配置添加 OS_DISTRIBUTION 字段 | `476caf1` |
+        46 -| **1.7** | 修复 Ubuntu 22.04/24.04+ 和 Debian 的 apt 源替换 | `a53f597` |
+        47 -| **1.8** | 修复 libncursesw5 → libncursesw6 跨版本问题 | `be98dcf` |
+        48 -| **1.9** | 处理 Ubuntu 24.04 预占用的 UID/GID | `ebe08ca` |
+        49 -| **1.10** | Ubuntu ≥ 22.04 跳过 python2.7，使用 libncurses-dev | `22b9086` |
+        50 -| **1.11** | 用 envsubst 替换三个 stage 中的 sed 模板渲染 | `306e121` |
+        51 -| **1.12** | 添加平台配置的 JSON Schema | `793a7f8` |
+        52 -| **1.13** | 添加 .devcontainer/devcontainer.json | `8a7d52b` |
+        53 -| **1.14** | 为 create_platform.sh 添加 --non-interactive 模式 | `ba33bf1` |
+        40 +| **1.1** | ✅ PORT_SLOT 自动计算系统 | `b9424fd` |
+        41 +| **1.2** | ✅ 迁移所有平台到 PORT_SLOT | `f633569` |
+        42 +| **1.3** | ✅ 交互式平台创建向导 | `408d340` |
+        43 +| **1.4** | ✅ 按 PORT_SLOT 顺序排序平台列表 | `2b5aa14` |
+        44 +| **1.5** | ✅ GitLab/Harbor 拆分为独立的 IP+端口变量 | `2ca4cff` |
+        45 +| **1.6** | ✅ 向平台配置添加 OS_DISTRIBUTION 字段 | `476caf1` |
+        46 +| **1.7** | ✅ 修复 Ubuntu 22.04/24.04+ 和 Debian 的 apt 源替换 | `a53f597` |
+        47 +| **1.8** | ✅ 修复 libncursesw5 → libncursesw6 跨版本问题 | `be98dcf` |
+        48 +| **1.9** | ✅ 处理 Ubuntu 24.04 预占用的 UID/GID | `ebe08ca` |
+        49 +| **1.10** | ✅ Ubuntu ≥ 22.04 跳过 python2.7，使用 libncurses-dev | `22b9086` |
+        50 +| **1.11** | ✅ 用 envsubst 替换三个 stage 中的 sed 模板渲染 | `306e121` |
+        51 +| **1.12** | ✅ 添加平台配置的 JSON Schema | `793a7f8` |
+        52 +| **1.13** | ✅ 添加 .devcontainer/devcontainer.json | `8a7d52b` |
+        53 +| **1.14** | ✅ 为 create_platform.sh 添加 --non-interactive 模式 | `ba33bf1` |
+        54
+        55  ---
+        56
+    ⎿  1 PostToolUse hook ran
+
+    ● Update(/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/HarborPilot.git/docs/zh/architecture/2-progress/progress.md)
+    ⎿  Added 19 lines, removed 18 lines
+        86
+        87  | 修复内容 | 提交 | 备注 |
+        88  |---|---|---|
+        89 -| Dockerfile ARG 跨阶段丢失（CUDA/OpenCV 从未安装） | `0dd8a0c` | 关键：13 个 ARG 现在在 ENV 块中 |
+        90 -| build.sh 中 eval 注入 → `${!name}` | `2872784` | 安全修复 |
+        91 -| Samba CIFS 挂载中的 UBUNTU_SERVER_IP 孤儿引用 | `2872784` | 运行时 Bug 修复，添加 SAMBA_SERVER_IP |
+        92 -| 无效的 bash 展开 `${USE_NVIDIA_GPU,,:-false}` | `2872784` | 正确性修复 |
+        93 -| harbor：set -e、死函数、死代码（删除约 100 行） | `0f0e12e` | |
+        94 -| 8 个受影响脚本的 shebang 移到第 1 行 | `d729c31` | |
+        95 -| 5 个文件中的中文注释翻译为英文 | `d729c31` | |
+        96 -| setup_workspace.sh：硬编码的 "developer" → `${DEV_USERNAME}` | `d729c31` | |
+        97 -| 更新过时文档（UBUNTU_SERVER_IP、SERVER_SSH_PORT 引用） | `3a06a79` | |
+        98 -| OpenCV 构建失败：找不到 cmake（dev_tools 在 OpenCV 之后运行） | `189a7f6` | 重新排序：先安装 dev_tools → 再 OpenCV |
+        99 -| Ubuntu 24.04 上 pip3 externally-managed-environment（PEP 668） | `90611c0` | 添加 --break-system-packages |
+        100 -| setup_workspace.sh_template：本地变量被 envsubst 替换为空 | `6f505a6` | 关键：转义 \${dir_path} 等 |
+        101 -| setup_workspace.sh_template：\\${var} 转义破坏 bash 语法（'then' 处语法错误） | `987265c` | 关键：使用 $1/$2/$3 位置参数 |
+        102 -| ARG USE_NVIDIA_GPU 缺失；ARG ENABLE_SYSLOG 重复 | `4cc03db` | Lint 修复 + 正确性 |
+        103 -| Harbor/GitLab URL 分组的 CHIP_FAMILY | `9dd8d36` | REGISTRY_URL 和 SDK_GIT_REPO 使用 ${CHIP_FAMILY} |
+        104 -| ubuntu_only_entrance.sh 模块化（6 个模块） | `fe46132` | volumes 软链接自动初始化；数字前缀命名 |
+        105 -| 所有平台 .env 迁移到 CHIP_FAMILY/CHIP_EXTRACT_NAME 模式 | `16ec81f` `281bd96` | 平台文件重命名为 chip-os 命名规范；REGISTRY_URL 修复 |
+        106 -| harbor 平台列表按芯片系列分组；create_platform.sh + CHIP_EXTRACT_NAME | `aad4e32` | 清晰的视觉分组；向导更新新字段 |
+        89 +| ✅ Dockerfile ARG 跨阶段丢失（CUDA/OpenCV 从未安装） | `0dd8a0c` | 关键：13 个 ARG 现在在 ENV 块中 |
+        90 +| ✅ build.sh 中 eval 注入 → `${!name}` | `2872784` | 安全修复 |
+        91 +| ✅ Samba CIFS 挂载中的 UBUNTU_SERVER_IP 孤儿引用 | `2872784` | 运行时 Bug 修复，添加 SAMBA_SERVER_IP |
+        92 +| ✅ 无效的 bash 展开 `${USE_NVIDIA_GPU,,:-false}` | `2872784` | 正确性修复 |
+        93 +| ✅ harbor：set -e、死函数、死代码（删除约 100 行） | `0f0e12e` | |
+        94 +| ✅ 8 个受影响脚本的 shebang 移到第 1 行 | `d729c31` | |
+        95 +| ✅ 5 个文件中的中文注释翻译为英文 | `d729c31` | |
+        96 +| ✅ setup_workspace.sh：硬编码的 "developer" → `${DEV_USERNAME}` | `d729c31` | |
+        97 +| ✅ 更新过时文档（UBUNTU_SERVER_IP、SERVER_SSH_PORT 引用） | `3a06a79` | |
+        98 +| ✅ OpenCV 构建失败：找不到 cmake（dev_tools 在 OpenCV 之后运行） | `189a7f6` | 重新排序：先安装 dev_tools → 再 OpenCV |
+        99 +| ✅ Ubuntu 24.04 上 pip3 externally-managed-environment（PEP 668） | `90611c0` | 添加 --break-system-packages |
+        100 +| ✅ setup_workspace.sh_template：本地变量被 envsubst 替换为空 | `6f505a6` | 关键：转义 \${dir_path} 等 |
+        101 +| ✅ setup_workspace.sh_template：\\${var} 转义破坏 bash 语法（'then' 处语法错误） | `987265c` | 关键：使用 $1/$2/$3 位置参数 |
+        102 +| ✅ ARG USE_NVIDIA_GPU 缺失；ARG ENABLE_SYSLOG 重复 | `4cc03db` | Lint 修复 + 正确性 |
+        103 +| ✅ Harbor/GitLab URL 分组的 CHIP_FAMILY | `9dd8d36` | REGISTRY_URL 和 SDK_GIT_REPO 使用 ${CHIP_FAMILY} |
+        104 +| ✅ ubuntu_only_entrance.sh 模块化（6 个模块） | `fe46132` | volumes 软链接自动初始化；数字前缀命名 |
+        105 +| ✅ 所有平台 .env 迁移到 CHIP_FAMILY/CHIP_EXTRACT_NAME 模式 | `16ec81f` `281bd96` | 平台文件重命名为 chip-os 命名规范；REGISTRY_URL 修复 |
+        106 +| ✅ harbor 平台列表按芯片系列分组；create_platform.sh + CHIP_EXTRACT_NAME | `aad4e32` | 清晰的视觉分组；向导更新新字段 |
+        107 +| ✅ docker compose project name 含 `.` 报错（PRODUCT_NAME 含 `24.04`） | `12deccc` | 新增 OS_VERSION_ID（点→连字符）；所有平台 + create_platform.sh 同步更新 |
+        108
+        109  ---
+        110
+    ⎿  1 PostToolUse hook ran
+
+                                                                                                                                                                    09:23 AM <synthetic>
+    ⎿  Context limit reached · /compact or /clear to continue
+
+
+    ```
+
+Mar28.2026 08:45
 - [x] docker compose project name 含 `.` 报错（如 rk3588-rk3588s_ubuntu-24.04）
     ```
     invalid project name "rk3588-rk3588s_ubuntu-24.04": must consist only of lowercase
