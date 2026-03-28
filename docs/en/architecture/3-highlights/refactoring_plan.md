@@ -85,7 +85,7 @@ HarborPilot.git/
 │   │       ├── harbor.crt           #   Harbor TLS certificate
 │   │       └── ubuntu_only_entrance.sh
 │   └── scripts/
-│       └── archive_tarball.sh       #   Package deliverable
+│       └── (packaging is now handled by harbor's 7_package_handover())
 │
 └── docs/                             # ★ Documentation (bilingual, en/ and zh/ trees)
     ├── en/                           #   English docs

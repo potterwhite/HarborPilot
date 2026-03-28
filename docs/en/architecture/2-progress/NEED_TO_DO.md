@@ -35,7 +35,11 @@ james@Anastasia:/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Developmen
       docker-compose.yaml 由 04_compose_generator.sh 运行时动态生成，不应进入 tarball。
       已在 7_package_handover() 中 cp ubuntu/ 完成后增加
       `rm -f docker-compose.yaml` 步骤，确保交付包里不含此文件。
-- [ ] 这里HarborPilot.git/project_handover/scripts/archive_tarball.sh应该也没用了？把没用的文件都精简掉，留下只对user有意义的，最理想就是user只有一个文件，那就最完美了（这只是一个比喻）。
+- [x] 这里HarborPilot.git/project_handover/scripts/archive_tarball.sh应该也没用了？把没用的文件都精简掉，留下只对user有意义的，最理想就是user只有一个文件，那就最完美了（这只是一个比喻）。
+    → 已删除：archive_tarball.sh 已被 harbor 的 7_package_handover() 完全替代，
+      已 git rm 删除，project_handover/scripts/ 目录随之消失。
+      同步清理：.gitignore 的 project_handover/scripts/* 规则，
+      codebase_map.md（EN + ZH），refactoring_plan.md（EN + ZH）均已更新。
 - [ ] 把我这里的docs目录下的config_layers.md/port-map-calculation.md/quick_start.md/也融合进architecture吧，我认为应该某种程度上说，他们也是介绍我的架构的一种信息。你需要同步改所有的相关的文档的ref link。（这一步会消耗很多token,请单独做，把其他做完了，单独做这个，大概率会context limit）
 
 

@@ -85,7 +85,7 @@ HarborPilot.git/
 │   │       ├── harbor.crt           #   Harbor TLS 证书
 │   │       └── ubuntu_only_entrance.sh
 │   └── scripts/
-│       └── archive_tarball.sh       #   打包交付物
+│       └── （打包功能已迁移至 harbor 的 7_package_handover()）
 │
 ├── harbor/                           # Harbor Registry 相关（未展开）
 │

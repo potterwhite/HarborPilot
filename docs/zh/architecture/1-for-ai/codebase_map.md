@@ -60,12 +60,10 @@ HarborPilot.git/
 │   │   └── stage_5_final/              ←   Stage 5：工作区、入口点、测试（模板）
 │
 ├── project_handover/                   ← ★ 客户端部署包
-│   ├── clientside/ubuntu/
-│   │   ├── ubuntu_only_entrance.sh     ←   容器生命周期：start/stop/restart/recreate/remove
-│   │   ├── docker-compose.yaml         ←   静态示例（实际 compose 在运行时动态生成）
-│   │   └── harbor.crt                  ←   Harbor CA 证书（每台宿主机安装一次）
-│   └── scripts/
-│       └── archive_tarball.sh          ←   打包交付物为 tar.gz
+│   └── clientside/ubuntu/
+│       ├── ubuntu_only_entrance.sh     ←   容器生命周期：start/stop/restart/recreate/remove
+│       ├── harbor.crt                  ←   Harbor CA 证书（每台宿主机安装一次）
+│       └── scripts/                    ←   6 个模块化辅助脚本
 │
 ├── docs/                               ← ★ 文档（双语分离）
 │   ├── en/                             ←   英文文档树
@@ -254,10 +252,6 @@ mcp/
 - `start` → 交互式菜单：进入运行中的容器 / 重启 / 重建
 - `1_2_check_docker_login()` — 带重试的 Harbor 登录
 - `2_4_retrieve_latest_image()` — 从 registry 拉取
-
-### `project_handover/scripts/archive_tarball.sh`
-创建 tar.gz 用于分发：`archive_tarball.sh all|client|server [ubuntu|windows|all]`
-- 跟随软链接，排除 `volumes/*`（保留 `.gitkeep`），文件名包含日期
 
 ---
 

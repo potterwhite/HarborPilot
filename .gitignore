@@ -50,9 +50,6 @@ project_handover/clientside/ubuntu/volumes
 # clientside/volumes/ is auto-created by 7_package_handover staging; ignore it
 project_handover/clientside/volumes
 
-project_handover/scripts/*
-!project_handover/scripts/archive_tarball.sh
-
 # Ignore all files in docker/dev-env-serverside directory except build.sh and dockerfile_modules
 docker/dev-env-serverside/*
 !docker/dev-env-serverside/build.sh

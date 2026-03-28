@@ -61,12 +61,10 @@ HarborPilot.git/
 │   │   └── stage_5_final/              ←   Stage 5: workspace, entrypoint, tests (templates)
 │
 ├── project_handover/                   ← ★ Client-side deployment package
-│   ├── clientside/ubuntu/
-│   │   ├── ubuntu_only_entrance.sh     ←   Container lifecycle: start/stop/restart/recreate/remove
-│   │   ├── docker-compose.yaml         ←   Static example (actual compose is generated dynamically)
-│   │   └── harbor.crt                  ←   Harbor CA cert (install once per host)
-│   └── scripts/
-│       └── archive_tarball.sh          ←   Package handover as tar.gz
+│   └── clientside/ubuntu/
+│       ├── ubuntu_only_entrance.sh     ←   Container lifecycle: start/stop/restart/recreate/remove
+│       ├── harbor.crt                  ←   Harbor CA cert (install once per host)
+│       └── scripts/                    ←   6 modular helper scripts
 │
 ├── docs/                               ← ★ Documentation (bilingual)
 │   ├── en/                             ←   English documentation tree
@@ -255,10 +253,6 @@ Container lifecycle manager. Commands: `start`/`stop`/`restart`/`recreate`/`remo
 - `start` → interactive menu: enter running container / restart / recreate
 - `1_2_check_docker_login()` — Harbor login with retry
 - `2_4_retrieve_latest_image()` — Pull from registry
-
-### `project_handover/scripts/archive_tarball.sh`
-Creates tar.gz for distribution: `archive_tarball.sh all|client|server [ubuntu|windows|all]`
-- Follows symlinks, excludes `volumes/*` except `.gitkeep`, date-stamped filenames
 
 ---
 
