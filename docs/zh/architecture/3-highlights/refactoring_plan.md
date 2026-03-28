@@ -14,6 +14,8 @@ status: "草案（待讨论后定稿）"
 
 # HarborPilot 重构计划
 
+> **Related:** [English Version →](../../../../en/architecture/3-highlights/refactoring_plan.md)
+
 ## 一、当前架构全景图
 
 ```

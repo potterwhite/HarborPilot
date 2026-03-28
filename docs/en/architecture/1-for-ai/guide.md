@@ -2,6 +2,7 @@
 
 > **Target audience:** AI coding agents (Claude Code, Cursor, etc.)
 > **Read this before touching any code.**
+> **Related:** [中文版 →](../../../../zh/architecture/1-for-ai/guide.md)
 
 ---
 

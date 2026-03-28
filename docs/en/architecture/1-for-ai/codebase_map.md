@@ -8,6 +8,7 @@
 > the relevant section in this document in the same commit/session.
 >
 > Last updated: 2026-03-28 (OS_VERSION_ID added; PRODUCT_NAME now dot-free; all platform .env + create_platform.sh updated)
+> **Related:** [中文版 →](../../../../zh/architecture/1-for-ai/codebase_map.md)
 
 ---
 

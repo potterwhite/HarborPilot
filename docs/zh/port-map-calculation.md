@@ -1,5 +1,7 @@
 # HarborPilot — 端口映射 · PORT_SLOT 系统
 
+> **Related:** [English Version →](../../en/port-map-calculation.md)
+
 端口现已从单个 `PORT_SLOT` 数字自动计算。
 无需手动计算任何端口。
 

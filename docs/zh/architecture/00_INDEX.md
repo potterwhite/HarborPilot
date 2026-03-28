@@ -44,3 +44,5 @@
 | [`../quick_start.md`](../quick_start.md) | 分步上手指南（中文） |
 | [`../port-map-calculation.md`](../port-map-calculation.md) | 端口计算公式与平台端口映射表 |
 | [`../readme.md`](../readme.md) | 中文 README |
+
+> **English documentation →** [`docs/en/architecture/00_INDEX.md`](../../../en/architecture/00_INDEX.md)

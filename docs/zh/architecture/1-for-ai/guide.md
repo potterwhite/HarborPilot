@@ -2,6 +2,7 @@
 
 > **目标读者：** AI 编码 Agent（Claude Code、Cursor 等）
 > **在接触任何代码之前，请先阅读本文。**
+> **Related:** [English Version →](../../../../en/architecture/1-for-ai/guide.md)
 
 ---
 

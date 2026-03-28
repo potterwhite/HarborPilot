@@ -14,6 +14,8 @@ status: "Draft (pending discussion and finalisation)"
 
 # HarborPilot Refactoring Plan
 
+> **Related:** [中文版 →](../../../../zh/architecture/3-highlights/refactoring_plan.md)
+
 ## 1. Current Architecture Overview
 
 ```

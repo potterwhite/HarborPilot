@@ -12,6 +12,8 @@ status: "Draft — pending approval"
 
 # HarborPilot Phase 4 — MCP Server & AI Agent Integration
 
+> **Related:** [中文版 →](../../../../zh/architecture/3-highlights/phase4_mcp_ai_agent_plan.md)
+>
 > **Goal**: Make HarborPilot the first-class interface between AI coding agents
 > (Claude, Cursor, Copilot) and embedded Linux dev environment provisioning.
 >

@@ -5,6 +5,7 @@
 > **without scanning source code**.
 >
 > Battle-tested in SynapseERP and HarborPilot.  Copy the structure; adapt the content.
+> **Related:** [中文版 →](../../../../zh/architecture/1-for-ai/ai_docs_system_template.md)
 
 ---
 

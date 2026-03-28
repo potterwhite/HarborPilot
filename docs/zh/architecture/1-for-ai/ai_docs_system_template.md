@@ -5,6 +5,7 @@
 > **无需扫描源代码**。
 >
 > 已在 SynapseERP 和 HarborPilot 中实战验证。复制结构；适配内容。
+> **Related:** [English Version →](../../../../en/architecture/1-for-ai/ai_docs_system_template.md)
 
 ---
 

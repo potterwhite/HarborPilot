@@ -7,6 +7,7 @@
 > **维护规则：** 任何修改本文中所列文件的 AI Agent，必须在同一次提交/会话中更新本文档的相关章节。
 >
 > 最后更新：2026-03-27（平台文件重命名为 chip-os 命名规范；新增 CHIP_EXTRACT_NAME；docs/ 目录拆分为 en/zh 双语）
+> **Related:** [English Version →](../../../../en/architecture/1-for-ai/codebase_map.md)
 
 ---
 

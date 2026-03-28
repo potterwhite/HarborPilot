@@ -1,6 +1,7 @@
 # HarborPilot — 项目进度
 
 > 最后更新：2026-03-27（Phase 3 审计日志更新；平台迁移 + harbor 分组提交已添加）
+> **Related:** [English Version →](../../../../en/architecture/2-progress/progress.md)
 
 ---
 

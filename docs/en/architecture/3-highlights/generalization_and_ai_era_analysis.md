@@ -13,6 +13,8 @@ context: "A complete discussion record on the philosophy of code generalization,
 
 # Obsession with Generalization and Software Design in the AI Era — A Critical Dialectical Analysis
 
+> **Related:** [中文版 →](../../../../zh/architecture/3-highlights/generalization_and_ai_era_analysis.md)
+>
 > **Background**: This document records a discussion that arose while fixing the `libncursesw5` package name compatibility issue, on the topic of "how to generalize handling of cross-distro package name differences". The user raised deep thoughts about their programming mindset, which prompted the following complete dialectical analysis.
 
 ---
