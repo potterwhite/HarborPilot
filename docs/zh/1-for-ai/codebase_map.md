@@ -66,14 +66,15 @@ HarborPilot.git/
 │       └── scripts/                    ←   6 个模块化辅助脚本
 │
 ├── docs/                               ← ★ 文档（双语分离）
-│   ├── assets/                         ←   共享图片（暗/亮背景）
 │   ├── en/                             ←   英文文档树
+│   │   ├── assets/                     ←     英文文档图片（暗背景）
 │   │   ├── 00_INDEX.md                 ←     导航中心（英文）
 │   │   ├── 1-for-ai/                  ←     AI Agent 参考文件
 │   │   ├── 2-progress/                ←     阶段追踪 + Phase 4 计划
 │   │   ├── 3-highlights/              ←     架构分析（竞品、config_layers、port-map）
 │   │   └── 4-for-beginner/            ←     快速上手指南
 │   └── zh/                             ←   中文文档树
+│       ├── assets/                     ←     中文文档图片（亮背景）
 │       ├── 00_INDEX.md                 ←     导航中心（中文）
 │       ├── 1-for-ai/                  ←     AI Agent 参考文件（中文）
 │       ├── 2-progress/                ←     阶段追踪（中文）+ NEED_TO_DO.md

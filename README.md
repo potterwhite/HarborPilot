@@ -4,7 +4,7 @@
 </div>
 
 <p align="center">
-  <img src="https://github.com/potterwhite/HarborPilot/blob/a997a343a5e883e48cf6771df55a7efbcf3d9933/doc/assets/dark-background.png" alt="HarborPilot Banner" width="100%"/>
+  <img src="docs/en/assets/dark-background.png" alt="HarborPilot Banner" width="100%"/>
 </p>
 
 <p align="center">

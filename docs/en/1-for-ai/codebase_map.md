@@ -67,19 +67,20 @@ HarborPilot.git/
 │       └── scripts/                    ←   6 modular helper scripts
 │
 ├── docs/                               ← ★ Documentation (bilingual)
-│   ├── assets/                         ←   Shared images (dark/light backgrounds)
 │   ├── en/                             ←   English documentation tree
+│   │   ├── assets/                     ←     Images for en docs (dark background)
 │   │   ├── 00_INDEX.md                 ←     Navigation hub (EN)
 │   │   ├── 1-for-ai/                  ←     AI agent reference files
 │   │   ├── 2-progress/                ←     Phase tracking + Phase 4 plan
 │   │   ├── 3-highlights/              ←     Architecture analysis (competitive, config_layers, port-map)
 │   │   └── 4-for-beginner/            ←     Quick start guide
 │   └── zh/                             ←   Chinese documentation tree
+│       ├── assets/                     ←     Images for zh docs (light background)
 │       ├── 00_INDEX.md                 ←     Navigation hub (ZH)
 │       ├── 1-for-ai/                  ←     AI agent reference files (ZH)
 │       ├── 2-progress/                ←     Phase tracking (ZH) + NEED_TO_DO.md
 │       ├── 3-highlights/              ←     Architecture analysis (ZH)
-│       ├── 4-reference/               ←     Reference docs (ZH)
+│       ├── 4-for-beginner/            ←     Quick start guide (ZH)
 │       └── readme.md                  ←   Chinese README
 │
 └── .devcontainer/
