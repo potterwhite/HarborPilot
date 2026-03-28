@@ -79,6 +79,7 @@ HarborPilot.git/
 │       ├── 00_INDEX.md                 ←     Navigation hub (ZH)
 │       ├── 1-for-ai/                  ←     AI agent reference files (ZH)
 │       ├── 2-progress/                ←     Phase tracking (ZH) + NEED_TO_DO.md
+│       │   └── task-logs/             ←       Archived NEED_TO_DO files (moved when fully done)
 │       ├── 3-highlights/              ←     Architecture analysis (ZH)
 │       ├── 4-for-beginner/            ←     Quick start guide (ZH)
 │       └── readme.md                  ←   Chinese README

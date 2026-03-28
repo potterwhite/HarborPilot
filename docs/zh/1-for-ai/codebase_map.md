@@ -78,6 +78,7 @@ HarborPilot.git/
 │       ├── 00_INDEX.md                 ←     导航中心（中文）
 │       ├── 1-for-ai/                  ←     AI Agent 参考文件（中文）
 │       ├── 2-progress/                ←     阶段追踪（中文）+ NEED_TO_DO.md
+│       │   └── task-logs/             ←       存档的 NEED_TO_DO（全部完成后归档）
 │       ├── 3-highlights/              ←     架构分析（中文）
 │       ├── 4-for-beginner/            ←     快速上手指南（中文）
 │       └── readme.md                  ←   中文 README
