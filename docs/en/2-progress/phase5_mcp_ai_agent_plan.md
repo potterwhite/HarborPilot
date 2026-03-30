@@ -1,18 +1,18 @@
 ---
-title: "HarborPilot Phase 4 — MCP Server & AI Agent Integration"
+title: "HarborPilot Phase 5 — MCP Server & AI Agent Integration"
 author: "PotterWhite + Claude"
 date: "2026-03-27"
 tags:
   - mcp
   - ai-agent
-  - phase4
+  - phase5
   - roadmap
 status: "Draft — pending approval"
 ---
 
-# HarborPilot Phase 4 — MCP Server & AI Agent Integration
+# HarborPilot Phase 5 — MCP Server & AI Agent Integration
 
-> **Related:** [中文版 →](../../zh/2-progress/phase4_mcp_ai_agent_plan.md)
+> **Related:** [中文版 →](../../zh/2-progress/phase5_mcp_ai_agent_plan.md)
 >
 > **Goal**: Make HarborPilot the first-class interface between AI coding agents
 > (Claude, Cursor, Copilot) and embedded Linux dev environment provisioning.

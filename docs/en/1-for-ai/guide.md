@@ -150,3 +150,21 @@ V=1 ./harbor
 # Validate platform config schema
 # (use platform_schema.json with any JSON Schema validator)
 ```
+
+---
+
+## 8. NEED_TO_DO Task Archiving Rules
+
+These rules are **absolute** — no exceptions, no creative interpretation.
+
+**File: `docs/zh/2-progress/NEED_TO_DO.md`**
+- This file is **permanent**. It is NEVER deleted, renamed, or `git mv`'d.
+- It holds only active (in-progress or not-yet-started) tasks.
+- When all tasks in it are done: clear the task content, keep the comment header line only.
+
+**Archive directory: `docs/zh/2-progress/task-logs/`**
+- Archive files are named `NEED_TO_DO_Archived-<Mon><Day>.<Year>.md` (e.g. `NEED_TO_DO_Archived-Mar28.2026.md`).
+- **One file per calendar day — strictly enforced.**
+- When archiving completed tasks: **APPEND** them to the existing file for today's date.
+- If no archive file exists for today, create one.
+- **NEVER create a second archive file for the same date** (e.g. `-aso.md`, `-v2.md`, etc.).

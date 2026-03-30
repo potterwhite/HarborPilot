@@ -7,7 +7,7 @@
 > **Maintenance rule:** Any AI agent that modifies a file listed here MUST update
 > the relevant section in this document in the same commit/session.
 >
-> Last updated: 2026-03-28 (docs restructured: en/zh drop architecture/ layer; NEED_TO_DO moved to zh; zh aligned to en: 4-reference→4-for-beginner, phase4→2-progress)
+> Last updated: 2026-03-28 (Phase 4 ASO plan added; task-logs archiving rules documented; Phase 5 MCP renumbered)
 > **Related:** [中文版 →](../../zh/1-for-ai/codebase_map.md)
 
 ---
@@ -71,7 +71,9 @@ HarborPilot.git/
 │   │   ├── assets/                     ←     Images for en docs (dark background)
 │   │   ├── 00_INDEX.md                 ←     Navigation hub (EN)
 │   │   ├── 1-for-ai/                  ←     AI agent reference files
-│   │   ├── 2-progress/                ←     Phase tracking + Phase 4 plan
+│   │   ├── 2-progress/                ←     Phase tracking + phase plans
+│   │   │   ├── phase4_aso_plan.md     ←       Phase 4: ASO & content distribution plan
+│   │   │   └── phase5_mcp_ai_agent_plan.md ← Phase 5: MCP Server & AI Agent plan
 │   │   ├── 3-highlights/              ←     Architecture analysis (competitive, config_layers, port-map)
 │   │   └── 4-for-beginner/            ←     Quick start guide
 │   └── zh/                             ←   Chinese documentation tree
@@ -79,7 +81,11 @@ HarborPilot.git/
 │       ├── 00_INDEX.md                 ←     Navigation hub (ZH)
 │       ├── 1-for-ai/                  ←     AI agent reference files (ZH)
 │       ├── 2-progress/                ←     Phase tracking (ZH) + NEED_TO_DO.md
-│       │   └── task-logs/             ←       Archived NEED_TO_DO files (moved when fully done)
+│       │   └── task-logs/             ←       NEED_TO_DO_Archived-<Mon><Day>.<Year>.md files.
+│       │                                        RULE: one file per calendar day.
+│       │                                        When tasks are done → APPEND to today's archive file.
+│       │                                        Do NOT create a second file for the same date.
+│       │                                        NEED_TO_DO.md itself is NEVER deleted or git-mv'd.
 │       ├── 3-highlights/              ←     Architecture analysis (ZH)
 │       ├── 4-for-beginner/            ←     Quick start guide (ZH)
 │       └── readme.md                  ←   Chinese README

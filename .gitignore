@@ -65,3 +65,10 @@ docker/dev-env-serverside/*
 configs/platforms/.env
 project_handover/.env
 project_handover/.env-independent
+
+# Personal strategy notes — not for repo
+ASO_strategy.md
+ASO_awesome_docker_pr.md
+ASO_devto_article.md
+ASO_devto_publish.sh
+ASO_operations_manual.md

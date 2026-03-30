@@ -22,7 +22,8 @@
 |---|---|
 | [`2-progress/progress.md`](2-progress/progress.md) | 所有阶段详情、当前状态、未来路线图 |
 | [`2-progress/NEED_TO_DO.md`](2-progress/NEED_TO_DO.md) | 活跃 Bug / 任务待办列表（极简工作笔记） |
-| [`2-progress/phase4_mcp_ai_agent_plan.md`](2-progress/phase4_mcp_ai_agent_plan.md) | ⭐ Phase 4 路线图：MCP Server 设计、AI Agent 集成、分步实现计划 |
+| [`2-progress/phase4_aso_plan.md`](2-progress/phase4_aso_plan.md) | Phase 4 路线图：ASO 内容分发计划 |
+| [`2-progress/phase5_mcp_ai_agent_plan.md`](2-progress/phase5_mcp_ai_agent_plan.md) | Phase 5 路线图：MCP Server 设计、AI Agent 集成 |
 
 ---
 

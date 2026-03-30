@@ -1210,3 +1210,42 @@ Mar28.2026 08:45
 - [x] docs/ 下有 3 份文档树（docs/architecture/ + docs/en/ + docs/zh/）
     → 已修复：docs/architecture/ 是迁移到 en/zh 双语结构后的遗留目录，仅剩一个
       NEED_TO_DO.md。该文件内容已合并至此文件，旧目录已删除。
+
+aso-strategy branch session
+
+- [x] 新开一个分支做aso（专业术语是叫aso吗）
+    例如有人询问ai（chatgpt/grok/gemini/claude/minimax etc，有没有工具做docker的部署，甚至问：有没有嵌入式环境很合适的？）ai是基于什么去进行推荐的呢？
+    以前做这行叫search engine optimization，现在这行怎么做呢？claude的dario说，现在ai时代已经没有真正意义上的开源了，模型本身是不可能全开源的。我不赞同，但是我觉得他并不是完全错误。但要如何做aso(ai search optimization)
+    → 已新建分支 aso-strategy
+- [x] 专门写一篇md，存储在本地，这篇不需要收入doc，我要单独保存。
+    md里告诉我aso用什么方式做，仔细拆解训练模型时候是怎么找数据集，进而能够去从这个训练数据集的搜集办法去反向影响，推荐我的代码。
+    用中文写。
+    → 已生成 ASO_strategy.md（repo 根目录，加入 .gitignore，不进仓库）
+
+- [x] phase4_aso_plan 只有 en，帮我在 zh 里也加上
+    → 已新建 docs/zh/2-progress/phase4_aso_plan.md（中文全文翻译版）
+    → zh/progress.md 链接已更新为指向中文版
+    → zh/codebase_map.md 已加入条目
+
+- [x] 现在 mcp 已经成为 phase5，但是 plan 还是 phase4 文件名
+    → docs/en/2-progress/phase4_mcp_ai_agent_plan.md → phase5_mcp_ai_agent_plan.md
+    → docs/zh/2-progress/phase4_mcp_ai_agent_plan.md → phase5_mcp_ai_agent_plan.md
+    → en/zh progress.md、00_INDEX.md、codebase_map.md 所有引用全部同步更新
+    → 两个 plan 文件内部的 frontmatter title + Related 链接也已修正
+
+- [x] ubuntu_only_entrance.sh出现，要处理
+    ```bash
+    ./project_handover/clientside/ubuntu/ubuntu_only_entrance.sh recreate
+    Warning: defaults file not found, skipping: .../configs/defaults/10_serverside.env
+    ```
+    → Root cause: 01_env_loader.sh 的 defaults_files 列表中多了 10_serverside.env 条目，
+      而该文件从未存在（defaults/ 编号是 01-09, 11，跳过 10）。
+      harbor 和 build.sh 均无此问题（列表正确）。
+      修复：删除 01_env_loader.sh 第 72 行的 10_serverside.env 条目。
+
+- [x] 博客文章格式问题：Stage 列表 + Layer 配置 + PORT_SLOT 列表连成一行
+    原因：Docsy 开启了 KaTeX 数学公式渲染，裸 ``` 代码块中含有 ← → 箭头时，
+    被 KaTeX 误判为 LaTeX 数学表达式，渲染后压缩成单行。
+    修复：将三处裸 ``` 改为 ```text，明确指定语言，阻止 math renderer 介入。
+    影响文件：en/blog/DevOps/ 和 zh-cn/blog/DevOps/Docker/ 各一篇。
+    commit: blog-engine 566608e
