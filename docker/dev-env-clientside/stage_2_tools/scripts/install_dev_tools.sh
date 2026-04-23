@@ -422,6 +422,63 @@ eighth_install_python_packages() {
 }
 
 ###############################################################################
+# Ninth: Install AI coding tools
+# Description: Install Claude Code, OpenCode, and OpenAI Codex after Node.js
+#              All three are installed as root and symlinked into /usr/local/bin
+#              so every user in the container can run them.
+###############################################################################
+ninth_install_ai_tools() {
+    echo ""
+    echo "##########################################################"
+    echo "(3.5/4) Installing AI coding tools..."
+    echo "##########################################################"
+
+    # ── 1. OpenAI Codex (npm global — simplest, Node.js already on PATH) ──────
+    echo "--- Installing OpenAI Codex ---"
+    if npm i -g @openai/codex; then
+        echo "OpenAI Codex installed: $(codex --version 2>/dev/null || echo 'ok')"
+    else
+        echo "Warning: Failed to install OpenAI Codex, continuing anyway..."
+    fi
+
+    # ── 2. Claude Code ────────────────────────────────────────────────────────
+    echo "--- Installing Claude Code ---"
+    if curl -fsSL https://claude.ai/install.sh | bash; then
+        # The installer places the binary under $HOME/.claude/local/claude
+        # Symlink to /usr/local/bin so all users can invoke it
+        local claude_bin
+        claude_bin=$(find /root/.claude -maxdepth 3 -type f -name "claude" 2>/dev/null | head -1 || true)
+        if [[ -n "${claude_bin}" ]]; then
+            ln -sf "${claude_bin}" /usr/local/bin/claude
+            echo "Claude Code installed: $(claude --version 2>/dev/null || echo 'ok')"
+        else
+            echo "Warning: claude binary not found after install, PATH may need manual update"
+        fi
+    else
+        echo "Warning: Failed to install Claude Code, continuing anyway..."
+    fi
+
+    # ── 3. OpenCode ───────────────────────────────────────────────────────────
+    echo "--- Installing OpenCode ---"
+    if curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path; then
+        local opencode_bin="/root/.opencode/bin/opencode"
+        if [[ -f "${opencode_bin}" ]]; then
+            ln -sf "${opencode_bin}" /usr/local/bin/opencode
+            echo "OpenCode installed: $(opencode --version 2>/dev/null || echo 'ok')"
+        else
+            echo "Warning: opencode binary not found after install"
+        fi
+    else
+        echo "Warning: Failed to install OpenCode, continuing anyway..."
+    fi
+
+    echo ""
+    echo "##########################################################"
+    echo "AI coding tools installation complete"
+    echo "##########################################################"
+}
+
+###############################################################################
 # Tenth: Cleanup
 # Description: Clean up package manager cache
 ###############################################################################
@@ -448,6 +505,8 @@ main() {
     fi
 
     eighth_install_python_packages
+
+    ninth_install_ai_tools
 
     #------------------------------
     nintyninth_cleanup
