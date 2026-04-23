@@ -141,7 +141,7 @@ Sourced after Layer 3 in every config loader. Two mutually exclusive modes:
 ### `scripts/create_platform.sh`
 Interactive wizard + non-interactive CLI for creating new platform `.env` files.
 - **Interactive mode**: `./scripts/create_platform.sh` — color prompts, displays existing platforms with slots, auto-assigns next available PORT_SLOT, shows port preview, asks confirmation
-- **Non-interactive mode**: `./scripts/create_platform.sh --non-interactive --name <name> --os <os> --os-version <ver> --harbor-ip <ip> [--port-slot <n>] [--nvidia] [--proxy-http <url>] [--install-cuda] [--install-opencv] [--npm-china-mirror]`
+- **Non-interactive mode**: `./scripts/create_platform.sh --non-interactive --name <name> --os <os> --os-version <ver> --harbor-ip <ip> [--port-slot <n>] [--nvidia] [--proxy-http <url>] [--install-cuda] [--install-opencv] [--npm-china-mirror] [--extra-volume <host:container>]` (`--extra-volume` is repeatable for 0..N mounts)
 - Validates: name format (`[a-zA-Z0-9_-]+`), no duplicate, PORT_SLOT collision warning
 - Generated `.env` includes all sections with proper `${VAR}` self-references
 
@@ -206,7 +206,7 @@ Single monolithic Dockerfile, 5 stages. Each stage has sub-stages for template p
 | `04_workspace.env` | `WORKSPACE_ROOT=/development`, subdirs: `i_src`…`vi_tools`, `WORKSPACE_BUILD_THREADS=4`, `WORKSPACE_LOG_LEVEL=INFO`, `WORKSPACE_DEBUG_PORT=3000` | 6 workspace subdirectories |
 | `05_registry.env` | `HAVE_GITLAB_SERVER=TRUE`, `HAVE_HARBOR_SERVER=TRUE`, `HARBOR_SERVER_PORT=9000` | `REGISTRY_URL` uses `CHIP_FAMILY` in Layer 3 |
 | `06_sdk.env` | `INSTALL_SDK=false`, `CHIP_FAMILY=${PRODUCT_NAME}` | `CHIP_FAMILY` groups same-silicon variants; `REGISTRY_URL` and `SDK_GIT_REPO` use `${CHIP_FAMILY}` |
-| `07_volumes.env` | `VOLUMES_ROOT=${WORKSPACE_ROOT}` | `HOST_VOLUME_DIR` has no default — REQUIRED per platform |
+| `07_volumes.env` | `VOLUMES_ROOT=${WORKSPACE_ROOT}`, `HOST_VOLUME_DIR` (no default — required per platform), `EXTRA_VOLUME_N` (no default — optional per platform, 0..N indexed) | `HOST_VOLUME_DIR` must be set in platform override. `EXTRA_VOLUME_N` uses `<host>:<container>` format; indices must be contiguous from 0; scanning stops at first missing index. Injected into compose by `04_compose_generator.sh`. |
 | `08_samba.env` | `SAMBA_SERVER_IP=""`, `SAMBA_PUBLIC_ACCOUNT_NAME/PASSWORD=sambashare`, `SAMBA_FILE_MODE=0777`, `SAMBA_DIR_MODE=0777` | Default Samba credentials + permissions |
 | `09_runtime.env` | `ENABLE_SSH=true`, `ENABLE_GDB_SERVER=true`, `USE_NVIDIA_GPU=false`, `ENABLE_CORE_DUMPS=true`, `CONTAINER_RESTART_POLICY=unless-stopped`, `CONTAINER_PRIVILEGED=true`, `CONTAINER_SERIAL_DEVICE=/dev/ttyUSB0`, `CONTAINER_SHM_SIZE=8g`, `NVIDIA_VISIBLE_DEVICES=all`, `NVIDIA_DRIVER_CAPABILITIES=all` | Ports from port_calc.sh; compose overrides for container runtime |
 | `11_proxy.env` | `HAS_PROXY=false`, `HTTP_PROXY_IP`, `HTTPS_PROXY_IP` | Proxy IPs have defaults but HAS_PROXY is off |
