@@ -47,6 +47,7 @@
 #         [--install-cuda]               # enable CUDA
 #         [--install-opencv]             # enable OpenCV
 #         [--npm-china-mirror]           # use npmmirror.com
+#         [--extra-volume <host:container>] # extra volume mount (repeatable, e.g. /mnt/a:/vol-a)
 #
 #   Example (for AI agent or CI):
 #     ./scripts/create_platform.sh --non-interactive \
@@ -306,7 +307,29 @@ create_platform() {
         fi
     fi
 
-    # 9. Proxy
+    # 9. Extra volume mounts (0..N)
+    local extra_volumes=()
+    echo ""
+    echo -e "  ${_YELLOW}--- Extra Volume Mounts (optional) ---${_NC}"
+    echo -e "  ${_CYAN}Format: <host_absolute_path>:<container_absolute_path>${_NC}"
+    echo -e "  ${_CYAN}Example: /mnt/host-a:/volumes_container-a${_NC}"
+    echo ""
+    local ev_idx=0
+    while _prompt_yn "Add extra volume mount #${ev_idx}?" "n"; do
+        _prompt "  EXTRA_VOLUME_${ev_idx} (host:container)"
+        local ev_pair="${REPLY}"
+        # Basic format validation
+        local ev_host="${ev_pair%%:*}"
+        local ev_container="${ev_pair#*:}"
+        if [[ -z "${ev_host}" || -z "${ev_container}" || "${ev_host}" == "${ev_pair}" ]]; then
+            echo -e "  ${_RED}Error: invalid format — must be <host>:<container>${_NC}"
+            continue
+        fi
+        extra_volumes+=("${ev_pair}")
+        ev_idx=$(( ev_idx + 1 ))
+    done
+
+    # 10. Proxy
     local has_proxy="false"
     local http_proxy_url=""
     local https_proxy_url=""
@@ -339,6 +362,16 @@ create_platform() {
     fi
     echo -e "  Harbor registry: ${harbor_ip}:${harbor_port}"
     echo -e "  NVIDIA GPU:      ${use_nvidia}"
+    if [[ "${#extra_volumes[@]}" -gt 0 ]]; then
+        echo -e "  Extra volumes:"
+        local _ev_i=0
+        for _ev in "${extra_volumes[@]}"; do
+            echo -e "    [${_ev_i}] ${_ev}"
+            _ev_i=$(( _ev_i + 1 ))
+        done
+    else
+        echo -e "  Extra volumes:   (none)"
+    fi
     if [[ "${has_proxy}" == "true" ]]; then
         echo -e "  HTTP  proxy:     ${http_proxy_url}"
         echo -e "  HTTPS proxy:     ${https_proxy_url}"
@@ -375,6 +408,17 @@ HTTP_PROXY_IP=\"${http_proxy_url}\"
 HTTPS_PROXY_IP=\"${https_proxy_url}\""
     else
         proxy_block="HAS_PROXY=\"false\""
+    fi
+
+    # Build extra volumes block conditionally
+    local extra_volumes_block=""
+    if [[ "${#extra_volumes[@]}" -gt 0 ]]; then
+        extra_volumes_block=$'\n# =============================================================================\n# Extra Volume Mounts  [optional — 0..N indexed; contiguous from 0]\n# ============================================================================='
+        local _bev_i=0
+        for _bev_pair in "${extra_volumes[@]}"; do
+            extra_volumes_block+=$'\n'"EXTRA_VOLUME_${_bev_i}=\"${_bev_pair}\""
+            _bev_i=$(( _bev_i + 1 ))
+        done
     fi
 
     cat > "${output_file}" << ENVEOF
@@ -439,6 +483,7 @@ SDK_GIT_DEFAULT_BRANCH="${sdk_branch}"
 # Docker Volumes  [REQUIRED — no universal default]
 # =============================================================================
 HOST_VOLUME_DIR="${host_volume_dir}"
+${extra_volumes_block}
 
 # =============================================================================
 # Container Runtime  [ports auto-calculated from PORT_SLOT]
@@ -475,6 +520,7 @@ create_platform_noninteractive() {
     local has_proxy="false" http_proxy_url="" https_proxy_url=""
     local install_cuda="false" install_opencv="false"
     local npm_china_mirror="false"
+    local extra_volumes=()
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -496,6 +542,7 @@ create_platform_noninteractive() {
             --install-cuda)    install_cuda="true";   shift ;;
             --install-opencv)  install_opencv="true"; shift ;;
             --npm-china-mirror) npm_china_mirror="true"; shift ;;
+            --extra-volume)    extra_volumes+=("$2"); shift 2 ;;
             *) echo "Unknown argument: $1" >&2; exit 1 ;;
         esac
     done
@@ -575,6 +622,17 @@ HTTPS_PROXY_IP=\"${https_proxy_url}\""
     [[ "${install_opencv}" == "true" ]]       && tools_overrides+=$'\nINSTALL_OPENCV="true"'
     [[ "${npm_china_mirror}" == "true" ]]     && tools_overrides+=$'\nNPM_USE_CHINA_MIRROR="true"'
 
+    # Build extra volumes block conditionally
+    local extra_volumes_block=""
+    if [[ "${#extra_volumes[@]}" -gt 0 ]]; then
+        extra_volumes_block=$'\n# =============================================================================\n# Extra Volume Mounts  [optional — 0..N indexed; contiguous from 0]\n# ============================================================================='
+        local _bev_i=0
+        for _bev_pair in "${extra_volumes[@]}"; do
+            extra_volumes_block+=$'\n'"EXTRA_VOLUME_${_bev_i}=\"${_bev_pair}\""
+            _bev_i=$(( _bev_i + 1 ))
+        done
+    fi
+
     # ── Print summary ─────────────────────────────────────────────────────────
     echo ""
     echo "  [non-interactive] Creating platform: ${platform_name}"
@@ -585,6 +643,13 @@ HTTPS_PROXY_IP=\"${https_proxy_url}\""
     echo "  Harbor:          ${harbor_ip}:${harbor_port}"
     echo "  Volume:          ${host_volume_dir}"
     [[ "${have_gitlab}" == "TRUE" ]] && echo "  GitLab:          ${gitlab_ip}:${gitlab_port}"
+    if [[ "${#extra_volumes[@]}" -gt 0 ]]; then
+        local _si=0
+        for _sv in "${extra_volumes[@]}"; do
+            echo "  Extra volume [${_si}]: ${_sv}"
+            _si=$(( _si + 1 ))
+        done
+    fi
     echo ""
 
     # ── Generate .env file ────────────────────────────────────────────────────
@@ -650,6 +715,7 @@ SDK_GIT_DEFAULT_BRANCH="${sdk_branch}"
 # Docker Volumes  [REQUIRED — no universal default]
 # =============================================================================
 HOST_VOLUME_DIR="${host_volume_dir}"
+${extra_volumes_block}
 
 # =============================================================================
 # Container Runtime  [ports auto-calculated from PORT_SLOT]
