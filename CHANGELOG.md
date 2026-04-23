@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0](https://github.com/potterwhite/HarborPilot/compare/v1.10.0...v1.11.0) (2026-04-23)
+
+
+### ✨ Added
+
+* add support for EXTRA_VOLUME mounts and AI dev tools installation ([#20](https://github.com/potterwhite/HarborPilot/issues/20)) ([d25d2e5](https://github.com/potterwhite/HarborPilot/commit/d25d2e529a9abb2d5c3885fb9648295c930818c4))
+
 ## [1.10.0](https://github.com/potterwhite/HarborPilot/compare/v1.9.0...v1.10.0) (2026-03-30)
 
 
