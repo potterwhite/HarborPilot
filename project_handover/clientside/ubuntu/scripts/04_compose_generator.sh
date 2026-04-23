@@ -67,6 +67,34 @@ GPU_EOF
 }
 
 # =============================================================================
+# 4th_group_2nd_b_branch: Build extra volumes section (EXTRA_VOLUME_0..N)
+# =============================================================================
+compose_generator_4th_2nd_b_build_extra_volumes_section() {
+    COMPOSE_EXTRA_VOLUMES_LINES=""
+    local i=0
+    while true; do
+        local varname="EXTRA_VOLUME_${i}"
+        local pair="${!varname:-}"
+        [[ -z "${pair}" ]] && break
+
+        # Validate format: must contain exactly one colon with non-empty host and container parts
+        local host_path="${pair%%:*}"
+        local container_path="${pair#*:}"
+        if [[ -z "${host_path}" || -z "${container_path}" || "${host_path}" == "${pair}" ]]; then
+            utils_print_error "EXTRA_VOLUME_${i} has invalid format '${pair}' — expected '<host>:<container>'"
+            return 1
+        fi
+
+        COMPOSE_EXTRA_VOLUMES_LINES+="      - \"${host_path}:${container_path}\""$'\n'
+        i=$(( i + 1 ))
+    done
+
+    if [[ "${i}" -gt 0 ]]; then
+        echo "Extra volume mounts: ${i} entry(ies) configured"
+    fi
+}
+
+# =============================================================================
 # 4th_group_3rd_branch: Build serial device section
 # =============================================================================
 compose_generator_4th_3rd_build_device_section() {
@@ -99,6 +127,7 @@ ${COMPOSE_DEVICES_SETTING}
     volumes:
       - /dev/bus/usb:/dev/bus/usb
       - "${VOLUMES_DIR}:${VOLUMES_ROOT}"
+${COMPOSE_EXTRA_VOLUMES_LINES}
 
     ports:
       - "${CLIENT_SSH_PORT}:22"
@@ -139,6 +168,7 @@ EOF
 compose_generator_4th_generate() {
     compose_generator_4th_1st_ensure_volumes_dir || return 1
     compose_generator_4th_2nd_build_gpu_section
+    compose_generator_4th_2nd_b_build_extra_volumes_section || return 1
     compose_generator_4th_3rd_build_device_section
     compose_generator_4th_4th_generate_file
 }
