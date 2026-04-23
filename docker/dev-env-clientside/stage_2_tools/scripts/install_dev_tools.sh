@@ -385,14 +385,24 @@ eighth_install_python_packages() {
     # Install Python package manager
     local max_retries=3
 
+    # --break-system-packages was introduced in pip 23; Ubuntu 20.04 ships pip 20
+    # which does not recognise the flag. Detect the major version at runtime.
+    local _pip_major
+    _pip_major=$(pip3 --version 2>/dev/null | grep -oP '(?<=pip )\d+' || echo "0")
+    local _pip_break_flag=""
+    if [ "${_pip_major}" -ge 23 ] 2>/dev/null; then
+        _pip_break_flag="--break-system-packages"
+    fi
+
     install_package() {
         local package=$1
         local version=$2
         local retry=0
 
         while [ $retry -lt $max_retries ]; do
+            # shellcheck disable=SC2086
             if pip3 install --no-cache-dir \
-               --break-system-packages \
+               ${_pip_break_flag} \
                -i https://mirrors.aliyun.com/pypi/simple/ \
                --trusted-host mirrors.aliyun.com \
                --timeout 30 \
