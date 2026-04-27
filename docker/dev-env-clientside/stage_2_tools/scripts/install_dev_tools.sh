@@ -61,7 +61,7 @@ second_install_dev_tools() {
 
     echo "OS_VERSION = ${OS_VERSION}"
     if [ "${OS_VERSION}" != "20.04" ]; then
-        apt-get install -y repo 
+        apt-get install -y repo
     else
         # -----------------------------------------
         # add libicu for rk3568 build process of the sdk
@@ -433,7 +433,14 @@ ninth_install_ai_tools() {
     echo "(3.5/4) Installing AI coding tools..."
     echo "##########################################################"
 
-    # ── 1. OpenAI Codex (npm global — simplest, Node.js already on PATH) ──────
+    # NOTE: Docker build runs as root throughout. nvm-managed npm defaults its
+    # global prefix to ~/.nvm/versions/node/vX.X.X/, so "npm -g" would install
+    # into /root/.nvm/…/bin/ which is inaccessible to the dev user.
+    # Force the prefix to /usr/local so all global bin symlinks land in
+    # /usr/local/bin/ — on every user's PATH with no extra setup required.
+    npm config set prefix /usr/local
+
+    # ── 1. OpenAI Codex ───────────────────────────────────────────────────────
     echo "--- Installing OpenAI Codex ---"
     if npm i -g @openai/codex; then
         echo "OpenAI Codex installed: $(codex --version 2>/dev/null || echo 'ok')"
@@ -443,30 +450,26 @@ ninth_install_ai_tools() {
 
     # ── 2. Claude Code ────────────────────────────────────────────────────────
     echo "--- Installing Claude Code ---"
-    if curl -fsSL https://claude.ai/install.sh | bash; then
-        # The installer places the binary under $HOME/.claude/local/claude
-        # Symlink to /usr/local/bin so all users can invoke it
-        local claude_bin
-        claude_bin=$(find /root/.claude -maxdepth 3 -type f -name "claude" 2>/dev/null | head -1 || true)
-        if [[ -n "${claude_bin}" ]]; then
-            ln -sf "${claude_bin}" /usr/local/bin/claude
-            echo "Claude Code installed: $(claude --version 2>/dev/null || echo 'ok')"
-        else
-            echo "Warning: claude binary not found after install, PATH may need manual update"
-        fi
+    if npm install -g @anthropic-ai/claude-code; then
+        echo "Claude Code installed: $(claude --version 2>/dev/null || echo 'ok')"
     else
         echo "Warning: Failed to install Claude Code, continuing anyway..."
     fi
 
     # ── 3. OpenCode ───────────────────────────────────────────────────────────
+    # The official installer respects $HOME; redirect it to /usr/local so the
+    # binary lands in /usr/local/.opencode/bin/ — a root-owned system path
+    # accessible to all users. Then symlink into /usr/local/bin/.
     echo "--- Installing OpenCode ---"
-    if curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path; then
-        local opencode_bin="/root/.opencode/bin/opencode"
+    local opencode_install_home="/usr/local"
+    local opencode_bin="${opencode_install_home}/.opencode/bin/opencode"
+    if HOME="${opencode_install_home}" curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path; then
         if [[ -f "${opencode_bin}" ]]; then
+            chmod 755 "${opencode_bin}"
             ln -sf "${opencode_bin}" /usr/local/bin/opencode
             echo "OpenCode installed: $(opencode --version 2>/dev/null || echo 'ok')"
         else
-            echo "Warning: opencode binary not found after install"
+            echo "Warning: opencode binary not found at ${opencode_bin} after install"
         fi
     else
         echo "Warning: Failed to install OpenCode, continuing anyway..."
