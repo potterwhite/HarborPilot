@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.1](https://github.com/potterwhite/HarborPilot/compare/v1.11.0...v1.11.1) (2026-06-11)
+
+
+### 🐛 Fixed
+
+* ai-tools added (not tested yet) ([fdfc1ef](https://github.com/potterwhite/HarborPilot/commit/fdfc1ef4dafd5d442a563cc346c8deeced0b4576))
+* ai-tools installation improvements and platform config updates ([2e80af8](https://github.com/potterwhite/HarborPilot/commit/2e80af88b94efd5b592db194dcd20f25110c30b0))
+
 ## [1.11.0](https://github.com/potterwhite/HarborPilot/compare/v1.10.0...v1.11.0) (2026-04-23)
 
 
