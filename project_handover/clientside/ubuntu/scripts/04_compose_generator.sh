@@ -48,7 +48,7 @@ compose_generator_4th_2nd_build_gpu_section() {
     tmp_use="${tmp_use,,}"
     
     if [[ "${tmp_use}" == "true" ]]; then
-        COMPOSE_GPU_SETTING=$(cat << 'GPU_EOF'
+        COMPOSE_GPU_SETTING=$(cat << GPU_EOF
     shm_size: ${CONTAINER_SHM_SIZE}
     deploy:
         resources:
