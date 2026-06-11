@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.2](https://github.com/potterwhite/HarborPilot/compare/v1.11.1...v1.11.2) (2026-06-11)
+
+
+### 🐛 Fixed
+
+* enable variable expansion in GPU section heredoc ([38e5814](https://github.com/potterwhite/HarborPilot/commit/38e5814fc7c17738765225f0e41a2a19e6dd890f))
+* enable variable expansion in GPU section heredoc ([b356285](https://github.com/potterwhite/HarborPilot/commit/b356285c2aeb1b7e24489b85fe3d737fc70c6f01))
+
 ## [1.11.1](https://github.com/potterwhite/HarborPilot/compare/v1.11.0...v1.11.1) (2026-06-11)
 
 
