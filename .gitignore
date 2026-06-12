@@ -66,7 +66,7 @@ configs/platforms/.env
 project_handover/.env
 
 # Host-level config overrides (per-machine, not committed)
-configs/host/*.env
+configs/3_host/*.env
 
 # Personal strategy notes — not for repo
 ASO_strategy.md

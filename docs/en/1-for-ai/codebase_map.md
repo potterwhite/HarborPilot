@@ -112,9 +112,9 @@ The **master orchestrator**. Interactive platform selection → 3-layer config l
 
 **Execution flow:**
 1. `1_specify_platform()` — Lists platforms sorted by PORT_SLOT, user picks by number. Also offers "Create new platform" which calls `create_platform.sh`.
-2. Layer 1: sources all `configs/defaults/*.env` in order (00→11)
+2. Layer 1: sources all `configs/1_defaults/*.env` in order (00→11)
 3. Layer 2: sources selected `<platform>.env`
-4. Layer 3: sources `configs/host/$(hostname).env` (optional, auto-loaded)
+4. Layer 3: sources `configs/3_host/$(hostname).env` (optional, auto-loaded)
 5. `port_calc.sh` — derives SSH/GDB ports from PORT_SLOT
 6. `0_check_registry_login()` — Verifies Docker is logged into Harbor; prompts interactive login if not
 7. `1_1_setup_volume_soft_link()` — Symlinks HOST_VOLUME_DIR
@@ -198,7 +198,7 @@ Single monolithic Dockerfile, 5 stages. Each stage has sub-stages for template p
 
 ## 4. Configuration System — Variable Reference
 
-### Layer 1: `configs/defaults/` (10 files)
+### Layer 1: `configs/1_defaults/` (10 files)
 
 | File | Key Variables | Notes |
 |---|---|---|
@@ -213,7 +213,7 @@ Single monolithic Dockerfile, 5 stages. Each stage has sub-stages for template p
 | `09_runtime.env` | `ENABLE_SSH=true`, `ENABLE_GDB_SERVER=true`, `USE_NVIDIA_GPU=false`, `ENABLE_CORE_DUMPS=true`, `CONTAINER_RESTART_POLICY=unless-stopped`, `CONTAINER_PRIVILEGED=true`, `CONTAINER_SERIAL_DEVICE=/dev/ttyUSB0`, `CONTAINER_SHM_SIZE=8g`, `NVIDIA_VISIBLE_DEVICES=all`, `NVIDIA_DRIVER_CAPABILITIES=all` | Ports from port_calc.sh; compose overrides for container runtime |
 | `11_proxy.env` | `HAS_PROXY=false`, `HTTP_PROXY_IP`, `HTTPS_PROXY_IP` | Proxy IPs have defaults but HAS_PROXY is off |
 
-### Layer 1 (continued): `configs/defaults/00_project.env`
+### Layer 1 (continued): `configs/1_defaults/00_project.env`
 
 | Variable | Value | Notes |
 |---|---|---|
@@ -223,7 +223,7 @@ Single monolithic Dockerfile, 5 stages. Each stage has sub-stages for template p
 | `PROJECT_RELEASE_DATE` | 2026-03-19 | Manual update |
 | `SDK_VERSION` | 1.1.2 | |
 
-### Layer 2: `configs/platforms/<name>.env`
+### Layer 2: `configs/2_platforms/<name>.env`
 
 Only override what differs. Required fields: `PRODUCT_NAME`, `OS_VERSION`, `OS_VERSION_ID`, `PORT_SLOT`, `HOST_VOLUME_DIR`.
 
@@ -280,7 +280,7 @@ Container lifecycle manager. Commands: `start`/`stop`/`restart`/`recreate`/`remo
 
 - **release-please** manages `CHANGELOG.md` and version bumps
 - Config: `release-please-config.json` — `release-type: simple`
-- Version source of truth: `VERSION` in `configs/defaults/00_project.env`
+- Version source of truth: `VERSION` in `configs/1_defaults/00_project.env`
 - `x-release-please-version` marker enables auto-bump
 - Changelog sections: feat→✨, fix→🐛, perf→⚡, revert→🔙. Docs/style/chore/refactor hidden.
 - `.devcontainer/devcontainer.json` — VS Code Dev Container for developing HarborPilot itself (not for end users). Forwards ports 2109+2345, installs C++ / CMake / Python / Git extensions.

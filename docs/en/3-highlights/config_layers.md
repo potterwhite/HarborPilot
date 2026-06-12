@@ -11,7 +11,7 @@ This document explains how HarborPilot's configuration system works, why it is s
 Early versions of HarborPilot had a flat structure:
 
 ```
-configs/platforms/
+configs/2_platforms/
 ├── rk3588s.env     # 180+ lines — everything
 ├── rk3568.env      # 180+ lines — 95% identical to rk3588s.env
 ├── rv1126.env      # 180+ lines — 95% identical to rk3588s.env
@@ -27,18 +27,18 @@ Adding a new global flag meant editing every platform file. A new platform meant
 Borrowed from Ansible, Helm, Kubernetes, and Yocto — any system that needs "sensible defaults with targeted overrides":
 
 ```
-Layer 1  configs/defaults/*.env          Global defaults — every platform inherits
+Layer 1  configs/1_defaults/*.env          Global defaults — every platform inherits
    ↓  (later layers override earlier ones)
-Layer 2  configs/platforms/<platform>.env Platform-specific overrides only
+Layer 2  configs/2_platforms/<platform>.env Platform-specific overrides only
    ↓
-Layer 3  configs/host/<hostname>.env      Host-level overrides (optional, gitignored)
+Layer 3  configs/3_host/<hostname>.env      Host-level overrides (optional, gitignored)
 ```
 
 **The rule:** a platform file only contains values that *differ* from the defaults. If it's not in the platform file, the default is used. A host file only contains values that *differ* from the platform — if it's not in the host file, the platform value is used.
 
 ---
 
-## Layer 1 — Global Defaults (`configs/defaults/`)
+## Layer 1 — Global Defaults (`configs/1_defaults/`)
 
 Twelve files, each scoped to one concern. The ordinal prefix makes the load order explicit at a glance.
 
@@ -60,7 +60,7 @@ Twelve files, each scoped to one concern. The ordinal prefix makes the load orde
 
 ---
 
-## Layer 2 — Platform Overrides (`configs/platforms/<platform>.env`)
+## Layer 2 — Platform Overrides (`configs/2_platforms/<platform>.env`)
 
 Each platform file contains **only what differs from the defaults**. The mandatory sections are:
 
@@ -116,16 +116,16 @@ That's all — everything else is inherited silently from Layer 1.
 
 ---
 
-## Layer 3 — Host-Level Overrides (`configs/host/<hostname>.env`)
+## Layer 3 — Host-Level Overrides (`configs/3_host/<hostname>.env`)
 
 This layer is **optional** and **auto-loaded by hostname**. It solves the problem of running the same platform on different machines with different hardware (e.g., one machine has NVIDIA GPU, another doesn't).
 
 ### How It Works
 
-The system runs `hostname` and looks for `configs/host/<hostname>.env`. If the file exists, it is sourced after the platform file. If it doesn't exist, the system skips this layer entirely.
+The system runs `hostname` and looks for `configs/3_host/<hostname>.env`. If the file exists, it is sourced after the platform file. If it doesn't exist, the system skips this layer entirely.
 
 ```bash
-# Example: configs/host/my-desktop.env
+# Example: configs/3_host/my-desktop.env
 USE_NVIDIA_GPU="true"
 CONTAINER_SHM_SIZE="1g"
 HOST_VOLUME_DIR="/mnt/ssd/volumes/rk3588"
@@ -141,7 +141,7 @@ HOST_VOLUME_DIR="/mnt/ssd/volumes/rk3588"
 
 ### Git Policy
 
-Host config files are `.gitignored` — they are local to each machine and should NOT be committed. Only `.gitkeep` and `README.md` in the `configs/host/` directory are tracked.
+Host config files are `.gitignored` — they are local to each machine and should NOT be committed. Only `.gitkeep` and `README.md` in the `configs/3_host/` directory are tracked.
 
 ---
 
@@ -227,9 +227,9 @@ No changes to any script or default file are needed.
 
 ## Adding a New Global Default
 
-1. Open the appropriate `configs/defaults/NN_<domain>.env` file
+1. Open the appropriate `configs/1_defaults/NN_<domain>.env` file
 2. Add the variable with its default value
-3. If you need a new *domain* that doesn't fit any existing file, create `configs/defaults/12_<domain>.env` and append it to the load list in all four scripts
+3. If you need a new *domain* that doesn't fit any existing file, create `configs/1_defaults/12_<domain>.env` and append it to the load list in all four scripts
 
 The platform files that need a non-default value can then override it with a single line.
 
@@ -238,12 +238,12 @@ The platform files that need a non-default value can then override it with a sin
 ## Adding a Host-Level Override
 
 1. Run `hostname` to find your machine name
-2. Create `configs/host/<your-hostname>.env`
+2. Create `configs/3_host/<your-hostname>.env`
 3. Add only the variables that differ from the platform config
 4. The system auto-loads this file — no script changes needed
 
 ```bash
-# Example: configs/host/my-desktop.env
+# Example: configs/3_host/my-desktop.env
 USE_NVIDIA_GPU="true"
 CONTAINER_SHM_SIZE="1g"
 HOST_VOLUME_DIR="/mnt/ssd/volumes/rk3588"

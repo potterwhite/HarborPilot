@@ -75,9 +75,9 @@ Architecture is platform-agnostic — adding a Debian platform or a different ch
 ## How does the three-layer config work?
 
 ```
-Layer 1:  configs/defaults/*.env        ← Global defaults (OS, tools, ports, registry…)
-Layer 2:  configs/platforms/<name>.env  ← Per-platform overrides only (≤20 lines)
-Layer 3:  configs/host/<hostname>.env   ← Host-level overrides (optional, gitignored)
+Layer 1:  configs/1_defaults/*.env        ← Global defaults (OS, tools, ports, registry…)
+Layer 2:  configs/2_platforms/<name>.env  ← Per-platform overrides only (≤20 lines)
+Layer 3:  configs/3_host/<hostname>.env   ← Host-level overrides (optional, gitignored)
 ```
 
 Last layer wins. A new platform file only contains what **differs** from the defaults — typically:

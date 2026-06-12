@@ -13,9 +13,9 @@
 # License: MIT
 #
 # Three-Layer Config Loading Order:
-#   Layer 1: configs/defaults/*.env  — global defaults (all platforms inherit)
-#   Layer 2: configs/platforms/<platform>.env  — platform-specific overrides
-#   Layer 3: configs/host/<hostname>.env  — host-level overrides (optional)
+#   Layer 1: configs/1_defaults/*.env  — global defaults (all platforms inherit)
+#   Layer 2: configs/2_platforms/<platform>.env  — platform-specific overrides
+#   Layer 3: configs/3_host/<hostname>.env  — host-level overrides (optional)
 ################################################################################
 
 func_1_1_setup_env(){
@@ -28,7 +28,7 @@ func_1_1_setup_env(){
     DOCKER_DIR="$(dirname "${CLIENTSIDE_DIR}")"
     TOP_ROOT_DIR="$(dirname "${DOCKER_DIR}")"
     CONFIGS_DIR="${TOP_ROOT_DIR}/configs"
-    DEFAULTS_DIR="${CONFIGS_DIR}/defaults"
+    DEFAULTS_DIR="${CONFIGS_DIR}/1_defaults"
     HANDOVER_DIR="${TOP_ROOT_DIR}/project_handover"
     PLATFORM_ENV_PATH="${HANDOVER_DIR}/.env"
 
@@ -82,7 +82,7 @@ func_1_1_setup_env(){
     # Layer 3: Host-level overrides (auto-loaded by hostname, optional)
     # ------------------------------------------------------------------
     LOCAL_HOSTNAME=$(hostname)
-    HOST_CONFIG="${CONFIGS_DIR}/host/${LOCAL_HOSTNAME}.env"
+    HOST_CONFIG="${CONFIGS_DIR}/3_host/${LOCAL_HOSTNAME}.env"
     if [ -f "${HOST_CONFIG}" ]; then
         source "${HOST_CONFIG}"
         echo "[config] Host override loaded: ${HOST_CONFIG}"

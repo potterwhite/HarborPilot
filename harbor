@@ -30,7 +30,7 @@ main() {
     TOP_CONFIGS_DIR="${TOP_ROOT_DIR}/configs"
     HANDOVER_DIR="${TOP_ROOT_DIR}/project_handover"
     # src env means they are the original files
-    PLATFORM_ENV_SRC_DIR="${TOP_CONFIGS_DIR}/platforms"
+    PLATFORM_ENV_SRC_DIR="${TOP_CONFIGS_DIR}/2_platforms"
     # dest env means destination files, which are used for runtime
     PLATFORM_ENV_DEST_PATH="${HANDOVER_DIR}/.env"
 
@@ -54,7 +54,7 @@ main() {
     # Layer 1: Global defaults — must be sourced FIRST so later layers
     #          can override individual values
     # ------------------------------------------------------------------
-    DEFAULTS_DIR="${TOP_CONFIGS_DIR}/defaults"
+    DEFAULTS_DIR="${TOP_CONFIGS_DIR}/1_defaults"
     for defaults_file in \
         "${DEFAULTS_DIR}/00_project.env" \
         "${DEFAULTS_DIR}/01_base.env" \
@@ -81,7 +81,7 @@ main() {
 
     # Layer 3: Host-level overrides (auto-loaded by hostname, optional)
     LOCAL_HOSTNAME=$(hostname)
-    HOST_CONFIG="${TOP_CONFIGS_DIR}/host/${LOCAL_HOSTNAME}.env"
+    HOST_CONFIG="${TOP_CONFIGS_DIR}/3_host/${LOCAL_HOSTNAME}.env"
     if [ -f "${HOST_CONFIG}" ]; then
         source "${HOST_CONFIG}"
         echo "[config] Host override loaded: ${HOST_CONFIG}"
@@ -254,7 +254,7 @@ prompt_with_timeout() {
 
     # Mirror the directory structure that 01_env_loader.sh expects:
     #   ubuntu/ → ../../.. → stage/   (TOP_ROOT_DIR equivalent)
-    #   ENTRY_DEFAULTS_DIR = TOP_ROOT_DIR/configs/defaults
+    #   ENTRY_DEFAULTS_DIR = TOP_ROOT_DIR/configs/1_defaults
     #   port_calc.sh       = TOP_ROOT_DIR/scripts/port_calc.sh
     mkdir -p "${stage}/project_handover/clientside/volumes"
     mkdir -p "${stage}/configs"

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "HarborPilot Platform Configuration",
-  "description": "Schema for configs/platforms/<platform>.env files. Only fields that differ from configs/defaults/*.env need to be specified in a platform file.",
+  "description": "Schema for configs/2_platforms/<platform>.env files. Only fields that differ from configs/1_defaults/*.env need to be specified in a platform file.",
   "type": "object",
 
   "required": ["PRODUCT_NAME", "OS_VERSION", "PORT_SLOT"],
@@ -19,7 +19,7 @@
       "type": "string",
       "enum": ["ubuntu", "debian"],
       "default": "ubuntu",
-      "description": "Linux distribution for the base Docker image. Default: ubuntu (from configs/defaults/01_base.env)."
+      "description": "Linux distribution for the base Docker image. Default: ubuntu (from configs/1_defaults/01_base.env)."
     },
 
     "OS_VERSION": {

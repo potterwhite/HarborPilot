@@ -112,9 +112,9 @@ mcp/
 
 **执行流程：**
 1. `1_specify_platform()` — 按 PORT_SLOT 排序列出平台，用户按编号选择。也可选择"创建新平台"，此时调用 `create_platform.sh`。
-2. Layer 1：按顺序 source `configs/defaults/*.env`（00→11）
+2. Layer 1：按顺序 source `configs/1_defaults/*.env`（00→11）
 3. Layer 2：source 所选 `<platform>.env`
-4. Layer 3：source `configs/host/$(hostname).env`（可选，自动加载）
+4. Layer 3：source `configs/3_host/$(hostname).env`（可选，自动加载）
 5. `port_calc.sh` — 从 PORT_SLOT 派生 SSH/GDB 端口
 6. `0_check_registry_login()` — 验证 Docker 已登录 Harbor；未登录则提示交互式登录
 7. `1_1_setup_volume_soft_link()` — 创建 HOST_VOLUME_DIR 软链接
@@ -198,7 +198,7 @@ mcp/
 
 ## 4. 配置系统 — 变量参考
 
-### Layer 1：`configs/defaults/`（10 个文件）
+### Layer 1：`configs/1_defaults/`（10 个文件）
 
 | 文件 | 关键变量 | 备注 |
 |---|---|---|
@@ -213,7 +213,7 @@ mcp/
 | `09_runtime.env` | `ENABLE_SSH=true`、`ENABLE_GDB_SERVER=true`、`USE_NVIDIA_GPU=false`、`ENABLE_CORE_DUMPS=true`、`CONTAINER_RESTART_POLICY=unless-stopped`、`CONTAINER_PRIVILEGED=true`、`CONTAINER_SERIAL_DEVICE=/dev/ttyUSB0`、`CONTAINER_SHM_SIZE=8g`、`NVIDIA_VISIBLE_DEVICES=all`、`NVIDIA_DRIVER_CAPABILITIES=all` | 端口由 port_calc.sh 计算；compose 运行时覆盖 |
 | `11_proxy.env` | `HAS_PROXY=false`、`HTTP_PROXY_IP`、`HTTPS_PROXY_IP` | 代理 IP 有默认值但 HAS_PROXY 默认关闭 |
 
-### Layer 1（续）：`configs/defaults/00_project.env`
+### Layer 1（续）：`configs/1_defaults/00_project.env`
 
 | 变量 | 值 | 备注 |
 |---|---|---|
@@ -223,7 +223,7 @@ mcp/
 | `PROJECT_RELEASE_DATE` | 2026-03-19 | 手动更新 |
 | `SDK_VERSION` | 1.1.2 | |
 
-### Layer 2：`configs/platforms/<name>.env`
+### Layer 2：`configs/2_platforms/<name>.env`
 
 只覆盖与默认值不同的内容。必填字段：`PRODUCT_NAME`、`OS_VERSION`、`PORT_SLOT`、`HOST_VOLUME_DIR`。
 
@@ -280,7 +280,7 @@ mcp/
 
 - **release-please** 管理 `CHANGELOG.md` 和版本更新
 - 配置：`release-please-config.json` — `release-type: simple`
-- 版本唯一来源：`configs/defaults/00_project.env` 中的 `VERSION`
+- 版本唯一来源：`configs/1_defaults/00_project.env` 中的 `VERSION`
 - `x-release-please-version` 标记启用自动更新
 - Changelog 章节：feat→✨，fix→🐛，perf→⚡，revert→🔙。docs/style/chore/refactor 隐藏。
 - `.devcontainer/devcontainer.json` — VS Code Dev Container，用于开发 HarborPilot 本身（非最终用户使用）。转发端口 2109+2345，安装 C++ / CMake / Python / Git 扩展。

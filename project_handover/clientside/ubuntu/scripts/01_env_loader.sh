@@ -51,7 +51,7 @@ env_loader_1st_1st_setup_paths() {
     export BUILD_SCRIPT_DIR="${ubuntu_dir}"
     export TOP_ROOT_DIR="${top_root_dir}"
     export ENTRY_ENV_PATH="${project_handover_dir}/.env"
-    export ENTRY_DEFAULTS_DIR="${top_root_dir}/configs/defaults"
+    export ENTRY_DEFAULTS_DIR="${top_root_dir}/configs/1_defaults"
     export ENTRY_CONFIGS_DIR="${top_root_dir}/configs"
 }
 
@@ -100,7 +100,7 @@ env_loader_1st_3rd_load_platform() {
 # =============================================================================
 env_loader_1st_4th_load_host() {
     local host_name=$(hostname)
-    local host_config="${ENTRY_CONFIGS_DIR}/host/${host_name}.env"
+    local host_config="${ENTRY_CONFIGS_DIR}/3_host/${host_name}.env"
     if [ -f "${host_config}" ]; then
         source "${host_config}"
         echo "[config] Host override loaded: ${host_config}"

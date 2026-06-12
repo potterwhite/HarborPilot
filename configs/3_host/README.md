@@ -7,12 +7,12 @@ This directory contains **per-machine** configuration overrides.
 The configuration system loads in this order (later overrides earlier):
 
 ```
-Layer 1: configs/defaults/*.env       ← Global defaults
-Layer 2: configs/platforms/<platform>  ← Platform-specific overrides
-Layer 3: configs/host/<hostname>.env   ← ★ This layer (optional)
+Layer 1: configs/1_defaults/*.env       ← Global defaults
+Layer 2: configs/2_platforms/<platform>  ← Platform-specific overrides
+Layer 3: configs/3_host/<hostname>.env   ← ★ This layer (optional)
 ```
 
-If `configs/host/<hostname>.env` does not exist, the system skips this layer entirely.
+If `configs/3_host/<hostname>.env` does not exist, the system skips this layer entirely.
 Only variables you explicitly set here will override the platform or default values.
 
 ## Usage
@@ -25,7 +25,7 @@ Only variables you explicitly set here will override the platform or default val
 2. Create a file named `<your-hostname>.env` in this directory:
    ```bash
    # Example: for a host named "my-desktop"
-   cat > configs/host/my-desktop.env << 'EOF'
+   cat > configs/3_host/my-desktop.env << 'EOF'
    # Override GPU setting for this machine
    USE_NVIDIA_GPU="true"
    CONTAINER_SHM_SIZE="1g"
@@ -47,8 +47,8 @@ Only variables you explicitly set here will override the platform or default val
 
 ## What NOT to Put Here
 
-- Platform-specific settings (those go in `configs/platforms/`)
-- Global defaults (those go in `configs/defaults/`)
+- Platform-specific settings (those go in `configs/2_platforms/`)
+- Global defaults (those go in `configs/1_defaults/`)
 - Anything that should be shared across all machines
 
 ## Git Policy

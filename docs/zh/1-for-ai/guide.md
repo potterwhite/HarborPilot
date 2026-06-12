@@ -91,8 +91,8 @@
 | 改代码后忘记更新 codebase_map | 始终在同一次提交中同步 codebase_map |
 | 提交信息笼统如"fix bugs" | 具体说明：`fix: handle pre-existing UID/GID in func_create_user` |
 | 在脚本中硬编码端口号 | 使用 PORT_SLOT 和 port_calc.sh 派生所有端口 |
-| 在 defaults/ 中硬编码平台特定值 | 覆盖值只放在 `configs/platforms/<name>.env` |
-| 新增配置变量只加到某一平台 | 先在 `configs/defaults/` 中加默认值，再按平台覆盖 |
+| 在 defaults/ 中硬编码平台特定值 | 覆盖值只放在 `configs/2_platforms/<name>.env` |
+| 新增配置变量只加到某一平台 | 先在 `configs/1_defaults/` 中加默认值，再按平台覆盖 |
 | 修改 `*_template` 文件后未测试 envsubst | 始终验证渲染结果是否符合预期 |
 | 忘记 OS_VERSION 条件分支 | Ubuntu 20.04 / 22.04 / 24.04 包和 apt 格式不同 |
 | 使用 `sed` 做模板渲染 | 使用 `envsubst` — sed 方案已移除 |
@@ -101,7 +101,7 @@
 
 ## 6. 关键架构事实
 
-1. **三层配置继承**：`configs/defaults/*.env`（Layer 1，全局）→ `configs/platforms/<platform>.env`（Layer 2，覆盖）→ `configs/host/<hostname>.env`（Layer 3，主机级，可选）。最后一层优先。平台文件只包含**与默认值不同**的内容。
+1. **三层配置继承**：`configs/1_defaults/*.env`（Layer 1，全局）→ `configs/2_platforms/<platform>.env`（Layer 2，覆盖）→ `configs/3_host/<hostname>.env`（Layer 3，主机级，可选）。最后一层优先。平台文件只包含**与默认值不同**的内容。
 
 2. **PORT_SLOT 是端口的唯一来源**：`CLIENT_SSH_PORT = 2109 + PORT_SLOT × 10`，`GDB_PORT = 2345 + PORT_SLOT × 10`。由 `scripts/port_calc.sh` 计算。绝不硬编码端口 — 始终设置 PORT_SLOT。
 
@@ -115,7 +115,7 @@
 
 7. **平台配置使用 `${VAR}` 自引用**：如 `IMAGE_NAME="${PRODUCT_NAME}-dev-env"`。这是 bash 变量展开，在 `source` 时求值，不是模板占位符。
 
-8. **版本管理自动化**：`release-please` 通过 `x-release-please-version` 标记自动更新 `configs/defaults/00_project.env` 中的 `VERSION` 并维护 `CHANGELOG.md`。
+8. **版本管理自动化**：`release-please` 通过 `x-release-please-version` 标记自动更新 `configs/1_defaults/00_project.env` 中的 `VERSION` 并维护 `CHANGELOG.md`。
 
 9. **OS 特定条件判断至关重要**：Ubuntu 24.04 使用 DEB822 apt 格式。Ubuntu 20.04 需要 `libncurses5-dev` 而非 `libncurses-dev`。`bsdextrautils` 在 20.04 上不可用。24.04 上 UID 1000 已被占用。任何涉及包的代码都必须检查 OS_VERSION。
 
