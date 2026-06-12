@@ -29,54 +29,38 @@ configs/platforms/
 ```
 Layer 1  configs/defaults/*.env          全局默认值 — 所有平台继承
    ↓  （后加载的层覆盖先加载的）
-Layer 2  configs/platform-independent/common.env    项目版本与常量
+Layer 2  configs/platforms/<platform>.env 平台特有覆盖（只写差异部分）
    ↓
-Layer 3  configs/platforms/<platform>.env           平台特有覆盖（只写差异部分）
+Layer 3  configs/host/<hostname>.env      主机级覆盖（可选，自动加载，gitignore）
 ```
 
-**核心规则：** 平台文件里只写与默认值*不同*的内容。如果某个变量不在平台文件里，就自动使用默认值。
+**核心规则：** 平台文件里只写与默认值*不同*的内容。如果某个变量不在平台文件里，就自动使用默认值。主机文件里只写与平台配置*不同*的内容 —— 如果某个变量不在主机文件里，就使用平台值。
 
 ---
 
 ## Layer 1 — 全局默认值（`configs/defaults/`）
 
-11 个文件，每个文件负责一个关注领域。文件名前缀的数字使加载顺序一目了然。
+12 个文件，每个文件负责一个关注领域。文件名前缀的数字使加载顺序一目了然。
 
 | 文件 | 包含的变量 |
 |---|---|
+| `00_project.env` | `VERSION`、`PROJECT_VERSION`、`PROJECT_RELEASE_DATE`、`PROJECT_MAINTAINER`、`SDK_VERSION` |
 | `01_base.env` | `OS_VERSION`、`DEV_USERNAME`、`DEV_UID/GID`、`TIMEZONE`、`DEBIAN_FRONTEND` |
 | `02_build.env` | `DOCKER_BUILDKIT` |
 | `03_tools.env` | `INSTALL_CUDA/OPENCV/CMAKE`、工具版本号（`CONAN_VERSION` 等）、`GCC_OFFLINE_PACKAGE` |
 | `04_workspace.env` | `WORKSPACE_ROOT` 及所有子目录路径、`WORKSPACE_BUILD_THREADS`、调试配置 |
 | `05_registry.env` | `HAVE_GITLAB_SERVER`、`HARBOR_SERVER_IP`、`HARBOR_SERVER_PORT`、`HAVE_HARBOR_SERVER`、`GITLAB_SERVER_IP`、`GITLAB_SERVER_PORT` |
-| `06_sdk.env` | `INSTALL_SDK`、`CHIP_FAMILY=${PRODUCT_NAME}`（URL 依赖 `CHIP_FAMILY`，在 Layer 3 设置） |
-| `07_volumes.env` | `VOLUMES_ROOT`（注意：`HOST_VOLUME_DIR` 无通用默认值，必须在 Layer 3 设置） |
+| `06_sdk.env` | `INSTALL_SDK`、`CHIP_FAMILY=${PRODUCT_NAME}`（URL 依赖 `CHIP_FAMILY`，在 Layer 2 设置） |
+| `07_volumes.env` | `VOLUMES_ROOT`（注意：`HOST_VOLUME_DIR` 无通用默认值，必须在 Layer 2 或 3 设置） |
 | `08_samba.env` | `SAMBA_PUBLIC/PRIVATE_ACCOUNT_NAME/PASSWORD`、`ENABLE_VSC_INTEGRATION` |
 | `09_runtime.env` | `ENABLE_SSH`、`ENABLE_SYSLOG`、`ENABLE_GDB_SERVER`、`ENABLE_CORE_DUMPS`、`USE_NVIDIA_GPU` |
 | `11_proxy.env` | `HAS_PROXY`（默认 `false`）、`HTTP/HTTPS_PROXY_IP` |
 
-**加载顺序至关重要。** 文件按数字顺序依次 source（01 → 11）。`05_registry.env` 里若要引用 `CONTAINER_NAME`，而该变量在 Layer 1 阶段尚未赋值 —— 这正是 `REGISTRY_URL` 故意不放在 Layer 1、而是在 Layer 3 里计算的原因。
+**加载顺序至关重要。** 文件按数字顺序依次 source（00 → 11）。`05_registry.env` 里若要引用 `CONTAINER_NAME`，而该变量在 Layer 1 阶段尚未赋值 —— 这正是 `REGISTRY_URL` 故意不放在 Layer 1、而是在 Layer 2 里计算的原因。
 
 ---
 
-## Layer 2 — 项目常量（`configs/platform-independent/common.env`）
-
-只包含**项目级、纳入版本管理**的不变量，与平台无关：
-
-```bash
-PROJECT_VERSION="1.5.0"
-PROJECT_RELEASE_DATE="2026-03-16"
-PROJECT_MAINTAINER="[PotterWhite]"
-PROJECT_LICENSE="MIT"
-SDK_VERSION="1.1.2"
-SDK_RELEASE_DATE="2025-06-30"
-```
-
-这个文件只在项目发布时才会变动，不含任何平台信息或基础设施地址。
-
----
-
-## Layer 3 — 平台覆盖（`configs/platforms/<platform>.env`）
+## Layer 2 — 平台覆盖（`configs/platforms/<platform>.env`）
 
 每个平台文件只包含**与默认值不同的内容**。必须填写的部分：
 
@@ -132,6 +116,57 @@ SDK_GIT_DEFAULT_BRANCH="br_main_20250206"
 
 ---
 
+## Layer 3 — 主机级覆盖（`configs/host/<hostname>.env`）
+
+这一层是**可选的**，由**主机名自动加载**。它解决了同一平台配置在不同硬件机器上运行的问题（例如一台机器有 NVIDIA GPU，另一台没有）。
+
+### 工作原理
+
+系统运行 `hostname` 并查找 `configs/host/<hostname>.env`。如果文件存在，在平台文件之后加载。如果不存在，系统完全跳过这一层。
+
+```bash
+# 示例：configs/host/my-desktop.env
+USE_NVIDIA_GPU="true"
+CONTAINER_SHM_SIZE="1g"
+HOST_VOLUME_DIR="/mnt/ssd/volumes/rk3588"
+```
+
+### 应该放什么
+
+- `USE_NVIDIA_GPU` — 这台机器是否有 NVIDIA GPU
+- `CONTAINER_SHM_SIZE` — 共享内存大小（GPU 工作负载需要更大）
+- `HOST_VOLUME_DIR` — 宿主机特定的 Volume 挂载路径
+- `EXTRA_VOLUMES_LIST` — 这台机器的额外挂载
+- 任何在同一平台不同机器之间有差异的变量
+
+### Git 策略
+
+主机配置文件被 `.gitignore` 忽略 —— 它们是每台机器本地的，不应提交到仓库。`configs/host/` 目录中只有 `.gitkeep` 和 `README.md` 被追踪。
+
+---
+
+## 变量优先级
+
+后面的层覆盖前面的。如果某个变量在所有层中都没有设置，则为空。
+
+```
+00_project.env  →  01_base.env  →  ...  →  11_proxy.env  →  <platform>.env  →  <hostname>.env
+     ↑                                          ↑                ↑                  ↑
+  版本/维护者/SDK版本                        服务器IP、        GPU开关、
+                                          OS版本、          卷挂载路径、
+                                          端口槽位          每台机器的差异
+```
+
+**示例：USE_NVIDIA_GPU 优先级链**
+
+| 场景 | defaults/09_runtime | platforms/rk3588.env | host/my-desktop.env | 结果 |
+|---|---|---|---|---|
+| 无主机文件 | `"false"` | *(未设置)* | *(文件不存在)* | `"false"` |
+| 主机文件无 GPU 变量 | `"false"` | `"true"` | *(只有 SHM_SIZE)* | `"true"` |
+| 主机覆盖 GPU | `"false"` | `"true"` | `"false"` | `"false"` |
+
+---
+
 ## 实际效果对比
 
 | 场景 | 重构前（扁平） | 三层覆盖后 |
@@ -139,6 +174,7 @@ SDK_GIT_DEFAULT_BRANCH="br_main_20250206"
 | 新增一个全局 flag | 改 N 个平台文件 | 只改 `defaults/` 里的一个文件 |
 | 新增一个平台 | 复制 180 行文件，改 5 行 | 写 ~20 行覆盖内容 |
 | 某平台特殊化某选项 | 早就在文件里了 | 在平台文件里加一行 |
+| 不同机器不同 GPU 配置 | 复制平台文件 | 添加主机覆盖文件 |
 | 读懂某平台的差异 | 需要和其他平台 diff | 直接读平台文件，它*就是* diff |
 
 ---
@@ -150,8 +186,8 @@ SDK_GIT_DEFAULT_BRANCH="br_main_20250206"
 ```bash
 # Layer 1 — 按顺序 source 所有默认文件
 for defaults_file in \
+    "${DEFAULTS_DIR}/00_project.env" \
     "${DEFAULTS_DIR}/01_base.env" \
-    "${DEFAULTS_DIR}/02_build.env" \
     ...
     "${DEFAULTS_DIR}/11_proxy.env"
 do
@@ -159,13 +195,14 @@ do
 done
 
 # Layer 2
-source "${PLATFORM_INDEPENDENT_ENV_PATH}"   # 通过 symlink 指向 common.env
-
-# Layer 3
 source "${PLATFORM_ENV_PATH}"               # 通过 symlink 指向 <platform>.env
+
+# Layer 3 — 可选，按主机名自动加载
+HOST_CONFIG="${CONFIGS_DIR}/host/$(hostname).env"
+[ -f "${HOST_CONFIG}" ] && source "${HOST_CONFIG}"
 ```
 
-`project_handover/` 下的两个 symlink（`.env` 和 `.env-independent`）在你运行 `./harbor` 选择平台时自动创建。
+`project_handover/` 下的 symlink（`.env`）在你运行 `./harbor` 选择平台时自动创建。
 
 实现了此模式的脚本：
 
@@ -195,3 +232,19 @@ source "${PLATFORM_ENV_PATH}"               # 通过 symlink 指向 <platform>.e
 3. 如需新建领域文件，创建 `configs/defaults/12_<domain>.env`，并将其追加到四个脚本的加载列表中
 
 需要非默认值的平台文件，只需在平台文件里加一行覆盖即可。
+
+---
+
+## 如何添加主机级覆盖
+
+1. 运行 `hostname` 获取机器名
+2. 创建 `configs/host/<你的主机名>.env`
+3. 只添加与平台配置不同的变量
+4. 系统自动加载此文件 —— 无需修改脚本
+
+```bash
+# 示例：configs/host/my-desktop.env
+USE_NVIDIA_GPU="true"
+CONTAINER_SHM_SIZE="1g"
+HOST_VOLUME_DIR="/mnt/ssd/volumes/rk3588"
+```

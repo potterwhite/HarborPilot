@@ -14,12 +14,8 @@
 #
 # Three-Layer Config Loading Order:
 #   Layer 1: configs/defaults/*.env  — global defaults (all platforms inherit)
-#   Layer 2: configs/platform-independent/common.env  — project constants
-#   Layer 3: configs/platforms/<platform>.env  — platform-specific overrides
-#
-# The .env and .env-independent symlinks in project_handover/ still work as
-# before; build.sh now also loads all defaults first so platform files only
-# need to declare what differs.
+#   Layer 2: configs/platforms/<platform>.env  — platform-specific overrides
+#   Layer 3: configs/host/<hostname>.env  — host-level overrides (optional)
 ################################################################################
 
 func_1_1_setup_env(){
@@ -35,7 +31,6 @@ func_1_1_setup_env(){
     DEFAULTS_DIR="${CONFIGS_DIR}/defaults"
     HANDOVER_DIR="${TOP_ROOT_DIR}/project_handover"
     PLATFORM_ENV_PATH="${HANDOVER_DIR}/.env"
-    PLATFORM_INDEPENDENT_ENV_PATH="${HANDOVER_DIR}/.env-independent"
 
     echo "BUILD_SCRIPT_PATH: ${BUILD_SCRIPT_PATH}"
     echo "BUILD_SCRIPT_DIR:  ${BUILD_SCRIPT_DIR}"
@@ -51,6 +46,7 @@ func_1_1_setup_env(){
     # ------------------------------------------------------------------
     echo "--- Layer 1: Loading defaults ---"
     for defaults_file in \
+        "${DEFAULTS_DIR}/00_project.env" \
         "${DEFAULTS_DIR}/01_base.env" \
         "${DEFAULTS_DIR}/02_build.env" \
         "${DEFAULTS_DIR}/03_tools.env" \
@@ -71,27 +67,25 @@ func_1_1_setup_env(){
     done
 
     # ------------------------------------------------------------------
-    # Layer 2: Project constants (version, maintainer, etc.)
+    # Layer 2: Platform-specific overrides (only what differs from defaults)
     # ------------------------------------------------------------------
-    echo "--- Layer 2: Loading platform-independent common.env ---"
-    echo "  PLATFORM_INDEPENDENT_ENV_PATH: ${PLATFORM_INDEPENDENT_ENV_PATH}"
-    if [ -e "${PLATFORM_INDEPENDENT_ENV_PATH}" ]; then
-        source "${PLATFORM_INDEPENDENT_ENV_PATH}"
-    else
-        echo "Fatal: ${PLATFORM_INDEPENDENT_ENV_PATH} not found, exit"
-        exit 1
-    fi
-
-    # ------------------------------------------------------------------
-    # Layer 3: Platform-specific overrides (only what differs from defaults)
-    # ------------------------------------------------------------------
-    echo "--- Layer 3: Loading platform overrides ---"
+    echo "--- Layer 2: Loading platform overrides ---"
     echo "  PLATFORM_ENV_PATH: ${PLATFORM_ENV_PATH}"
     if [ -e "${PLATFORM_ENV_PATH}" ]; then
         source "${PLATFORM_ENV_PATH}"
     else
         echo "Fatal: ${PLATFORM_ENV_PATH} not found, exit"
         exit 1
+    fi
+
+    # ------------------------------------------------------------------
+    # Layer 3: Host-level overrides (auto-loaded by hostname, optional)
+    # ------------------------------------------------------------------
+    LOCAL_HOSTNAME=$(hostname)
+    HOST_CONFIG="${CONFIGS_DIR}/host/${LOCAL_HOSTNAME}.env"
+    if [ -f "${HOST_CONFIG}" ]; then
+        source "${HOST_CONFIG}"
+        echo "[config] Host override loaded: ${HOST_CONFIG}"
     fi
 
     # Port calculation: auto-derive ports from PORT_SLOT (or validate explicit ports).
@@ -112,6 +106,7 @@ func_1_1_setup_env(){
     declare -A _seen_vars  # deduplicate variable names
 
     all_env_files=(
+        "${DEFAULTS_DIR}/00_project.env"
         "${DEFAULTS_DIR}/01_base.env"
         "${DEFAULTS_DIR}/02_build.env"
         "${DEFAULTS_DIR}/03_tools.env"
@@ -122,7 +117,6 @@ func_1_1_setup_env(){
         "${DEFAULTS_DIR}/08_samba.env"
         "${DEFAULTS_DIR}/09_runtime.env"
         "${DEFAULTS_DIR}/11_proxy.env"
-        "${PLATFORM_INDEPENDENT_ENV_PATH}"
         "${PLATFORM_ENV_PATH}"
     )
 

@@ -29,54 +29,38 @@ Borrowed from Ansible, Helm, Kubernetes, and Yocto — any system that needs "se
 ```
 Layer 1  configs/defaults/*.env          Global defaults — every platform inherits
    ↓  (later layers override earlier ones)
-Layer 2  configs/platform-independent/common.env    Project version & constants
+Layer 2  configs/platforms/<platform>.env Platform-specific overrides only
    ↓
-Layer 3  configs/platforms/<platform>.env           Platform-specific overrides only
+Layer 3  configs/host/<hostname>.env      Host-level overrides (optional, gitignored)
 ```
 
-**The rule:** a platform file only contains values that *differ* from the defaults. If it's not in the platform file, the default is used.
+**The rule:** a platform file only contains values that *differ* from the defaults. If it's not in the platform file, the default is used. A host file only contains values that *differ* from the platform — if it's not in the host file, the platform value is used.
 
 ---
 
 ## Layer 1 — Global Defaults (`configs/defaults/`)
 
-Eleven files, each scoped to one concern. The ordinal prefix makes the load order explicit at a glance.
+Twelve files, each scoped to one concern. The ordinal prefix makes the load order explicit at a glance.
 
 | File | Variables |
 |---|---|
+| `00_project.env` | `VERSION`, `PROJECT_VERSION`, `PROJECT_RELEASE_DATE`, `PROJECT_MAINTAINER`, `SDK_VERSION` |
 | `01_base.env` | `OS_VERSION`, `DEV_USERNAME`, `DEV_UID/GID`, `TIMEZONE`, `DEBIAN_FRONTEND` |
 | `02_build.env` | `DOCKER_BUILDKIT` |
 | `03_tools.env` | `INSTALL_CUDA/OPENCV/CMAKE`, tool versions (`CONAN_VERSION`, etc.), `GCC_OFFLINE_PACKAGE` |
 | `04_workspace.env` | `WORKSPACE_ROOT` and all subdirectory paths, `WORKSPACE_BUILD_THREADS`, debug settings |
 | `05_registry.env` | `HAVE_GITLAB_SERVER`, `HARBOR_SERVER_IP`, `HARBOR_SERVER_PORT`, `HAVE_HARBOR_SERVER`, `GITLAB_SERVER_IP`, `GITLAB_SERVER_PORT` |
-| `06_sdk.env` | `INSTALL_SDK`, `CHIP_FAMILY=${PRODUCT_NAME}` (URLs depend on `CHIP_FAMILY`, set in Layer 3) |
-| `07_volumes.env` | `VOLUMES_ROOT` (note: `HOST_VOLUME_DIR` has no universal default — must be set in Layer 3) |
+| `06_sdk.env` | `INSTALL_SDK`, `CHIP_FAMILY=${PRODUCT_NAME}` (URLs depend on `CHIP_FAMILY`, set in Layer 2) |
+| `07_volumes.env` | `VOLUMES_ROOT` (note: `HOST_VOLUME_DIR` has no universal default — must be set in Layer 2 or 3) |
 | `08_samba.env` | `SAMBA_PUBLIC/PRIVATE_ACCOUNT_NAME/PASSWORD`, `ENABLE_VSC_INTEGRATION` |
 | `09_runtime.env` | `ENABLE_SSH`, `ENABLE_SYSLOG`, `ENABLE_GDB_SERVER`, `ENABLE_CORE_DUMPS`, `USE_NVIDIA_GPU` |
 | `11_proxy.env` | `HAS_PROXY` (default: `false`), `HTTP/HTTPS_PROXY_IP` |
 
-**Loading order matters.** The files are sourced in numerical order (01 → 11). A variable defined in `05_registry.env` can reference `CONTAINER_NAME` only if it has already been set — it hasn't yet at Layer 1, which is why `REGISTRY_URL` is intentionally left out of Layer 1 and computed in Layer 3 instead.
+**Loading order matters.** The files are sourced in numerical order (00 → 11). A variable defined in `05_registry.env` can reference `CONTAINER_NAME` only if it has already been set — it hasn't yet at Layer 1, which is why `REGISTRY_URL` is intentionally left out of Layer 1 and computed in Layer 2 instead.
 
 ---
 
-## Layer 2 — Project Constants (`configs/platform-independent/common.env`)
-
-Contains only values that are **project-wide and version-controlled**, not platform-specific:
-
-```bash
-PROJECT_VERSION="1.5.0"
-PROJECT_RELEASE_DATE="2026-03-16"
-PROJECT_MAINTAINER="[PotterWhite]"
-PROJECT_LICENSE="MIT"
-SDK_VERSION="1.1.2"
-SDK_RELEASE_DATE="2025-06-30"
-```
-
-This file changes only when the project itself is released. It is never platform-specific and never contains infrastructure addresses.
-
----
-
-## Layer 3 — Platform Overrides (`configs/platforms/<platform>.env`)
+## Layer 2 — Platform Overrides (`configs/platforms/<platform>.env`)
 
 Each platform file contains **only what differs from the defaults**. The mandatory sections are:
 
@@ -132,6 +116,57 @@ That's all — everything else is inherited silently from Layer 1.
 
 ---
 
+## Layer 3 — Host-Level Overrides (`configs/host/<hostname>.env`)
+
+This layer is **optional** and **auto-loaded by hostname**. It solves the problem of running the same platform on different machines with different hardware (e.g., one machine has NVIDIA GPU, another doesn't).
+
+### How It Works
+
+The system runs `hostname` and looks for `configs/host/<hostname>.env`. If the file exists, it is sourced after the platform file. If it doesn't exist, the system skips this layer entirely.
+
+```bash
+# Example: configs/host/my-desktop.env
+USE_NVIDIA_GPU="true"
+CONTAINER_SHM_SIZE="1g"
+HOST_VOLUME_DIR="/mnt/ssd/volumes/rk3588"
+```
+
+### What to Put Here
+
+- `USE_NVIDIA_GPU` — whether this specific machine has an NVIDIA GPU
+- `CONTAINER_SHM_SIZE` — shared memory size (GPU workloads need more)
+- `HOST_VOLUME_DIR` — host-specific volume mount path
+- `EXTRA_VOLUMES_LIST` — additional volume mounts for this machine
+- Any variable that differs between machines sharing the same platform config
+
+### Git Policy
+
+Host config files are `.gitignored` — they are local to each machine and should NOT be committed. Only `.gitkeep` and `README.md` in the `configs/host/` directory are tracked.
+
+---
+
+## Variable Precedence
+
+Later layers override earlier ones. If a variable is not set in any layer, it is empty.
+
+```
+00_project.env  →  01_base.env  →  ...  →  11_proxy.env  →  <platform>.env  →  <hostname>.env
+     ↑                                          ↑                ↑                  ↑
+  version/maintainer                        server IPs,      GPU on/off,
+  SDK versions                              OS version,      volume paths,
+                                            port slot        per-machine tweaks
+```
+
+**Example: USE_NVIDIA_GPU precedence chain**
+
+| Scenario | defaults/09_runtime | platforms/rk3588.env | host/my-desktop.env | Result |
+|---|---|---|---|---|
+| No host file | `"false"` | *(not set)* | *(file missing)* | `"false"` |
+| Host file, no GPU var | `"false"` | `"true"` | *(has SHM_SIZE only)* | `"true"` |
+| Host overrides GPU | `"false"` | `"true"` | `"false"` | `"false"` |
+
+---
+
 ## Practical Impact
 
 | Scenario | Before (flat) | After (three-layer) |
@@ -139,6 +174,7 @@ That's all — everything else is inherited silently from Layer 1.
 | Add a global flag | Edit N platform files | Edit one file in `defaults/` |
 | Add a new platform | Copy 180-line file, change 5 lines | Write ~20 lines of overrides only |
 | Customise one platform | Already there | Add one line in the platform file |
+| Different GPU per machine | Duplicate platform file | Add host override file |
 | Understand what makes a platform unique | Diff against every other file | Read the platform file — it *is* the diff |
 
 ---
@@ -150,8 +186,8 @@ All three scripts that consume configuration implement identical loading logic:
 ```bash
 # Layer 1 — source all defaults in order
 for defaults_file in \
+    "${DEFAULTS_DIR}/00_project.env" \
     "${DEFAULTS_DIR}/01_base.env" \
-    "${DEFAULTS_DIR}/02_build.env" \
     ...
     "${DEFAULTS_DIR}/11_proxy.env"
 do
@@ -159,13 +195,14 @@ do
 done
 
 # Layer 2
-source "${PLATFORM_INDEPENDENT_ENV_PATH}"   # common.env via symlink
-
-# Layer 3
 source "${PLATFORM_ENV_PATH}"               # <platform>.env via symlink
+
+# Layer 3 — optional, auto-loaded by hostname
+HOST_CONFIG="${CONFIGS_DIR}/host/$(hostname).env"
+[ -f "${HOST_CONFIG}" ] && source "${HOST_CONFIG}"
 ```
 
-The symlinks in `project_handover/` (`project_handover/.env` and `project_handover/.env-independent`) are set automatically by `./harbor` when you pick a platform.
+The symlink in `project_handover/` (`project_handover/.env`) is set automatically by `./harbor` when you pick a platform.
 
 Scripts that implement this pattern:
 
@@ -195,3 +232,19 @@ No changes to any script or default file are needed.
 3. If you need a new *domain* that doesn't fit any existing file, create `configs/defaults/12_<domain>.env` and append it to the load list in all four scripts
 
 The platform files that need a non-default value can then override it with a single line.
+
+---
+
+## Adding a Host-Level Override
+
+1. Run `hostname` to find your machine name
+2. Create `configs/host/<your-hostname>.env`
+3. Add only the variables that differ from the platform config
+4. The system auto-loads this file — no script changes needed
+
+```bash
+# Example: configs/host/my-desktop.env
+USE_NVIDIA_GPU="true"
+CONTAINER_SHM_SIZE="1g"
+HOST_VOLUME_DIR="/mnt/ssd/volumes/rk3588"
+```

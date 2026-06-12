@@ -7,7 +7,7 @@
       "include-component-in-tag": false,
       "bump-minor-pre-major": true,
       "extra-files": [
-        "configs/platform-independent/common.env"
+        "configs/defaults/00_project.env"
       ],
       "changelog-sections": [
         {"type": "feat", "section": "✨ Added", "hidden": false},

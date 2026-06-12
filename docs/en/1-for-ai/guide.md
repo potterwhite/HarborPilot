@@ -102,7 +102,7 @@
 
 ## 6. Key Architecture Facts
 
-1. **Three-Layer Config Inheritance**: `configs/defaults/*.env` (Layer 1, global) → `configs/platform-independent/common.env` (Layer 2, project constants) → `configs/platforms/<platform>.env` (Layer 3, overrides). Last layer wins. A platform file only contains what **differs** from defaults.
+1. **Three-Layer Config Inheritance**: `configs/defaults/*.env` (Layer 1, global) → `configs/platforms/<platform>.env` (Layer 2, overrides) → `configs/host/<hostname>.env` (Layer 3, host-level, optional). Last layer wins. A platform file only contains what **differs** from defaults.
 
 2. **PORT_SLOT is the single source of port truth**: `CLIENT_SSH_PORT = 2109 + PORT_SLOT × 10`, `GDB_PORT = 2345 + PORT_SLOT × 10`. Calculated by `scripts/port_calc.sh`. Never hardcode ports — always set PORT_SLOT.
 
@@ -116,7 +116,7 @@
 
 7. **Platform configs use `${VAR}` self-references**: e.g. `IMAGE_NAME="${PRODUCT_NAME}-dev-env"`. These are bash variable expansions evaluated at `source` time, not template placeholders.
 
-8. **Versioning is automated**: `release-please` bumps `VERSION` in `configs/platform-independent/common.env` (via `x-release-please-version` marker) and maintains `CHANGELOG.md`.
+8. **Versioning is automated**: `release-please` bumps `VERSION` in `configs/defaults/00_project.env` (via `x-release-please-version` marker) and maintains `CHANGELOG.md`.
 
 9. **OS-specific conditionals are critical**: Ubuntu 24.04 uses DEB822 apt format. Ubuntu 20.04 needs `libncurses5-dev` not `libncurses-dev`. `bsdextrautils` is not available on 20.04. UID 1000 is pre-occupied on 24.04. Always check OS_VERSION in any package-related code.
 

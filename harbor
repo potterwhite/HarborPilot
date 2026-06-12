@@ -31,11 +31,8 @@ main() {
     HANDOVER_DIR="${TOP_ROOT_DIR}/project_handover"
     # src env means they are the original files
     PLATFORM_ENV_SRC_DIR="${TOP_CONFIGS_DIR}/platforms"
-    PLATFORM_INDEPENDENT_ENV_SRC_DIR="${TOP_CONFIGS_DIR}/platform-independent"
-    PLATFORM_INDEPENDENT_ENV_SRC_PATH="${PLATFORM_INDEPENDENT_ENV_SRC_DIR}/common.env"
     # dest env means destination files, which are used for runtime
     PLATFORM_ENV_DEST_PATH="${HANDOVER_DIR}/.env"
-    PLATFORM_INDEPENDENT_ENV_DEST_PATH="${HANDOVER_DIR}/.env-independent"
 
     ##################################################################
     # Top-level menu: choose action before platform selection
@@ -59,6 +56,7 @@ main() {
     # ------------------------------------------------------------------
     DEFAULTS_DIR="${TOP_CONFIGS_DIR}/defaults"
     for defaults_file in \
+        "${DEFAULTS_DIR}/00_project.env" \
         "${DEFAULTS_DIR}/01_base.env" \
         "${DEFAULTS_DIR}/02_build.env" \
         "${DEFAULTS_DIR}/03_tools.env" \
@@ -77,13 +75,17 @@ main() {
         fi
     done
 
-    # Layer 2: Project constants (version, maintainer …)
-    echo "Loading environment variables from ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}"
-    source "${PLATFORM_INDEPENDENT_ENV_DEST_PATH}"
-
-    # Layer 3: Platform-specific overrides (only what differs from defaults)
+    # Layer 2: Platform-specific overrides (only what differs from defaults)
     echo "Loading environment variables from ${PLATFORM_ENV_DEST_PATH}"
     source "${PLATFORM_ENV_DEST_PATH}"
+
+    # Layer 3: Host-level overrides (auto-loaded by hostname, optional)
+    LOCAL_HOSTNAME=$(hostname)
+    HOST_CONFIG="${TOP_CONFIGS_DIR}/host/${LOCAL_HOSTNAME}.env"
+    if [ -f "${HOST_CONFIG}" ]; then
+        source "${HOST_CONFIG}"
+        echo "[config] Host override loaded: ${HOST_CONFIG}"
+    fi
 
     # Port calculation: auto-derive ports from PORT_SLOT (or validate explicit ports)
     source "${TOP_ROOT_DIR}/scripts/port_calc.sh"
@@ -214,13 +216,12 @@ prompt_with_timeout() {
 #   <output>/
 #   ├── project_handover/
 #   │   ├── .env                     ← platform config (dereferenced)
-#   │   ├── .env-independent         ← version constants (dereferenced)
 #   │   ├── clientside/
 #   │   │   └── ubuntu/              ← entrance script + 6 modules + harbor.crt
 #   │   └── clientside/volumes/
 #   │       └── .gitkeep
 #   ├── configs/
-#   │   └── defaults/                ← 10 default .env files
+#   │   └── defaults/                ← 11 default .env files (including 00_project.env)
 #   └── scripts/
 #       └── port_calc.sh             ← port formula script
 #
@@ -243,10 +244,6 @@ prompt_with_timeout() {
         echo "✗ Error: .env symlink not found at ${PLATFORM_ENV_DEST_PATH}"
         return 1
     fi
-    if [ ! -f "${PLATFORM_INDEPENDENT_ENV_DEST_PATH}" ]; then
-        echo "✗ Error: .env-independent symlink not found at ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}"
-        return 1
-    fi
 
     # ── Assemble archive in a temp staging directory ──────────────────────────
     # This avoids the GNU tar limitation that -r cannot append to compressed
@@ -263,9 +260,8 @@ prompt_with_timeout() {
     mkdir -p "${stage}/configs"
     mkdir -p "${stage}/scripts"
 
-    # 1. Dereference .env and .env-independent (copy real file content)
-    cp -L "${PLATFORM_ENV_DEST_PATH}"             "${stage}/project_handover/.env"
-    cp -L "${PLATFORM_INDEPENDENT_ENV_DEST_PATH}" "${stage}/project_handover/.env-independent"
+    # 1. Dereference .env (copy real file content)
+    cp -L "${PLATFORM_ENV_DEST_PATH}" "${stage}/project_handover/.env"
 
     # 2. Copy ubuntu client directory (dereference symlinks with cp -rL)
     #    Exclude the volumes symlink inside ubuntu/
@@ -519,20 +515,13 @@ _print_next_steps() {
     echo ${target_platform}
     cd ${TOP_ROOT_DIR}
 
-    # 1st. create configs/platforms/.env
+    # create configs/platforms/.env symlink
     if [ -e ${PLATFORM_ENV_DEST_PATH} ]; then
         rm -f ${PLATFORM_ENV_DEST_PATH}
     fi
     ln -sf "${PLATFORM_ENV_SRC_DIR}/${target_platform}.env" "${PLATFORM_ENV_DEST_PATH}"
 
-    # create project_handover/common.env symlink
-    if [ -e ${PLATFORM_INDEPENDENT_ENV_DEST_PATH} ]; then
-        rm -f ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}
-    fi
-    ln -sf ${PLATFORM_INDEPENDENT_ENV_SRC_PATH} ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}
-
     ls -lha ${PLATFORM_ENV_DEST_PATH}
-    ls -lha ${PLATFORM_INDEPENDENT_ENV_DEST_PATH}
 
     echo
     echo "--- Setup env files (${target_platform}) Successfully ---"

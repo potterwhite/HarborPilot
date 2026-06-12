@@ -61,7 +61,7 @@ Architecture is platform-agnostic — adding a Debian platform or a different ch
 |---|---|
 | **One command to build** | `./harbor` — select platform → build → tag → push → verify manifest |
 | **One command to run** | `ubuntu_only_entrance.sh start` — fully configured container in seconds |
-| **New platform in 20 lines** | Three-layer config: `defaults/` → `common.env` → `platform.env` · only overrides needed |
+| **New platform in 20 lines** | Three-layer config: `defaults/` → `platform.env` → `host.env` · only overrides needed |
 | **Zero port conflicts** | `PORT_SLOT` formula — SSH and GDB ports derived automatically, never collide |
 | **Registry lifecycle** | Auto push + manifest digest verification — not just "hope it uploaded" |
 | **Chip-family grouping** | `CHIP_FAMILY` drives Harbor project, SDK repo, SSH keys — RK3588 variants share one team |
@@ -76,12 +76,15 @@ Architecture is platform-agnostic — adding a Debian platform or a different ch
 
 ```
 Layer 1:  configs/defaults/*.env        ← Global defaults (OS, tools, ports, registry…)
-Layer 2:  configs/platform-independent/common.env  ← Project version & constants
-Layer 3:  configs/platforms/<name>.env  ← Per-platform overrides only (≤20 lines)
+Layer 2:  configs/platforms/<name>.env  ← Per-platform overrides only (≤20 lines)
+Layer 3:  configs/host/<hostname>.env   ← Host-level overrides (optional, gitignored)
 ```
 
 Last layer wins. A new platform file only contains what **differs** from the defaults — typically:
 `PRODUCT_NAME`, `OS_VERSION`, `PORT_SLOT`, `HOST_VOLUME_DIR`, and any chip-specific overrides.
+
+Host-level overrides (Layer 3) allow per-machine customization without duplicating platform configs —
+useful when the same platform runs on machines with different hardware (e.g., NVIDIA GPU on/off).
 
 **PORT_SLOT** is the single source of port truth:
 - `CLIENT_SSH_PORT = 2109 + PORT_SLOT × 10`
@@ -101,7 +104,8 @@ HarborPilot/
 ├── harbor                            ← Entry point: build → tag → push → verify
 │
 ├── configs/
-│   ├── defaults/                     ← Layer 1 · 10 domain-scoped default files
+│   ├── defaults/                     ← Layer 1 · 12 domain-scoped default files
+│   │   ├── 00_project.env            Project version, maintainer, SDK versions
 │   │   ├── 01_base.env               OS, user, timezone, locale
 │   │   ├── 02_build.env              Docker BuildKit settings
 │   │   ├── 03_tools.env              Dev tool switches & versions (CUDA, OpenCV, Node…)
@@ -112,15 +116,14 @@ HarborPilot/
 │   │   ├── 08_samba.env              Samba credentials
 │   │   ├── 09_runtime.env            SSH / GDB / NVIDIA / serial switches
 │   │   └── 11_proxy.env              HTTP/HTTPS proxy (off by default)
-│   ├── platform-independent/
-│   │   └── common.env                ← Layer 2 · project version & constants
-│   └── platforms/
-│       ├── rk3588-rk3588s_ubuntu-22.04.env   ← Layer 3 · platform overrides only
-│       ├── rk3588-rk3588s_ubuntu-24.04.env
-│       ├── rk3568-rk3568_ubuntu-20.04.env
-│       ├── rk3568-rk3568_ubuntu-22.04.env
-│       ├── rv1126-rv1126_ubuntu-22.04.env
-│       └── rv1126-rv1126bp_ubuntu-22.04.env
+│   ├── platforms/                    ← Layer 2 · per-platform overrides only
+│   │   ├── rk3588-rk3588s_ubuntu-22.04.env
+│   │   ├── rk3588-rk3588s_ubuntu-24.04.env
+│   │   ├── rk3568-rk3568_ubuntu-20.04.env
+│   │   ├── rk3568-rk3568_ubuntu-22.04.env
+│   │   ├── rv1126-rv1126_ubuntu-22.04.env
+│   │   └── rv1126-rv1126bp_ubuntu-22.04.env
+│   └── host/                         ← Layer 3 · host-level overrides (optional, gitignored)
 │
 ├── docker/
 │   └── dev-env-clientside/           ← 5-stage Dockerfile

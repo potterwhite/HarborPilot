@@ -23,7 +23,8 @@ HarborPilot.git/
 ├── release-please-config.json          ← 版本自动化配置
 │
 ├── configs/                            ← ★ 三层配置系统
-│   ├── defaults/                       ←   Layer 1：11 个按领域划分的默认文件
+│   ├── defaults/                       ←   Layer 1：12 个按领域划分的默认文件
+│   │   ├── 00_project.env              ←     项目版本、维护者、SDK 版本
 │   │   ├── 01_base.env                 ←     OS、用户、时区、语言
 │   │   ├── 02_build.env                ←     Docker BuildKit 设置
 │   │   ├── 03_tools.env                ←     开发工具开关与版本（CUDA、OpenCV、Node…）
@@ -34,15 +35,16 @@ HarborPilot.git/
 │   │   ├── 08_samba.env                ←     Samba 共享凭证
 │   │   ├── 09_runtime.env              ←     SSH / GDB / syslog / NVIDIA 开关
 │   │   └── 11_proxy.env                ←     HTTP/HTTPS 代理（默认：关）
-│   ├── platform-independent/
-│   │   └── common.env                  ←   Layer 2：项目版本、维护者、日期
-│   ├── platforms/                               ←   Layer 3：每平台覆盖（只写差异）
+│   ├── platforms/                               ←   Layer 2：每平台覆盖（只写差异）
 │   │   ├── rk3588-rk3588s_ubuntu-22.04.env      ←     PORT_SLOT=0，Ubuntu 22.04，NVIDIA GPU
 │   │   ├── rv1126-rv1126bp_ubuntu-22.04.env      ←     PORT_SLOT=1，Ubuntu 22.04
 │   │   ├── rk3568-rk3568_ubuntu-20.04.env        ←     PORT_SLOT=2，Ubuntu 20.04
 │   │   ├── rv1126-rv1126_ubuntu-22.04.env        ←     PORT_SLOT=3，Ubuntu 22.04
 │   │   ├── rk3568-rk3568_ubuntu-22.04.env        ←     PORT_SLOT=4，Ubuntu 22.04
 │   │   └── rk3588-rk3588s_ubuntu-24.04.env      ←     PORT_SLOT=5，Ubuntu 24.04，无 NVIDIA
+│   ├── host/                                   ←   Layer 3：主机级覆盖（可选，gitignore）
+│   │   ├── .gitkeep                            ←     保留目录
+│   │   └── README.md                           ←     使用说明
 │   └── platform_schema.json            ←   平台 .env 文件的 JSON Schema
 │
 ├── scripts/                            ← ★ 宿主机工具
@@ -110,9 +112,9 @@ mcp/
 
 **执行流程：**
 1. `1_specify_platform()` — 按 PORT_SLOT 排序列出平台，用户按编号选择。也可选择"创建新平台"，此时调用 `create_platform.sh`。
-2. Layer 1：按顺序 source `configs/defaults/*.env`（01→11）
-3. Layer 2：source `common.env`
-4. Layer 3：source 所选 `<platform>.env`
+2. Layer 1：按顺序 source `configs/defaults/*.env`（00→11）
+3. Layer 2：source 所选 `<platform>.env`
+4. Layer 3：source `configs/host/$(hostname).env`（可选，自动加载）
 5. `port_calc.sh` — 从 PORT_SLOT 派生 SSH/GDB 端口
 6. `0_check_registry_login()` — 验证 Docker 已登录 Harbor；未登录则提示交互式登录
 7. `1_1_setup_volume_soft_link()` — 创建 HOST_VOLUME_DIR 软链接
@@ -211,7 +213,7 @@ mcp/
 | `09_runtime.env` | `ENABLE_SSH=true`、`ENABLE_GDB_SERVER=true`、`USE_NVIDIA_GPU=false`、`ENABLE_CORE_DUMPS=true`、`CONTAINER_RESTART_POLICY=unless-stopped`、`CONTAINER_PRIVILEGED=true`、`CONTAINER_SERIAL_DEVICE=/dev/ttyUSB0`、`CONTAINER_SHM_SIZE=8g`、`NVIDIA_VISIBLE_DEVICES=all`、`NVIDIA_DRIVER_CAPABILITIES=all` | 端口由 port_calc.sh 计算；compose 运行时覆盖 |
 | `11_proxy.env` | `HAS_PROXY=false`、`HTTP_PROXY_IP`、`HTTPS_PROXY_IP` | 代理 IP 有默认值但 HAS_PROXY 默认关闭 |
 
-### Layer 2：`configs/platform-independent/common.env`
+### Layer 1（续）：`configs/defaults/00_project.env`
 
 | 变量 | 值 | 备注 |
 |---|---|---|
@@ -221,7 +223,7 @@ mcp/
 | `PROJECT_RELEASE_DATE` | 2026-03-19 | 手动更新 |
 | `SDK_VERSION` | 1.1.2 | |
 
-### Layer 3：`configs/platforms/<name>.env`
+### Layer 2：`configs/platforms/<name>.env`
 
 只覆盖与默认值不同的内容。必填字段：`PRODUCT_NAME`、`OS_VERSION`、`PORT_SLOT`、`HOST_VOLUME_DIR`。
 
@@ -278,7 +280,7 @@ mcp/
 
 - **release-please** 管理 `CHANGELOG.md` 和版本更新
 - 配置：`release-please-config.json` — `release-type: simple`
-- 版本唯一来源：`configs/platform-independent/common.env` 中的 `VERSION`
+- 版本唯一来源：`configs/defaults/00_project.env` 中的 `VERSION`
 - `x-release-please-version` 标记启用自动更新
 - Changelog 章节：feat→✨，fix→🐛，perf→⚡，revert→🔙。docs/style/chore/refactor 隐藏。
 - `.devcontainer/devcontainer.json` — VS Code Dev Container，用于开发 HarborPilot 本身（非最终用户使用）。转发端口 2109+2345，安装 C++ / CMake / Python / Git 扩展。
@@ -287,7 +289,7 @@ mcp/
 
 ## 8. 关键架构模式
 
-1. **三层配置继承** — 默认值为 90% 的变量提供合理初值。平台文件只覆盖差异。新增平台只需 ~15–20 行。Layer 2（common.env）保存版本等项目级常量。
+1. **三层配置继承** — 默认值为 90% 的变量提供合理初值。平台文件只覆盖差异。新增平台只需 ~15–20 行。主机级覆盖（Layer 3，可选）允许每台机器自定义配置，无需复制平台文件。
 
 2. **基于 PORT_SLOT 的端口分配** — 单个整数决定所有端口映射。防止平台间端口冲突。公式在 `port_calc.sh` 中定义一次，处处引用。
 

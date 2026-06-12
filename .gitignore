@@ -64,7 +64,9 @@ docker/dev-env-serverside/*
 **/project_handover_*.tar*
 configs/platforms/.env
 project_handover/.env
-project_handover/.env-independent
+
+# Host-level config overrides (per-machine, not committed)
+configs/host/*.env
 
 # Personal strategy notes — not for repo
 ASO_strategy.md
