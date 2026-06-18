@@ -65,6 +65,7 @@ prompt_with_timeout() {
 #   $1 - Prompt message
 #   $2 - Current question number (optional)
 #   $3 - Total questions count (optional)
+#   $4 - Recommended value: "y" or "n" (optional, default: "y")
 # Returns:
 #   0 if user confirms (y/Y/Enter), 1 if user denies (n/N)
 ################################################################################
@@ -72,10 +73,22 @@ prompt_simple() {
     local message="$1"
     local current="${2:-}"
     local total="${3:-}"
+    local recommend="${4:-y}"  # Default recommendation is "y"
     local prefix=""
 
     if [[ -n "${current}" && -n "${total}" ]]; then
         prefix="(${current}/${total}) "
+    fi
+
+    # Determine which option is recommended
+    local recommend_y=""
+    local recommend_n=""
+    if [[ "${recommend,,}" == "y" ]]; then
+        recommend_y=" (recommended)"
+        recommend_n=""
+    else
+        recommend_y=""
+        recommend_n=" (recommended)"
     fi
 
     echo ""
@@ -83,21 +96,30 @@ prompt_simple() {
     echo "  ║                                                                  ║"
     printf "  ║  ${prefix}%-60s║\n" "${message}"
     echo "  ║                                                                  ║"
-    echo "  ║  [y] Yes    [n] No                                              ║"
+    printf "  ║  [y] Yes%-8s [n] No%-48s║\n" "${recommend_y}" "${recommend_n}"
+    echo "  ║  (Press Enter for recommended option)                           ║"
     echo "  ║                                                                  ║"
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
 
     while true; do
         read -p "  Your choice: " input
         case "${input,,}" in
-            y|yes|"")
+            y|yes)
                 return 0
                 ;;
             n|no)
                 return 1
                 ;;
+            "")
+                # Enter pressed - use recommended value
+                if [[ "${recommend,,}" == "y" ]]; then
+                    return 0
+                else
+                    return 1
+                fi
+                ;;
             *)
-                echo "  ✗ Please enter 'y' or 'n'."
+                echo "  ✗ Please enter 'y' or 'n' (or press Enter for recommended)."
                 ;;
         esac
     done
@@ -414,7 +436,7 @@ _create_host_config() {
 
     if [ -f "${HOST_CONFIG}" ]; then
         echo "  ⚠️  Host config already exists: ${HOST_CONFIG}"
-        if ! prompt_simple "Overwrite existing config?" "1" "${total_questions}"; then
+        if ! prompt_simple "Overwrite existing config?" "1" "${total_questions}" "n"; then
             echo "  → Cancelled."
             _select_config_source
             return
@@ -444,9 +466,9 @@ _create_host_config() {
     echo "  ║                                                                  ║"
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
 
-    # Question 1: GPU
+    # Question 1: GPU (recommend: no for most machines)
     local use_gpu="false"
-    if prompt_simple "Does this machine have an NVIDIA GPU?" "2" "${total_questions}"; then
+    if prompt_simple "Does this machine have an NVIDIA GPU?" "2" "${total_questions}" "n"; then
         use_gpu="true"
     fi
 
@@ -454,14 +476,14 @@ _create_host_config() {
     local shm_size="256m"
     if [[ "${use_gpu}" == "true" ]]; then
         shm_size="1g"
-        if prompt_simple "Set SHM size to 1g for GPU? (recommended)" "3" "${total_questions}"; then
+        if prompt_simple "Set SHM size to 1g for GPU?" "3" "${total_questions}" "y"; then
             echo "  → SHM size set to ${shm_size}"
         else
             shm_size="2g"
             echo "  → SHM size set to ${shm_size}"
         fi
     else
-        if prompt_simple "Set SHM size to 512m? (default is 256m)" "3" "${total_questions}"; then
+        if prompt_simple "Set SHM size to 512m? (default is 256m)" "3" "${total_questions}" "n"; then
             shm_size="512m"
             echo "  → SHM size set to ${shm_size}"
         else
@@ -469,18 +491,18 @@ _create_host_config() {
         fi
     fi
 
-    # Question 3: Network mode
+    # Question 3: Network mode (recommend: yes for production)
     local network_mode="bridge"
-    if prompt_simple "Use host network mode? (recommended for production)" "4" "${total_questions}"; then
+    if prompt_simple "Use host network mode?" "4" "${total_questions}" "y"; then
         network_mode="host"
         echo "  → Network mode set to host"
     else
         echo "  → Network mode set to bridge (default)"
     fi
 
-    # Question 4: Auto-start container
+    # Question 4: Auto-start container (recommend: yes)
     local auto_restart="no"
-    if prompt_simple "Auto-restart container on boot?" "5" "${total_questions}"; then
+    if prompt_simple "Auto-restart container on boot?" "5" "${total_questions}" "y"; then
         auto_restart="unless-stopped"
         echo "  → Container will auto-restart on boot"
     else
