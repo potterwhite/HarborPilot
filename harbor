@@ -50,6 +50,11 @@ main() {
         fi
     done
 
+    ##################################################################
+    # Host configuration check and prompt
+    ##################################################################
+    _check_and_prompt_host_config
+
     # ------------------------------------------------------------------
     # Layer 1: Global defaults — must be sourced FIRST so later layers
     #          can override individual values
@@ -484,11 +489,6 @@ _print_next_steps() {
     echo ""
     local create_idx=$(( i + 1 ))
     echo -e "  [${create_idx}].${_CREATE_PLATFORM_LABEL:-+ Create new platform}"
-    echo ""
-    echo -e "  \033[1;33m💡 Tip: To customize for a specific machine (e.g. GPU, IP, volumes),"
-    echo -e "     create a host config after selecting a platform:"
-    echo -e "       echo 'USE_NVIDIA_GPU=\"false\"' > configs/3_host/\$(hostname).env\033[0m"
-    echo ""
 
     #-------------------------------------------------------
     read -p "Please type the index your choice: " user_type
@@ -530,13 +530,81 @@ _print_next_steps() {
 
     echo
     echo "--- Setup env files (${target_platform}) Successfully ---"
-    echo ""
-    echo -e "\033[1;36m📌 Next step (optional): Create host-specific overrides\033[0m"
-    echo -e "   If this machine needs custom settings (GPU, IP, volumes, etc.):"
-    echo -e "     1. Check hostname:  \033[1mhostname\033[0m"
-    echo -e "     2. Create config:   \033[1mecho 'YOUR_VARS_HERE' > configs/3_host/\$(hostname).env\033[0m"
-    echo -e "   See configs/3_host/README.md for details."
     echo
+}
+
+################################################################################
+# 1.5 Check and prompt for host configuration
+# If no host config exists, explain the options to the user
+################################################################################
+_check_and_prompt_host_config() {
+    LOCAL_HOSTNAME=$(hostname)
+    HOST_CONFIG="${TOP_CONFIGS_DIR}/3_host/${LOCAL_HOSTNAME}.env"
+
+    echo ""
+    echo "  ╔══════════════════════════════════════════════════════════════════╗"
+    echo "  ║                    Host Configuration Check                     ║"
+    echo "  ╠══════════════════════════════════════════════════════════════════╣"
+    echo "  ║                                                                  ║"
+    printf "  ║  Hostname: %-53s║\n" "${LOCAL_HOSTNAME}"
+    printf "  ║  Config:   %-53s║\n" "${HOST_CONFIG}"
+    echo "  ║                                                                  ║"
+
+    if [ -f "${HOST_CONFIG}" ]; then
+        echo "  ║  ✅ Host config found!                                          ║"
+        echo "  ║                                                                  ║"
+        echo "  ║  The following host-specific overrides will be applied:          ║"
+        echo "  ║                                                                  ║"
+        # Show first 5 non-comment, non-empty lines
+        local count=0
+        while IFS= read -r line; do
+            [[ -z "${line}" || "${line}" =~ ^[[:space:]]*# ]] && continue
+            printf "  ║    %-60s║\n" "${line}"
+            ((count++))
+            [[ $count -ge 5 ]] && break
+        done < "${HOST_CONFIG}"
+        if [[ $count -ge 5 ]]; then
+            echo "  ║    ... (more overrides in file)                                 ║"
+        fi
+        echo "  ║                                                                  ║"
+        echo "  ║  These overrides customize the platform config for this machine. ║"
+        echo "  ║  They will NOT affect the Docker image, only runtime behavior.   ║"
+    else
+        echo "  ║  ⚠️  No host-specific config found for this machine.            ║"
+        echo "  ║                                                                  ║"
+        echo "  ║  You have two options:                                           ║"
+        echo "  ║                                                                  ║"
+        echo "  ║  Option 1: Use platform defaults (recommended if they fit)       ║"
+        echo "  ║    → The selected platform config will be used as-is.            ║"
+        echo "  ║    → No action needed, just continue.                            ║"
+        echo "  ║                                                                  ║"
+        echo "  ║  Option 2: Create host-specific overrides                        ║"
+        echo "  ║    → Only if you need to customize for this machine:             ║"
+        echo "  ║      • GPU settings (USE_NVIDIA_GPU)                             ║"
+        echo "  ║      • Network/IP addresses (HARBOR_SERVER_IP, CLIENT_IP)        ║"
+        echo "  ║      • Volume paths (HOST_VOLUME_DIR)                            ║"
+        echo "  ║      • Other machine-specific settings                           ║"
+        echo "  ║                                                                  ║"
+        echo "  ║  To create:                                                      ║"
+        printf "  ║    echo 'YOUR_VARS' > configs/3_host/%-25s║\n" "${LOCAL_HOSTNAME}.env"
+        echo "  ║                                                                  ║"
+        echo "  ║  📌 Note: Host configs are gitignored and NOT part of the image. ║"
+        echo "  ║     They only exist on this machine for runtime customization.   ║"
+    fi
+
+    echo "  ║                                                                  ║"
+    echo "  ╚══════════════════════════════════════════════════════════════════╝"
+    echo ""
+
+    if [ ! -f "${HOST_CONFIG}" ]; then
+        if prompt_with_timeout "Continue with platform defaults? (Select 'n' to abort and create host config)" 15; then
+            echo "  → Using platform defaults."
+        else
+            echo "  → Aborted. Create host config and try again."
+            echo "     See configs/3_host/README.md for details."
+            exit 0
+        fi
+    fi
 }
 
 ################################################################################
