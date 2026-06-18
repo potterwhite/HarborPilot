@@ -75,7 +75,7 @@ set -euo pipefail
 # ─── Resolve paths ───────────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TOP_ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-PLATFORMS_DIR="${TOP_ROOT_DIR}/configs/platforms"
+PLATFORMS_DIR="${TOP_ROOT_DIR}/configs/2_platforms"
 
 # ─── Colors ──────────────────────────────────────────────────────────────────
 _BOLD='\033[1m'
@@ -423,10 +423,10 @@ HTTPS_PROXY_IP=\"${https_proxy_url}\""
 
     cat > "${output_file}" << ENVEOF
 ################################################################################
-# File: configs/platforms/${platform_name}.env
+# File: configs/2_platforms/${platform_name}.env
 #
 # Description: Platform-specific overrides for ${platform_name} (${os_distro} ${os_version}).
-#              Only values that DIFFER from configs/defaults/*.env are listed.
+#              Only values that DIFFER from configs/1_defaults/*.env are listed.
 #              All other settings are inherited from the defaults layer.
 #
 # Author: PotterWhite
@@ -657,10 +657,10 @@ HTTPS_PROXY_IP=\"${https_proxy_url}\""
 
     cat > "${output_file}" << ENVEOF
 ################################################################################
-# File: configs/platforms/${platform_name}.env
+# File: configs/2_platforms/${platform_name}.env
 #
 # Description: Platform-specific overrides for ${platform_name} (${os_distro} ${os_version}).
-#              Only values that DIFFER from configs/defaults/*.env are listed.
+#              Only values that DIFFER from configs/1_defaults/*.env are listed.
 #              All other settings are inherited from the defaults layer.
 #
 # Generated: $(date +%Y-%m-%d) by create_platform.sh --non-interactive

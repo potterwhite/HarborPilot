@@ -40,7 +40,7 @@ func_1_1_setup_env(){
     echo "HANDOVER_DIR:      ${HANDOVER_DIR}"
 
     # ------------------------------------------------------------------
-    # Layer 1: Global defaults — source every file under configs/defaults/
+    # Layer 1: Global defaults — source every file under configs/1_defaults/
     #          Order: base → build → tools → workspace → registry → sdk
     #                 → volumes → samba → runtime → serverside → proxy
     # ------------------------------------------------------------------

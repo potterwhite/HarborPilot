@@ -221,11 +221,11 @@ prompt_with_timeout() {
 #   │   └── clientside/volumes/
 #   │       └── .gitkeep
 #   ├── configs/
-#   │   └── defaults/                ← 11 default .env files (including 00_project.env)
+#   │   └── 1_defaults/              ← 11 default .env files (including 00_project.env)
 #   └── scripts/
 #       └── port_calc.sh             ← port formula script
 #
-# The relative path from ubuntu/ to configs/defaults and scripts/ is preserved
+# The relative path from ubuntu/ to configs/1_defaults and scripts/ is preserved
 # so 01_env_loader.sh resolves TOP_ROOT_DIR correctly after extraction.
 ################################################################################
 7_package_handover() {
@@ -279,8 +279,8 @@ prompt_with_timeout() {
     # 3. Preserve volumes/.gitkeep placeholder
     touch "${stage}/project_handover/clientside/volumes/.gitkeep"
 
-    # 4. Copy configs/defaults (all .env files)
-    cp -r "${TOP_ROOT_DIR}/configs/defaults" "${stage}/configs/defaults"
+    # 4. Copy configs/1_defaults (all .env files)
+    cp -r "${TOP_ROOT_DIR}/configs/1_defaults" "${stage}/configs/1_defaults"
 
     # 5. Copy scripts/port_calc.sh
     cp "${TOP_ROOT_DIR}/scripts/port_calc.sh" "${stage}/scripts/port_calc.sh"
@@ -484,6 +484,11 @@ _print_next_steps() {
     echo ""
     local create_idx=$(( i + 1 ))
     echo -e "  [${create_idx}].${_CREATE_PLATFORM_LABEL:-+ Create new platform}"
+    echo ""
+    echo -e "  \033[1;33m💡 Tip: To customize for a specific machine (e.g. GPU, IP, volumes),"
+    echo -e "     create a host config after selecting a platform:"
+    echo -e "       echo 'USE_NVIDIA_GPU=\"false\"' > configs/3_host/\$(hostname).env\033[0m"
+    echo ""
 
     #-------------------------------------------------------
     read -p "Please type the index your choice: " user_type
@@ -515,7 +520,7 @@ _print_next_steps() {
     echo ${target_platform}
     cd ${TOP_ROOT_DIR}
 
-    # create configs/platforms/.env symlink
+    # create configs/2_platforms/.env symlink
     if [ -e ${PLATFORM_ENV_DEST_PATH} ]; then
         rm -f ${PLATFORM_ENV_DEST_PATH}
     fi
@@ -525,6 +530,12 @@ _print_next_steps() {
 
     echo
     echo "--- Setup env files (${target_platform}) Successfully ---"
+    echo ""
+    echo -e "\033[1;36m📌 Next step (optional): Create host-specific overrides\033[0m"
+    echo -e "   If this machine needs custom settings (GPU, IP, volumes, etc.):"
+    echo -e "     1. Check hostname:  \033[1mhostname\033[0m"
+    echo -e "     2. Create config:   \033[1mecho 'YOUR_VARS_HERE' > configs/3_host/\$(hostname).env\033[0m"
+    echo -e "   See configs/3_host/README.md for details."
     echo
 }
 
