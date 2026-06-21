@@ -114,7 +114,7 @@ The **master orchestrator**. Interactive platform selection → 3-layer config l
 1. `1_specify_platform()` — Lists platforms sorted by PORT_SLOT, user picks by number. Also offers "Create new platform" which calls `create_platform.sh`.
 2. Layer 1: sources all `configs/1_defaults/*.env` in order (00→11)
 3. Layer 2: sources selected `<platform>.env`
-4. Layer 3: sources `configs/3_host/$(hostname).env` (optional, auto-loaded)
+4. Layer 3: sources `configs/3_hosts/$(hostname).env` (optional, auto-loaded)
 5. `port_calc.sh` — derives SSH/GDB ports from PORT_SLOT
 6. `0_check_registry_login()` — Verifies Docker is logged into Harbor; prompts interactive login if not
 7. `1_1_setup_volume_soft_link()` — Symlinks HOST_VOLUME_DIR

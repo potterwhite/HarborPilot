@@ -642,7 +642,7 @@ _check_and_prompt_host_config() {
         echo "  ║      • Other machine-specific settings                           ║"
         echo "  ║                                                                  ║"
         echo "  ║  To create:                                                      ║"
-        printf "  ║    echo 'YOUR_VARS' > configs/3_host/%-25s║\n" "${LOCAL_HOSTNAME}.env"
+        printf "  ║    echo 'YOUR_VARS' > configs/3_hosts/%-25s║\n" "${LOCAL_HOSTNAME}.env"
         echo "  ║                                                                  ║"
         echo "  ║  📌 Note: Host configs are gitignored and NOT part of the image. ║"
         echo "  ║     They only exist on this machine for runtime customization.   ║"
@@ -657,7 +657,7 @@ _check_and_prompt_host_config() {
             echo "  → Using platform defaults."
         else
             echo "  → Aborted. Create host config and try again."
-            echo "     See configs/3_host/README.md for details."
+            echo "     See configs/3_hosts/README.md for details."
             exit 0
         fi
     fi

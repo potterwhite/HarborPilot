@@ -101,7 +101,7 @@
 
 ## 6. 关键架构事实
 
-1. **三层配置继承**：`configs/1_defaults/*.env`（Layer 1，全局）→ `configs/2_platforms/<platform>.env`（Layer 2，覆盖）→ `configs/3_host/<hostname>.env`（Layer 3，主机级，可选）。最后一层优先。平台文件只包含**与默认值不同**的内容。
+1. **三层配置继承**：`configs/1_defaults/*.env`（Layer 1，全局）→ `configs/2_platforms/<platform>.env`（Layer 2，覆盖）→ `configs/3_hosts/<hostname>.env`（Layer 3，主机级，可选）。最后一层优先。平台文件只包含**与默认值不同**的内容。
 
 2. **PORT_SLOT 是端口的唯一来源**：`CLIENT_SSH_PORT = 2109 + PORT_SLOT × 10`，`GDB_PORT = 2345 + PORT_SLOT × 10`。由 `scripts/port_calc.sh` 计算。绝不硬编码端口 — 始终设置 PORT_SLOT。
 

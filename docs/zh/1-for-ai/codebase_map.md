@@ -114,7 +114,7 @@ mcp/
 1. `1_specify_platform()` — 按 PORT_SLOT 排序列出平台，用户按编号选择。也可选择"创建新平台"，此时调用 `create_platform.sh`。
 2. Layer 1：按顺序 source `configs/1_defaults/*.env`（00→11）
 3. Layer 2：source 所选 `<platform>.env`
-4. Layer 3：source `configs/3_host/$(hostname).env`（可选，自动加载）
+4. Layer 3：source `configs/3_hosts/$(hostname).env`（可选，自动加载）
 5. `port_calc.sh` — 从 PORT_SLOT 派生 SSH/GDB 端口
 6. `0_check_registry_login()` — 验证 Docker 已登录 Harbor；未登录则提示交互式登录
 7. `1_1_setup_volume_soft_link()` — 创建 HOST_VOLUME_DIR 软链接

@@ -1,0 +1,6 @@
+# Ignore all host-specific env files
+*.env
+
+# But keep the template and README
+!TEMPLATE.env.example
+!README.md

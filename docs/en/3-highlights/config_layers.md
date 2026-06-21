@@ -31,7 +31,7 @@ Layer 1  configs/1_defaults/*.env          Global defaults — every platform in
    ↓  (later layers override earlier ones)
 Layer 2  configs/2_platforms/<platform>.env Platform-specific overrides only
    ↓
-Layer 3  configs/3_host/<hostname>.env      Host-level overrides (optional, gitignored)
+Layer 3  configs/3_host/<hostname>.env     Host-level overrides (optional, gitignored)
 ```
 
 **The rule:** a platform file only contains values that *differ* from the defaults. If it's not in the platform file, the default is used. A host file only contains values that *differ* from the platform — if it's not in the host file, the platform value is used.
@@ -62,86 +62,127 @@ Twelve files, each scoped to one concern. The ordinal prefix makes the load orde
 
 ## Layer 2 — Platform Overrides (`configs/2_platforms/<platform>.env`)
 
-Each platform file contains **only what differs from the defaults**. The mandatory sections are:
+Each platform file contains **only what differs from the defaults**. Platform files define the **platform identity** and **SDK configuration**.
 
-### Always required (no defaults exist)
+### What belongs in Platform files
+
+| Category | Variables | Reason |
+|----------|-----------|--------|
+| **Platform Identity** | `CHIP_FAMILY`, `CHIP_EXTRACT_NAME`, `OS_DISTRIBUTION`, `OS_VERSION`, `PRODUCT_NAME` | Defines the platform uniquely |
+| **Derived Names** | `IMAGE_NAME`, `CONTAINER_NAME`, `LATEST_IMAGE_TAG` | Depend on `PRODUCT_NAME` |
+| **Port Slot** | `PORT_SLOT` | Platform-specific port allocation |
+| **Registry URL** | `REGISTRY_URL` | Depends on `CHIP_FAMILY` |
+| **SDK** | `SDK_INSTALL_PATH`, `SDK_GIT_REPO`, `SDK_GIT_KEY_FILE`, `SDK_GIT_DEFAULT_BRANCH` | Platform-specific SDK |
+
+### Example: Platform file (rk3588-ubuntu-22.04.env)
 
 ```bash
-# Platform identity
-PRODUCT_NAME="rk3568"
-OS_VERSION="20.04"
+# Platform Identity  [REQUIRED — no defaults]
+CHIP_FAMILY="rk3588"
+CHIP_EXTRACT_NAME="rk3588s"
 OS_DISTRIBUTION="ubuntu"
+OS_VERSION="22.04"
+OS_VERSION_ID="22-04"
+PRODUCT_NAME="${CHIP_FAMILY}-${CHIP_EXTRACT_NAME}_${OS_DISTRIBUTION}-${OS_VERSION_ID}"
 
-# Derived names (depend on PRODUCT_NAME)
+# Derived from PRODUCT_NAME (keep in sync)
 IMAGE_NAME="${PRODUCT_NAME}-dev-env"
-CONTAINER_NAME=${PRODUCT_NAME}
 LATEST_IMAGE_TAG=${PROJECT_VERSION}
+CONTAINER_NAME=${PRODUCT_NAME}
 
-# Port slot — all ports derived by port_calc.sh
-PORT_SLOT="2"
-
-# Registry URL (depends on CHIP_FAMILY and HARBOR_SERVER_IP)
-HARBOR_SERVER_IP="192.168.3.67"
-HARBOR_SERVER_PORT="9000"
+# Registry URL  [depends on HARBOR_SERVER_IP from host/defaults]
 REGISTRY_URL="${HARBOR_SERVER_IP}:${HARBOR_SERVER_PORT}/team_${CHIP_FAMILY}"
 
-# GitLab server (for SDK repos)
-HAVE_GITLAB_SERVER="TRUE"
-GITLAB_SERVER_IP="192.168.3.67"
-GITLAB_SERVER_PORT="22"
-
-# SDK paths (depend on CHIP_FAMILY)
+# SDK  [CHIP_FAMILY groups same-silicon variants together]
 SDK_INSTALL_PATH="${WORKSPACE_ROOT}/sdk"
-SDK_GIT_REPO="git@${GITLAB_SERVER_IP}:team_${CHIP_FAMILY}/${CHIP_FAMILY}_sdk.git"
+SDK_GIT_REPO="git@${GITLAB_SERVER_IP:-192.168.0.19}:team_${CHIP_FAMILY}/${PRODUCT_NAME}_sdk.git"
 SDK_GIT_KEY_FILE="SDK_${CHIP_FAMILY}_ED25519"
+SDK_GIT_DEFAULT_BRANCH="main"
 
-# Host volume path (host-machine-specific, no sensible default)
-HOST_VOLUME_DIR="/mnt/.../volumes/rk3568"
+# Container Runtime  [ports auto-calculated from PORT_SLOT]
+PORT_SLOT="0"
 ```
 
-### Optional overrides (only when different from defaults)
+### What does NOT belong in Platform files
 
-```bash
-# rk3568 uses a China npm mirror; the default is false
-NPM_USE_CHINA_MIRROR="true"
+These are **host-specific** and should be in Layer 3:
 
-# rk3568 has proxy access; the default is false
-HAS_PROXY="true"
-
-# rk3568 SDK uses a non-main branch
-SDK_GIT_DEFAULT_BRANCH="br_main_20250206"
-```
-
-That's all — everything else is inherited silently from Layer 1.
+- `HOST_VOLUME_DIR` — host filesystem path
+- `EXTRA_VOLUME_*` — user-specific volume mounts
+- `HAS_PROXY`, `HTTP_PROXY_IP`, `HTTPS_PROXY_IP` — network environment
+- `NPM_USE_CHINA_MIRROR` — network environment
+- `USE_NVIDIA_GPU`, `CONTAINER_SHM_SIZE` — hardware-specific
+- `GITLAB_SERVER_*`, `HARBOR_SERVER_*` — server connectivity
+- `HAVE_GITLAB_SERVER`, `HAVE_HARBOR_SERVER` — server availability
 
 ---
 
 ## Layer 3 — Host-Level Overrides (`configs/3_host/<hostname>.env`)
 
-This layer is **optional** and **auto-loaded by hostname**. It solves the problem of running the same platform on different machines with different hardware (e.g., one machine has NVIDIA GPU, another doesn't).
+This layer is **optional** and **auto-loaded by hostname**. It solves the problem of running the same platform on different machines with different hardware, network, or paths.
 
 ### How It Works
 
 The system runs `hostname` and looks for `configs/3_host/<hostname>.env`. If the file exists, it is sourced after the platform file. If it doesn't exist, the system skips this layer entirely.
 
+### Getting Started
+
 ```bash
-# Example: configs/3_host/my-desktop.env
-USE_NVIDIA_GPU="true"
-CONTAINER_SHM_SIZE="1g"
-HOST_VOLUME_DIR="/mnt/ssd/volumes/rk3588"
+# 1. Get your hostname
+hostname
+
+# 2. Copy the template
+cp configs/3_host/TEMPLATE.env.example configs/3_host/$(hostname).env
+
+# 3. Edit with your settings
+nano configs/3_host/$(hostname).env
 ```
 
-### What to Put Here
+### What belongs in Host files
 
-- `USE_NVIDIA_GPU` — whether this specific machine has an NVIDIA GPU
-- `CONTAINER_SHM_SIZE` — shared memory size (GPU workloads need more)
-- `HOST_VOLUME_DIR` — host-specific volume mount path
-- `EXTRA_VOLUMES_LIST` — additional volume mounts for this machine
-- Any variable that differs between machines sharing the same platform config
+| Category | Variables | Reason |
+|----------|-----------|--------|
+| **Network** | `HAS_PROXY`, `HTTP_PROXY_IP`, `HTTPS_PROXY_IP`, `NPM_USE_CHINA_MIRROR` | Network environment |
+| **Servers** | `HAVE_GITLAB_SERVER`, `GITLAB_SERVER_*`, `HAVE_HARBOR_SERVER`, `HARBOR_SERVER_*` | Server reachability |
+| **Hardware** | `USE_NVIDIA_GPU`, `CONTAINER_SHM_SIZE` | Machine-specific hardware |
+| **Paths** | `HOST_VOLUME_DIR`, `EXTRA_VOLUME_*` | Host filesystem paths |
+
+### Example: Host file
+
+```bash
+# configs/3_host/my-desktop.env
+
+# Network
+HAS_PROXY="true"
+HTTP_PROXY_IP="192.168.3.67"
+HTTPS_PROXY_IP="192.168.3.67"
+NPM_USE_CHINA_MIRROR="true"
+
+# Servers
+HAVE_GITLAB_SERVER="TRUE"
+GITLAB_SERVER_IP="192.168.3.67"
+GITLAB_SERVER_PORT="80"
+HARBOR_SERVER_IP="192.168.3.67"
+HARBOR_SERVER_PORT="9000"
+
+# Hardware
+USE_NVIDIA_GPU="true"
+CONTAINER_SHM_SIZE="1g"
+
+# Paths
+HOST_VOLUME_DIR="/mnt/ssd/docker-volumes/${PRODUCT_NAME}"
+EXTRA_VOLUME_0="/home/james/notes:/volumes_notes"
+EXTRA_VOLUME_1="/home/james/projects:/volumes_projects"
+```
 
 ### Git Policy
 
-Host config files are `.gitignored` — they are local to each machine and should NOT be committed. Only `.gitkeep` and `README.md` in the `configs/3_host/` directory are tracked.
+Host config files are **gitignored** — they are local to each machine and should NOT be committed. Only `TEMPLATE.env.example`, `README.md`, and `.gitkeep` in the `configs/3_host/` directory are tracked.
+
+This protects:
+- User-specific paths (`/home/james/...`)
+- Network configurations (proxy IPs, server addresses)
+- Hardware details (GPU availability)
 
 ---
 
@@ -152,18 +193,25 @@ Later layers override earlier ones. If a variable is not set in any layer, it is
 ```
 00_project.env  →  01_base.env  →  ...  →  11_proxy.env  →  <platform>.env  →  <hostname>.env
      ↑                                          ↑                ↑                  ↑
-  version/maintainer                        server IPs,      GPU on/off,
-  SDK versions                              OS version,      volume paths,
-                                            port slot        per-machine tweaks
+  version/maintainer                        server IPs,      platform ID,     proxy settings,
+  SDK versions                              OS version,      port slot,       volume paths,
+                                            proxy default    SDK config       GPU, servers
 ```
 
-**Example: USE_NVIDIA_GPU precedence chain**
+**Example: HAS_PROXY precedence chain**
 
-| Scenario | defaults/09_runtime | platforms/rk3588.env | host/my-desktop.env | Result |
+| Scenario | defaults/11_proxy | platforms/rk3588.env | host/my-desktop.env | Result |
 |---|---|---|---|---|
 | No host file | `"false"` | *(not set)* | *(file missing)* | `"false"` |
-| Host file, no GPU var | `"false"` | `"true"` | *(has SHM_SIZE only)* | `"true"` |
-| Host overrides GPU | `"false"` | `"true"` | `"false"` | `"false"` |
+| Host file with proxy | `"false"` | *(not set)* | `"true"` | `"true"` |
+| Platform sets proxy (old style) | `"false"` | `"true"` | *(not set)* | `"true"` |
+
+**Example: GITLAB_SERVER_IP precedence chain**
+
+| Scenario | defaults/05_registry | platforms/rk3588.env | host/my-desktop.env | Result |
+|---|---|---|---|---|
+| No host file | `"192.168.0.19"` | *(not set)* | *(file missing)* | `"192.168.0.19"` |
+| Host overrides | `"192.168.0.19"` | *(not set)* | `"192.168.3.67"` | `"192.168.3.67"` |
 
 ---
 
@@ -176,6 +224,7 @@ Later layers override earlier ones. If a variable is not set in any layer, it is
 | Customise one platform | Already there | Add one line in the platform file |
 | Different GPU per machine | Duplicate platform file | Add host override file |
 | Understand what makes a platform unique | Diff against every other file | Read the platform file — it *is* the diff |
+| Share config across team | Commit everything | Commit defaults + platform, host is private |
 
 ---
 
@@ -198,7 +247,7 @@ done
 source "${PLATFORM_ENV_PATH}"               # <platform>.env via symlink
 
 # Layer 3 — optional, auto-loaded by hostname
-HOST_CONFIG="${CONFIGS_DIR}/host/$(hostname).env"
+HOST_CONFIG="${CONFIGS_DIR}/3_hosts/$(hostname).env"
 [ -f "${HOST_CONFIG}" ] && source "${HOST_CONFIG}"
 ```
 
@@ -217,7 +266,7 @@ Scripts that implement this pattern:
 ## Adding a New Platform
 
 1. Copy an existing platform `.env` as a starting point or run `./scripts/create_platform.sh`
-2. Fill in the **required** section (identity, ports, `HOST_VOLUME_DIR`, registry URL)
+2. Fill in the **required** section (identity, port slot, SDK paths)
 3. Add only the optional overrides that differ from defaults
 4. Run `./harbor` — your new platform appears in the selection menu automatically
 
@@ -238,13 +287,17 @@ The platform files that need a non-default value can then override it with a sin
 ## Adding a Host-Level Override
 
 1. Run `hostname` to find your machine name
-2. Create `configs/3_host/<your-hostname>.env`
-3. Add only the variables that differ from the platform config
+2. Copy the template: `cp configs/3_host/TEMPLATE.env.example configs/3_host/$(hostname).env`
+3. Edit the file, uncommenting and setting only the variables you need
 4. The system auto-loads this file — no script changes needed
 
-```bash
-# Example: configs/3_host/my-desktop.env
-USE_NVIDIA_GPU="true"
-CONTAINER_SHM_SIZE="1g"
-HOST_VOLUME_DIR="/mnt/ssd/volumes/rk3588"
-```
+See `configs/3_host/README.md` for detailed examples and troubleshooting.
+
+---
+
+## See Also
+
+- [Host Configuration Template](../../configs/3_host/TEMPLATE.env.example)
+- [Host Configuration Guide](../../configs/3_host/README.md)
+- [Platform Configuration](../../configs/2_platforms/)
+- [Default Configuration](../../configs/1_defaults/)

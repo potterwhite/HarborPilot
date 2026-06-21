@@ -102,7 +102,7 @@
 
 ## 6. Key Architecture Facts
 
-1. **Three-Layer Config Inheritance**: `configs/1_defaults/*.env` (Layer 1, global) → `configs/2_platforms/<platform>.env` (Layer 2, overrides) → `configs/3_host/<hostname>.env` (Layer 3, host-level, optional). Last layer wins. A platform file only contains what **differs** from defaults.
+1. **Three-Layer Config Inheritance**: `configs/1_defaults/*.env` (Layer 1, global) → `configs/2_platforms/<platform>.env` (Layer 2, overrides) → `configs/3_hosts/<hostname>.env` (Layer 3, host-level, optional). Last layer wins. A platform file only contains what **differs** from defaults.
 
 2. **PORT_SLOT is the single source of port truth**: `CLIENT_SSH_PORT = 2109 + PORT_SLOT × 10`, `GDB_PORT = 2345 + PORT_SLOT × 10`. Calculated by `scripts/port_calc.sh`. Never hardcode ports — always set PORT_SLOT.
 

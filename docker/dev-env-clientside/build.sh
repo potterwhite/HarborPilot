@@ -15,7 +15,7 @@
 # Three-Layer Config Loading Order:
 #   Layer 1: configs/1_defaults/*.env  — global defaults (all platforms inherit)
 #   Layer 2: configs/2_platforms/<platform>.env  — platform-specific overrides
-#   Layer 3: configs/3_host/<hostname>.env  — host-level overrides (optional)
+#   Layer 3: configs/3_hosts/<hostname>.env  — host-level overrides (optional)
 ################################################################################
 
 func_1_1_setup_env(){
