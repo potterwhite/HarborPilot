@@ -31,7 +31,7 @@ Layer 1  configs/1_defaults/*.env          Global defaults — every platform in
    ↓  (later layers override earlier ones)
 Layer 2  configs/2_platforms/<platform>.env Platform-specific overrides only
    ↓
-Layer 3  configs/3_host/<hostname>.env     Host-level overrides (optional, gitignored)
+Layer 3  configs/3_hosts/<hostname>.env     Host-level overrides (optional, gitignored)
 ```
 
 **The rule:** a platform file only contains values that *differ* from the defaults. If it's not in the platform file, the default is used. A host file only contains values that *differ* from the platform — if it's not in the host file, the platform value is used.
@@ -117,13 +117,13 @@ These are **host-specific** and should be in Layer 3:
 
 ---
 
-## Layer 3 — Host-Level Overrides (`configs/3_host/<hostname>.env`)
+## Layer 3 — Host-Level Overrides (`configs/3_hosts/<hostname>.env`)
 
 This layer is **optional** and **auto-loaded by hostname**. It solves the problem of running the same platform on different machines with different hardware, network, or paths.
 
 ### How It Works
 
-The system runs `hostname` and looks for `configs/3_host/<hostname>.env`. If the file exists, it is sourced after the platform file. If it doesn't exist, the system skips this layer entirely.
+The system runs `hostname` and looks for `configs/3_hosts/<hostname>.env`. If the file exists, it is sourced after the platform file. If it doesn't exist, the system skips this layer entirely.
 
 ### Getting Started
 
@@ -132,10 +132,10 @@ The system runs `hostname` and looks for `configs/3_host/<hostname>.env`. If the
 hostname
 
 # 2. Copy the template
-cp configs/3_host/TEMPLATE.env.example configs/3_host/$(hostname).env
+cp configs/3_hosts/TEMPLATE.env.example configs/3_hosts/$(hostname).env
 
 # 3. Edit with your settings
-nano configs/3_host/$(hostname).env
+nano configs/3_hosts/$(hostname).env
 ```
 
 ### What belongs in Host files
@@ -150,7 +150,7 @@ nano configs/3_host/$(hostname).env
 ### Example: Host file
 
 ```bash
-# configs/3_host/my-desktop.env
+# configs/3_hosts/my-desktop.env
 
 # Network
 HAS_PROXY="true"
@@ -177,7 +177,7 @@ EXTRA_VOLUME_1="/home/james/projects:/volumes_projects"
 
 ### Git Policy
 
-Host config files are **gitignored** — they are local to each machine and should NOT be committed. Only `TEMPLATE.env.example`, `README.md`, and `.gitkeep` in the `configs/3_host/` directory are tracked.
+Host config files are **gitignored** — they are local to each machine and should NOT be committed. Only `TEMPLATE.env.example`, `README.md`, and `.gitkeep` in the `configs/3_hosts/` directory are tracked.
 
 This protects:
 - User-specific paths (`/home/james/...`)
@@ -287,17 +287,17 @@ The platform files that need a non-default value can then override it with a sin
 ## Adding a Host-Level Override
 
 1. Run `hostname` to find your machine name
-2. Copy the template: `cp configs/3_host/TEMPLATE.env.example configs/3_host/$(hostname).env`
+2. Copy the template: `cp configs/3_hosts/TEMPLATE.env.example configs/3_hosts/$(hostname).env`
 3. Edit the file, uncommenting and setting only the variables you need
 4. The system auto-loads this file — no script changes needed
 
-See `configs/3_host/README.md` for detailed examples and troubleshooting.
+See `configs/3_hosts/README.md` for detailed examples and troubleshooting.
 
 ---
 
 ## See Also
 
-- [Host Configuration Template](../../configs/3_host/TEMPLATE.env.example)
-- [Host Configuration Guide](../../configs/3_host/README.md)
+- [Host Configuration Template](../../configs/3_hosts/TEMPLATE.env.example)
+- [Host Configuration Guide](../../configs/3_hosts/README.md)
 - [Platform Configuration](../../configs/2_platforms/)
 - [Default Configuration](../../configs/1_defaults/)

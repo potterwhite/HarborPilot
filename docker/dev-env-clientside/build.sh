@@ -82,7 +82,7 @@ func_1_1_setup_env(){
     # Layer 3: Host-level overrides (auto-loaded by hostname, optional)
     # ------------------------------------------------------------------
     LOCAL_HOSTNAME=$(hostname)
-    HOST_CONFIG="${CONFIGS_DIR}/3_host/${LOCAL_HOSTNAME}.env"
+    HOST_CONFIG="${CONFIGS_DIR}/3_hosts/${LOCAL_HOSTNAME}.env"
     if [ -f "${HOST_CONFIG}" ]; then
         source "${HOST_CONFIG}"
         echo "[config] Host override loaded: ${HOST_CONFIG}"

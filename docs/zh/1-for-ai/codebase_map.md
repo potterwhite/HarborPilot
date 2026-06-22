@@ -42,7 +42,7 @@ HarborPilot.git/
 │   │   ├── rv1126-rv1126_ubuntu-22.04.env        ←     PORT_SLOT=3，Ubuntu 22.04
 │   │   ├── rk3568-rk3568_ubuntu-22.04.env        ←     PORT_SLOT=4，Ubuntu 22.04
 │   │   └── rk3588-rk3588s_ubuntu-24.04.env      ←     PORT_SLOT=5，Ubuntu 24.04，无 NVIDIA
-│   ├── host/                                   ←   Layer 3：主机级覆盖（可选，gitignore）
+│   ├── hosts/                                  ←   Layer 3：主机级覆盖（可选，gitignore）
 │   │   ├── .gitkeep                            ←     保留目录
 │   │   └── README.md                           ←     使用说明
 │   └── platform_schema.json            ←   平台 .env 文件的 JSON Schema

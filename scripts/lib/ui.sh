@@ -322,11 +322,11 @@ _print_next_steps() {
 ################################################################################
 _select_config_source() {
     LOCAL_HOSTNAME=$(hostname)
-    HOST_CONFIG="${TOP_CONFIGS_DIR}/3_host/${LOCAL_HOSTNAME}.env"
+    HOST_CONFIG="${TOP_CONFIGS_DIR}/3_hosts/${LOCAL_HOSTNAME}.env"
 
     # Scan for all existing host configs
     declare -a host_configs=()
-    for host_file in "${TOP_CONFIGS_DIR}/3_host/"*.env; do
+    for host_file in "${TOP_CONFIGS_DIR}/3_hosts/"*.env; do
         [[ ! -f "${host_file}" ]] && continue
         local basename
         basename="$(basename "${host_file}" .env)"
@@ -417,7 +417,7 @@ _select_config_source() {
 ################################################################################
 _create_host_config() {
     LOCAL_HOSTNAME=$(hostname)
-    HOST_CONFIG="${TOP_CONFIGS_DIR}/3_host/${LOCAL_HOSTNAME}.env"
+    HOST_CONFIG="${TOP_CONFIGS_DIR}/3_hosts/${LOCAL_HOSTNAME}.env"
     local total_questions=5  # Total questions to ask
 
     echo ""
@@ -559,7 +559,7 @@ EOF
 ################################################################################
 _load_host_config() {
     local host_name="$1"
-    HOST_CONFIG="${TOP_CONFIGS_DIR}/3_host/${host_name}.env"
+    HOST_CONFIG="${TOP_CONFIGS_DIR}/3_hosts/${host_name}.env"
 
     if [ ! -f "${HOST_CONFIG}" ]; then
         echo "  ✗ Error: Host config not found: ${HOST_CONFIG}"
@@ -595,7 +595,7 @@ _load_host_config() {
 ################################################################################
 _check_and_prompt_host_config() {
     LOCAL_HOSTNAME=$(hostname)
-    HOST_CONFIG="${TOP_CONFIGS_DIR}/3_host/${LOCAL_HOSTNAME}.env"
+    HOST_CONFIG="${TOP_CONFIGS_DIR}/3_hosts/${LOCAL_HOSTNAME}.env"
 
     echo ""
     echo "  ╔══════════════════════════════════════════════════════════════════╗"

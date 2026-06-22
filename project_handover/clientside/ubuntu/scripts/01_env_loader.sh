@@ -100,7 +100,7 @@ env_loader_1st_3rd_load_platform() {
 # =============================================================================
 env_loader_1st_4th_load_host() {
     local host_name=$(hostname)
-    local host_config="${ENTRY_CONFIGS_DIR}/3_host/${host_name}.env"
+    local host_config="${ENTRY_CONFIGS_DIR}/3_hosts/${host_name}.env"
     if [ -f "${host_config}" ]; then
         source "${host_config}"
         echo "[config] Host override loaded: ${host_config}"

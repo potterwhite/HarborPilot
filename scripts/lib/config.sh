@@ -7,7 +7,7 @@
 ################################################################################
 
 ################################################################################
-# Load all configuration layers (1_defaults, 2_platforms, 3_host)
+# Load all configuration layers (1_defaults, 2_platforms, 3_hosts)
 # This function is called from main() after platform/host selection
 ################################################################################
 _load_config_layers() {
@@ -40,7 +40,7 @@ _load_config_layers() {
 
     # Layer 3: Host-level overrides (auto-loaded by hostname, optional)
     LOCAL_HOSTNAME=$(hostname)
-    HOST_CONFIG="${TOP_CONFIGS_DIR}/3_host/${LOCAL_HOSTNAME}.env"
+    HOST_CONFIG="${TOP_CONFIGS_DIR}/3_hosts/${LOCAL_HOSTNAME}.env"
     if [ -f "${HOST_CONFIG}" ]; then
         source "${HOST_CONFIG}"
         echo "[config] Host override loaded: ${HOST_CONFIG}"
@@ -98,7 +98,7 @@ _load_layer2_platform() {
 ################################################################################
 _load_layer3_host() {
     LOCAL_HOSTNAME=$(hostname)
-    HOST_CONFIG="${TOP_CONFIGS_DIR}/3_host/${LOCAL_HOSTNAME}.env"
+    HOST_CONFIG="${TOP_CONFIGS_DIR}/3_hosts/${LOCAL_HOSTNAME}.env"
 
     if [ -f "${HOST_CONFIG}" ]; then
         source "${HOST_CONFIG}"

@@ -123,7 +123,7 @@ HarborPilot/
 │   │   ├── rk3568-rk3568_ubuntu-22.04.env
 │   │   ├── rv1126-rv1126_ubuntu-22.04.env
 │   │   └── rv1126-rv1126bp_ubuntu-22.04.env
-│   └── host/                         ← Layer 3 · host-level overrides (optional, gitignored)
+│   └── hosts/                        ← Layer 3 · host-level overrides (optional, gitignored)
 │
 ├── docker/
 │   └── dev-env-clientside/           ← 5-stage Dockerfile

@@ -43,7 +43,7 @@ HarborPilot.git/
 │   │   ├── rv1126-rv1126_ubuntu-22.04.env        ←     PORT_SLOT=3, Ubuntu 22.04
 │   │   ├── rk3568-rk3568_ubuntu-22.04.env        ←     PORT_SLOT=4, Ubuntu 22.04
 │   │   └── rk3588-rk3588s_ubuntu-24.04.env      ←     PORT_SLOT=5, Ubuntu 24.04, no NVIDIA
-│   ├── host/                                   ←   Layer 3: host-level overrides (optional, gitignored)
+│   ├── hosts/                                  ←   Layer 3: host-level overrides (optional, gitignored)
 │   │   ├── .gitkeep                            ←     Keeps directory in git
 │   │   └── README.md                           ←     Usage documentation
 │   └── platform_schema.json            ←   JSON Schema for validating platform .env files
