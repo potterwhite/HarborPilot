@@ -6,7 +6,7 @@
 >
 > **维护规则：** 任何修改本文中所列文件的 AI Agent，必须在同一次提交/会话中更新本文档的相关章节。
 >
-> 最后更新：2026-03-28（新增 Phase 4 ASO 计划；task-logs 存档规则已文档化；MCP 重新编号为 Phase 5）
+> 最后更新：2026-06-18（SDK_INSTALL_PATH 移至默认层；SDK 变量在 host 模板中完整注释）
 > **Related:** [English Version →](../../en/1-for-ai/codebase_map.md)
 
 ---
@@ -30,7 +30,7 @@ HarborPilot.git/
 │   │   ├── 03_tools.env                ←     开发工具开关与版本（CUDA、OpenCV、Node…）
 │   │   ├── 04_workspace.env            ←     工作区目录结构与构建设置
 │   │   ├── 05_registry.env             ←     Harbor / GitLab 服务器地址
-│   │   ├── 06_sdk.env                  ←     SDK 安装开关（默认：false）
+│   │   ├── 06_sdk.env                  ←     SDK 开关（默认：false）+ SDK_INSTALL_PATH
 │   │   ├── 07_volumes.env              ←     Docker volume 根路径
 │   │   ├── 08_samba.env                ←     Samba 共享凭证
 │   │   ├── 09_runtime.env              ←     SSH / GDB / syslog / NVIDIA 开关
@@ -207,7 +207,7 @@ mcp/
 | `03_tools.env` | `INSTALL_CUDA=false`、`INSTALL_OPENCV=false`、`INSTALL_HOST_CMAKE=true`、`NPM_USE_CHINA_MIRROR=false`、`CUDA_VERSION=12.0`、`OPENCV_VERSION=4.9.0`、`CONAN_VERSION=2.0.17` | 版本锁定以确保可复现 |
 | `04_workspace.env` | `WORKSPACE_ROOT=/development`，子目录：`i_src`…`vi_tools`，`WORKSPACE_BUILD_THREADS=4`、`WORKSPACE_LOG_LEVEL=INFO`、`WORKSPACE_DEBUG_PORT=3000` | 6 个工作区子目录 |
 | `05_registry.env` | `HAVE_GITLAB_SERVER=TRUE`、`HAVE_HARBOR_SERVER=TRUE`、`HARBOR_SERVER_PORT=9000` | `REGISTRY_URL` 在 Layer 3 中使用 `CHIP_FAMILY` |
-| `06_sdk.env` | `INSTALL_SDK=false`、`CHIP_FAMILY=${PRODUCT_NAME}` | `CHIP_FAMILY` 将同芯片的变体归组；`REGISTRY_URL` 和 `SDK_GIT_REPO` 使用 `${CHIP_FAMILY}` |
+| `06_sdk.env` | `INSTALL_SDK=false`、`SDK_INSTALL_PATH=${WORKSPACE_ROOT}/sdk`、`CHIP_FAMILY=${PRODUCT_NAME}` | `SDK_INSTALL_PATH` 是仓库约定（所有平台相同）。`CHIP_FAMILY` 将同芯片变体归组；`SDK_GIT_REPO`、`SDK_GIT_KEY_FILE`、`SDK_GIT_DEFAULT_BRANCH` 由平台文件（Layer 2）自动生成 |
 | `07_volumes.env` | `VOLUMES_ROOT=${WORKSPACE_ROOT}` | `HOST_VOLUME_DIR` 无默认值 — 每平台**必须**设置 |
 | `08_samba.env` | `SAMBA_SERVER_IP=""`、`SAMBA_PUBLIC_ACCOUNT_NAME/PASSWORD=sambashare`、`SAMBA_FILE_MODE=0777`、`SAMBA_DIR_MODE=0777` | 默认 Samba 凭证 + 权限 |
 | `09_runtime.env` | `ENABLE_SSH=true`、`ENABLE_GDB_SERVER=true`、`USE_NVIDIA_GPU=false`、`ENABLE_CORE_DUMPS=true`、`CONTAINER_RESTART_POLICY=unless-stopped`、`CONTAINER_PRIVILEGED=true`、`CONTAINER_SERIAL_DEVICE=/dev/ttyUSB0`、`CONTAINER_SHM_SIZE=8g`、`NVIDIA_VISIBLE_DEVICES=all`、`NVIDIA_DRIVER_CAPABILITIES=all` | 端口由 port_calc.sh 计算；compose 运行时覆盖 |

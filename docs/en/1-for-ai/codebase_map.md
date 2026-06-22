@@ -7,7 +7,7 @@
 > **Maintenance rule:** Any AI agent that modifies a file listed here MUST update
 > the relevant section in this document in the same commit/session.
 >
-> Last updated: 2026-03-28 (Phase 4 ASO plan added; task-logs archiving rules documented; Phase 5 MCP renumbered)
+> Last updated: 2026-06-18 (SDK_INSTALL_PATH moved to defaults; SDK vars documented in host template)
 > **Related:** [中文版 →](../../zh/1-for-ai/codebase_map.md)
 
 ---
@@ -31,7 +31,7 @@ HarborPilot.git/
 │   │   ├── 03_tools.env                ←     Dev tool switches & versions (CUDA, OpenCV, Node…)
 │   │   ├── 04_workspace.env            ←     Workspace directory structure & build settings
 │   │   ├── 05_registry.env             ←     Harbor / GitLab server addresses
-│   │   ├── 06_sdk.env                  ←     SDK install switch (default: false)
+│   │   ├── 06_sdk.env                  ←     SDK switch (default: false) + SDK_INSTALL_PATH
 │   │   ├── 07_volumes.env              ←     Docker volume root path
 │   │   ├── 08_samba.env                ←     Samba share credentials
 │   │   ├── 09_runtime.env              ←     SSH / GDB / syslog / NVIDIA switches
@@ -207,7 +207,7 @@ Single monolithic Dockerfile, 5 stages. Each stage has sub-stages for template p
 | `03_tools.env` | `INSTALL_CUDA=false`, `INSTALL_OPENCV=false`, `INSTALL_HOST_CMAKE=true`, `NPM_USE_CHINA_MIRROR=false`, `CUDA_VERSION=12.0`, `OPENCV_VERSION=4.9.0`, `CONAN_VERSION=2.0.17` | Version pinning for reproducibility |
 | `04_workspace.env` | `WORKSPACE_ROOT=/development`, subdirs: `i_src`…`vi_tools`, `WORKSPACE_BUILD_THREADS=4`, `WORKSPACE_LOG_LEVEL=INFO`, `WORKSPACE_DEBUG_PORT=3000` | 6 workspace subdirectories |
 | `05_registry.env` | `HAVE_GITLAB_SERVER=TRUE`, `HAVE_HARBOR_SERVER=TRUE`, `HARBOR_SERVER_PORT=9000` | `REGISTRY_URL` uses `CHIP_FAMILY` in Layer 3 |
-| `06_sdk.env` | `INSTALL_SDK=false`, `CHIP_FAMILY=${PRODUCT_NAME}` | `CHIP_FAMILY` groups same-silicon variants; `REGISTRY_URL` and `SDK_GIT_REPO` use `${CHIP_FAMILY}` |
+| `06_sdk.env` | `INSTALL_SDK=false`, `SDK_INSTALL_PATH=${WORKSPACE_ROOT}/sdk`, `CHIP_FAMILY=${PRODUCT_NAME}` | `SDK_INSTALL_PATH` is a repo convention (same across all platforms). `CHIP_FAMILY` groups same-silicon variants; `SDK_GIT_REPO`, `SDK_GIT_KEY_FILE`, `SDK_GIT_DEFAULT_BRANCH` are auto-generated per platform (Layer 2) |
 | `07_volumes.env` | `VOLUMES_ROOT=${WORKSPACE_ROOT}`, `HOST_VOLUME_DIR` (no default — required per platform), `EXTRA_VOLUME_N` (no default — optional per platform, 0..N indexed) | `HOST_VOLUME_DIR` must be set in platform override. `EXTRA_VOLUME_N` uses `<host>:<container>` format; indices must be contiguous from 0; scanning stops at first missing index. Injected into compose by `04_compose_generator.sh`. |
 | `08_samba.env` | `SAMBA_SERVER_IP=""`, `SAMBA_PUBLIC_ACCOUNT_NAME/PASSWORD=sambashare`, `SAMBA_FILE_MODE=0777`, `SAMBA_DIR_MODE=0777` | Default Samba credentials + permissions |
 | `09_runtime.env` | `ENABLE_SSH=true`, `ENABLE_GDB_SERVER=true`, `USE_NVIDIA_GPU=false`, `ENABLE_CORE_DUMPS=true`, `CONTAINER_RESTART_POLICY=unless-stopped`, `CONTAINER_PRIVILEGED=true`, `CONTAINER_SERIAL_DEVICE=/dev/ttyUSB0`, `CONTAINER_SHM_SIZE=8g`, `NVIDIA_VISIBLE_DEVICES=all`, `NVIDIA_DRIVER_CAPABILITIES=all` | Ports from port_calc.sh; compose overrides for container runtime |

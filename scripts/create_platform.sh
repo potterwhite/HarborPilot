@@ -472,9 +472,8 @@ HARBOR_SERVER_PORT="${harbor_port}"
 REGISTRY_URL="\${HARBOR_SERVER_IP}:\${HARBOR_SERVER_PORT}/team_\${CHIP_FAMILY}"
 
 # =============================================================================
-# SDK  [CHIP_FAMILY groups same-silicon variants together]
+# SDK  [auto-generated — only used when INSTALL_SDK=true]
 # =============================================================================
-SDK_INSTALL_PATH="\${WORKSPACE_ROOT}/sdk"
 SDK_GIT_REPO="git@\${GITLAB_SERVER_IP:-${harbor_ip}}:team_\${CHIP_FAMILY}/\${PRODUCT_NAME}_sdk.git"
 SDK_GIT_KEY_FILE="SDK_\${CHIP_FAMILY}_ED25519"
 SDK_GIT_DEFAULT_BRANCH="${sdk_branch}"
@@ -704,9 +703,8 @@ HARBOR_SERVER_PORT="${harbor_port}"
 REGISTRY_URL="\${HARBOR_SERVER_IP}:\${HARBOR_SERVER_PORT}/team_\${CHIP_FAMILY}"
 
 # =============================================================================
-# SDK  [CHIP_FAMILY groups same-silicon variants together]
+# SDK  [auto-generated — only used when INSTALL_SDK=true]
 # =============================================================================
-SDK_INSTALL_PATH="\${WORKSPACE_ROOT}/sdk"
 SDK_GIT_REPO="git@\${GITLAB_SERVER_IP:-${harbor_ip}}:team_\${CHIP_FAMILY}/\${PRODUCT_NAME}_sdk.git"
 SDK_GIT_KEY_FILE="SDK_\${CHIP_FAMILY}_ED25519"
 SDK_GIT_DEFAULT_BRANCH="${sdk_branch}"
