@@ -430,7 +430,7 @@ _select_host_config() {
 _create_host_config() {
     LOCAL_HOSTNAME=$(hostname)
     HOST_CONFIG="${TOP_CONFIGS_DIR}/3_hosts/${LOCAL_HOSTNAME}.env"
-    local total_questions=6  # Total questions to ask
+    local total_questions=5  # Questions after platform selection
 
     echo ""
     echo "  ╔══════════════════════════════════════════════════════════════════╗"
@@ -441,14 +441,14 @@ _create_host_config() {
     printf "  ║  File:     %-52s║\n" "${HOST_CONFIG}"
     echo "  ║                                                                  ║"
     echo "  ║  This will create a host-specific config file.                  ║"
-    echo "  ║  You'll be guided through ${total_questions} questions.                           ║"
+    echo "  ║  You'll be guided through 1 platform + ${total_questions} settings.                 ║"
     echo "  ║                                                                  ║"
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
     echo ""
 
     if [ -f "${HOST_CONFIG}" ]; then
         echo "  ⚠️  Host config already exists: ${HOST_CONFIG}"
-        if ! prompt_simple "Overwrite existing config?" "1" "${total_questions}" "n"; then
+        if ! prompt_simple "Overwrite existing config?" "" "" "n"; then
             echo "  → Cancelled."
             _select_host_config
             return
@@ -483,7 +483,7 @@ _create_host_config() {
     # Question 1: HOST_VOLUME_DIR (required — no universal default)
     local host_volume_dir=""
     echo ""
-    echo "  (2/${total_questions}) Docker volumes directory on this host"
+    echo "  (1/${total_questions}) Docker volumes directory on this host"
     echo "      This is where container volumes are stored."
     echo "      Recommended: /mnt/ssd/docker-volumes/\${PRODUCT_NAME}"
     echo ""
@@ -497,7 +497,7 @@ _create_host_config() {
 
     # Question 2: GPU (recommend: no for most machines)
     local use_gpu="false"
-    if prompt_simple "Does this machine have an NVIDIA GPU?" "3" "${total_questions}" "n"; then
+    if prompt_simple "Does this machine have an NVIDIA GPU?" "2" "${total_questions}" "n"; then
         use_gpu="true"
     fi
 
@@ -505,14 +505,14 @@ _create_host_config() {
     local shm_size="256m"
     if [[ "${use_gpu}" == "true" ]]; then
         shm_size="1g"
-        if prompt_simple "Set SHM size to 1g for GPU?" "4" "${total_questions}" "y"; then
+        if prompt_simple "Set SHM size to 1g for GPU?" "3" "${total_questions}" "y"; then
             echo "  → SHM size set to ${shm_size}"
         else
             shm_size="2g"
             echo "  → SHM size set to ${shm_size}"
         fi
     else
-        if prompt_simple "Set SHM size to 512m? (default is 256m)" "4" "${total_questions}" "n"; then
+        if prompt_simple "Set SHM size to 512m? (default is 256m)" "3" "${total_questions}" "n"; then
             shm_size="512m"
             echo "  → SHM size set to ${shm_size}"
         else
@@ -522,7 +522,7 @@ _create_host_config() {
 
     # Question 4: Network mode (recommend: yes for production)
     local network_mode="bridge"
-    if prompt_simple "Use host network mode?" "5" "${total_questions}" "y"; then
+    if prompt_simple "Use host network mode?" "4" "${total_questions}" "y"; then
         network_mode="host"
         echo "  → Network mode set to host"
     else
@@ -531,7 +531,7 @@ _create_host_config() {
 
     # Question 5: Auto-start container (recommend: yes)
     local auto_restart="no"
-    if prompt_simple "Auto-restart container on boot?" "6" "${total_questions}" "y"; then
+    if prompt_simple "Auto-restart container on boot?" "5" "${total_questions}" "y"; then
         auto_restart="unless-stopped"
         echo "  → Container will auto-restart on boot"
     else
@@ -603,6 +603,7 @@ EOF
         echo ""
         echo "  -----"
         echo ""
+        _HARBOR_SKIP_BUILD=1
     fi
 }
 

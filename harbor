@@ -67,8 +67,14 @@ main() {
     ##################################################################
     # Host configuration (only for build mode)
     ##################################################################
+    _HARBOR_SKIP_BUILD=0
     if [ "${_HARBOR_MODE}" = "build" ]; then
         _select_host_config
+    fi
+
+    # User chose not to build after creating host config
+    if [ "${_HARBOR_SKIP_BUILD}" = "1" ]; then
+        return 0
     fi
 
     ##################################################################
