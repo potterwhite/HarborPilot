@@ -34,16 +34,43 @@ _load_config_layers() {
         fi
     done
 
-    # Layer 2: Platform-specific overrides (only what differs from defaults)
-    echo "Loading environment variables from ${PLATFORM_ENV_DEST_PATH}"
-    source "${PLATFORM_ENV_DEST_PATH}"
-
-    # Layer 3: Host-level overrides (auto-loaded by hostname, optional)
+    # Layer 2 + 3: Host-driven platform resolution
+    # If host config declares BASE_PLATFORM, use that to determine the platform.
+    # Otherwise fall back to the .env symlink (backward compatibility).
     LOCAL_HOSTNAME=$(hostname)
     HOST_CONFIG="${TOP_CONFIGS_DIR}/3_hosts/${LOCAL_HOSTNAME}.env"
+
     if [ -f "${HOST_CONFIG}" ]; then
+        # Read BASE_PLATFORM without sourcing the whole file
+        local base_platform
+        base_platform=$(grep -E '^BASE_PLATFORM=' "${HOST_CONFIG}" | head -1 | sed 's/^BASE_PLATFORM=//;s/^"//;s/"$//' | tr -d "'")
+
+        if [ -n "${base_platform}" ]; then
+            # New path: platform determined by host config
+            local platform_env="${TOP_CONFIGS_DIR}/2_platforms/${base_platform}.env"
+            if [ -f "${platform_env}" ]; then
+                source "${platform_env}"
+                echo "[config] Platform loaded from BASE_PLATFORM: ${base_platform}"
+            else
+                echo "Error: BASE_PLATFORM='${base_platform}' not found at ${platform_env}"
+                echo "       Available platforms:"
+                ls -1 "${TOP_CONFIGS_DIR}/2_platforms/"*.env 2>/dev/null | sed 's|.*/||;s|\.env$||' | sed 's/^/         /'
+                return 1
+            fi
+        else
+            # Legacy path: platform from .env symlink
+            echo "Loading environment variables from ${PLATFORM_ENV_DEST_PATH}"
+            source "${PLATFORM_ENV_DEST_PATH}"
+        fi
+
+        # Source host config AFTER platform (host overrides platform)
         source "${HOST_CONFIG}"
         echo "[config] Host override loaded: ${HOST_CONFIG}"
+    else
+        # No host config — use .env symlink (legacy behavior)
+        echo "Loading environment variables from ${PLATFORM_ENV_DEST_PATH}"
+        source "${PLATFORM_ENV_DEST_PATH}"
+        echo "[config] No host-specific config found for ${LOCAL_HOSTNAME}"
     fi
 
     # Port calculation: auto-derive ports from PORT_SLOT (or validate explicit ports)
@@ -95,12 +122,28 @@ _load_layer2_platform() {
 ################################################################################
 # Load Layer 3: Host-level overrides
 # These are machine-specific values that override Layer 1 and Layer 2
+# If host config declares BASE_PLATFORM, platform is auto-resolved.
 ################################################################################
 _load_layer3_host() {
     LOCAL_HOSTNAME=$(hostname)
     HOST_CONFIG="${TOP_CONFIGS_DIR}/3_hosts/${LOCAL_HOSTNAME}.env"
 
     if [ -f "${HOST_CONFIG}" ]; then
+        # Read BASE_PLATFORM without sourcing the whole file
+        local base_platform
+        base_platform=$(grep -E '^BASE_PLATFORM=' "${HOST_CONFIG}" | head -1 | sed 's/^BASE_PLATFORM=//;s/^"//;s/"$//' | tr -d "'")
+
+        if [ -n "${base_platform}" ]; then
+            local platform_env="${TOP_CONFIGS_DIR}/2_platforms/${base_platform}.env"
+            if [ -f "${platform_env}" ]; then
+                source "${platform_env}"
+                echo "[config] Platform loaded from BASE_PLATFORM: ${base_platform}"
+            else
+                echo "Error: BASE_PLATFORM='${base_platform}' not found at ${platform_env}"
+                return 1
+            fi
+        fi
+
         source "${HOST_CONFIG}"
         echo "[config] Host override loaded: ${HOST_CONFIG}"
     else

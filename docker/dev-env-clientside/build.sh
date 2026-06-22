@@ -67,25 +67,53 @@ func_1_1_setup_env(){
     done
 
     # ------------------------------------------------------------------
-    # Layer 2: Platform-specific overrides (only what differs from defaults)
-    # ------------------------------------------------------------------
-    echo "--- Layer 2: Loading platform overrides ---"
-    echo "  PLATFORM_ENV_PATH: ${PLATFORM_ENV_PATH}"
-    if [ -e "${PLATFORM_ENV_PATH}" ]; then
-        source "${PLATFORM_ENV_PATH}"
-    else
-        echo "Fatal: ${PLATFORM_ENV_PATH} not found, exit"
-        exit 1
-    fi
-
-    # ------------------------------------------------------------------
-    # Layer 3: Host-level overrides (auto-loaded by hostname, optional)
+    # Layer 2 + 3: Host-driven platform resolution
+    # If host config declares BASE_PLATFORM, use that to determine the platform.
+    # Otherwise fall back to the .env symlink (backward compatibility).
     # ------------------------------------------------------------------
     LOCAL_HOSTNAME=$(hostname)
     HOST_CONFIG="${CONFIGS_DIR}/3_hosts/${LOCAL_HOSTNAME}.env"
+
     if [ -f "${HOST_CONFIG}" ]; then
+        # Read BASE_PLATFORM without sourcing the whole file
+        base_platform=$(grep -E '^BASE_PLATFORM=' "${HOST_CONFIG}" | head -1 | sed 's/^BASE_PLATFORM=//;s/^"//;s/"$//' | tr -d "'")
+
+        if [ -n "${base_platform}" ]; then
+            # New path: platform determined by host config
+            platform_env="${CONFIGS_DIR}/2_platforms/${base_platform}.env"
+            if [ -f "${platform_env}" ]; then
+                source "${platform_env}"
+                echo "[config] Platform loaded from BASE_PLATFORM: ${base_platform}"
+            else
+                echo "Fatal: BASE_PLATFORM='${base_platform}' not found at ${platform_env}"
+                exit 1
+            fi
+        else
+            # Legacy path: platform from .env symlink
+            echo "--- Layer 2: Loading platform overrides ---"
+            echo "  PLATFORM_ENV_PATH: ${PLATFORM_ENV_PATH}"
+            if [ -e "${PLATFORM_ENV_PATH}" ]; then
+                source "${PLATFORM_ENV_PATH}"
+            else
+                echo "Fatal: ${PLATFORM_ENV_PATH} not found, exit"
+                exit 1
+            fi
+        fi
+
+        # Source host config AFTER platform (host overrides platform)
         source "${HOST_CONFIG}"
         echo "[config] Host override loaded: ${HOST_CONFIG}"
+    else
+        # No host config — use .env symlink (legacy behavior)
+        echo "--- Layer 2: Loading platform overrides ---"
+        echo "  PLATFORM_ENV_PATH: ${PLATFORM_ENV_PATH}"
+        if [ -e "${PLATFORM_ENV_PATH}" ]; then
+            source "${PLATFORM_ENV_PATH}"
+        else
+            echo "Fatal: ${PLATFORM_ENV_PATH} not found, exit"
+            exit 1
+        fi
+        echo "[config] No host-specific config found for ${LOCAL_HOSTNAME}"
     fi
 
     # Port calculation: auto-derive ports from PORT_SLOT (or validate explicit ports).
