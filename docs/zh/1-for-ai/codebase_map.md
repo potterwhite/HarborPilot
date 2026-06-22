@@ -111,18 +111,20 @@ mcp/
 **主编排器**。交互式选择主机 → 加载 3 层配置 → 构建 → 打 tag → 推送 → 清理。
 
 **执行流程：**
-1. `_select_host_config()` — 列出 host 配置及其 BASE_PLATFORM，用户按编号选择。也可选择"创建新 host 配置"向导。
-2. `_load_config_layers()` — 加载 3 层配置：
+1. `0_show_main_menu()` — 顶级菜单：[1] Build & Push，[2] Package Handover，[3] Configurations
+2. `_show_config_menu()`（选择 Configurations 时）— 创建 platform、创建 host（基于已有 platform）、或返回
+3. `_select_host_config()`（选择 Build 时）— 列出 host 配置及其 BASE_PLATFORM，用户按编号选择。也可选择"创建新 host 配置"向导。
+4. `_load_config_layers()` — 加载 3 层配置：
    - Layer 1：按顺序 source `configs/1_defaults/*.env`（00→11）
    - Layer 2：从 host 的 `BASE_PLATFORM` 加载 platform（旧版从 .env 软链接）
    - Layer 3：source `configs/3_hosts/$(hostname).env`（覆盖 platform）
-3. `port_calc.sh` — 从 PORT_SLOT 派生 SSH/GDB 端口
-4. `0_check_registry_login()` — 验证 Docker 已登录 Harbor；未登录则提示交互式登录
-5. `2_build_images()` → 调用 `docker/dev-env-clientside/build.sh`
-6. `3_prepare_version_info()` — 获取最终镜像 ID
-7. `4_tag_images()` — 打 version + latest 标签（本地或 registry）
-8. `5_push_images()` — 推送 + 验证 manifest digest
-9. `6_cleanup_images()` — 删除中间镜像（保留最终镜像）
+5. `port_calc.sh` — 从 PORT_SLOT 派生 SSH/GDB 端口
+6. `0_check_registry_login()` — 验证 Docker 已登录 Harbor；未登录则提示交互式登录
+7. `2_build_images()` → 调用 `docker/dev-env-clientside/build.sh`
+8. `3_prepare_version_info()` — 获取最终镜像 ID
+9. `4_tag_images()` — 打 version + latest 标签（本地或 registry）
+10. `5_push_images()` — 推送 + 验证 manifest digest
+11. `6_cleanup_images()` — 删除中间镜像（保留最终镜像）
 
 **关键行为：**
 - 每步（构建/打 tag/推送/清理）都有 `prompt_with_timeout` — 用户可用 'n' 跳过，10 秒后自动继续

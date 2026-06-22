@@ -61,8 +61,21 @@ main() {
     ##################################################################
     # Top-level menu: choose action before platform selection
     ##################################################################
-    _HARBOR_MODE="build"
-    0_show_main_menu
+    while true; do
+        _HARBOR_MODE="build"
+        0_show_main_menu
+
+        if [ "${_HARBOR_MODE}" = "config" ]; then
+            _show_config_menu
+            # If user built from config menu, proceed; otherwise show main menu again
+            if [ "${_HARBOR_MODE}" = "build" ]; then
+                break
+            fi
+            continue
+        fi
+
+        break
+    done
 
     ##################################################################
     # Host configuration (only for build mode)

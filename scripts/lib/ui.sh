@@ -3,8 +3,9 @@
 # Module: ui.sh
 # Description: UI interaction functions for HarborPilot
 # Functions: prompt_with_timeout, prompt_simple, 0_show_main_menu,
-#            1_specify_platform, _select_host_config, _create_host_config,
-#            _load_host_config, _check_and_prompt_host_config, _print_next_steps
+#            _show_config_menu, 1_specify_platform, _select_host_config,
+#            _create_host_config, _load_host_config, _check_and_prompt_host_config,
+#            _print_next_steps
 ################################################################################
 
 ################################################################################
@@ -126,8 +127,8 @@ prompt_simple() {
 }
 
 ################################################################################
-# 0. Top-level action menu: Build or Package
-# Sets _HARBOR_MODE to "build" or "package"
+# 0. Top-level action menu: Build, Package, or Configurations
+# Sets _HARBOR_MODE to "build", "package", or "config"
 ################################################################################
 0_show_main_menu() {
     echo ""
@@ -137,12 +138,13 @@ prompt_simple() {
     echo "  ║                                                                  ║"
     echo "  ║  [1]  Build & Push          — build image and push to registry  ║"
     echo "  ║  [2]  Package Handover      — create client delivery tarball    ║"
+    echo "  ║  [3]  Configurations        — create platform or host config    ║"
     echo "  ║                                                                  ║"
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
     echo ""
 
     while true; do
-        read -p "  Please select [1-2]: " _menu_choice
+        read -p "  Please select [1-3]: " _menu_choice
         case "${_menu_choice}" in
             1)
                 _HARBOR_MODE="build"
@@ -156,8 +158,58 @@ prompt_simple() {
                 echo ""
                 break
                 ;;
+            3)
+                _HARBOR_MODE="config"
+                echo "  → Configurations selected."
+                echo ""
+                break
+                ;;
             *)
-                echo "  ✗ Invalid choice. Please enter 1 or 2."
+                echo "  ✗ Invalid choice. Please enter 1, 2, or 3."
+                ;;
+        esac
+    done
+}
+
+################################################################################
+# Configurations submenu: create platform, create host, or go back
+################################################################################
+_show_config_menu() {
+    while true; do
+        echo ""
+        echo "  ╔══════════════════════════════════════════════════════════════════╗"
+        echo "  ║                     Configurations                              ║"
+        echo "  ╠══════════════════════════════════════════════════════════════════╣"
+        echo "  ║                                                                  ║"
+        echo "  ║  [1]  Create new platform                                        ║"
+        echo "  ║  [2]  Create new host (based on existing platform config)        ║"
+        echo "  ║                                                                  ║"
+        echo "  ║  [0]  Back to main menu                                          ║"
+        echo "  ║                                                                  ║"
+        echo "  ╚══════════════════════════════════════════════════════════════════╝"
+        echo ""
+
+        read -p "  Please select [0-2]: " _config_choice
+        case "${_config_choice}" in
+            1)
+                "${TOP_ROOT_DIR}/scripts/create_platform.sh" || true
+                ;;
+            2)
+                _create_host_config
+                read -p "  Build this host now? (y/N): " _build_choice
+                if [[ "${_build_choice}" =~ ^[yY]$ ]]; then
+                    _load_host_config "${LOCAL_HOSTNAME}"
+                    _HARBOR_MODE="build"
+                    break
+                fi
+                ;;
+            0)
+                echo "  → Back to main menu."
+                echo ""
+                break
+                ;;
+            *)
+                echo "  ✗ Invalid choice. Please enter 0, 1, or 2."
                 ;;
         esac
     done
@@ -376,6 +428,12 @@ _select_host_config() {
         echo ""
         read -p "  Please select [1]: " _config_choice
         _create_host_config
+        read -p "  Build this host now? (y/N): " _build_choice
+        if [[ "${_build_choice}" =~ ^[yY]$ ]]; then
+            _load_host_config "${LOCAL_HOSTNAME}"
+        else
+            _HARBOR_SKIP_BUILD=1
+        fi
         return
     fi
 
@@ -413,6 +471,12 @@ _select_host_config() {
     if [[ "${_config_choice}" -eq "${max_option}" ]]; then
         # Create new host config
         _create_host_config
+        read -p "  Build this host now? (y/N): " _build_choice
+        if [[ "${_build_choice}" =~ ^[yY]$ ]]; then
+            _load_host_config "${LOCAL_HOSTNAME}"
+        else
+            _select_host_config
+        fi
     elif [[ "${_config_choice}" -ge 1 && "${_config_choice}" -lt "${max_option}" ]]; then
         # Load existing host config
         local host_idx=$(( _config_choice - 1 ))
@@ -595,16 +659,7 @@ EOF
     echo "  → Auto-loaded when you run './harbor' on ${LOCAL_HOSTNAME}"
     echo ""
 
-    read -p "  Build '${LOCAL_HOSTNAME}' host now? (y/N): " _build_choice
-    if [[ "${_build_choice}" =~ ^[yY]$ ]]; then
-        _load_host_config "${LOCAL_HOSTNAME}"
-    else
-        echo "  → Skipped. You can build anytime by running './harbor'."
-        echo ""
-        echo "  -----"
-        echo ""
-        _HARBOR_SKIP_BUILD=1
-    fi
+    return 0
 }
 
 ################################################################################
