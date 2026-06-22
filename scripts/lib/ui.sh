@@ -98,7 +98,7 @@ prompt_simple() {
     printf "  ║  ${prefix}%-60s║\n" "${message}"
     echo "  ║                                                                  ║"
     printf "  ║  [y] Yes%-8s [n] No%-48s║\n" "${recommend_y}" "${recommend_n}"
-    echo "  ║  (Press Enter for recommended option)                           ║"
+    echo "  ║  (Press Enter for recommended option)                            ║"
     echo "  ║                                                                  ║"
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
 
@@ -133,12 +133,12 @@ prompt_simple() {
 0_show_main_menu() {
     echo ""
     echo "  ╔══════════════════════════════════════════════════════════════════╗"
-    echo "  ║                      HarborPilot — Main Menu                    ║"
+    echo "  ║                      HarborPilot — Main Menu                     ║"
     echo "  ╠══════════════════════════════════════════════════════════════════╣"
     echo "  ║                                                                  ║"
-    echo "  ║  [1]  Build & Push          — build image and push to registry  ║"
-    echo "  ║  [2]  Package Handover      — create client delivery tarball    ║"
-    echo "  ║  [3]  Configurations        — create platform or host config    ║"
+    echo "  ║  [1]  Configurations        — create platform or host config     ║"
+    echo "  ║  [2]  Build & Push          — build image and push to registry   ║"
+    echo "  ║  [3]  Package Handover      — create client delivery tarball     ║"
     echo "  ║                                                                  ║"
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
     echo ""
@@ -147,20 +147,20 @@ prompt_simple() {
         read -p "  Please select [1-3]: " _menu_choice
         case "${_menu_choice}" in
             1)
+                _HARBOR_MODE="config"
+                echo "  → Configurations selected."
+                echo ""
+                break
+                ;;
+            2)
                 _HARBOR_MODE="build"
                 echo "  → Build & Push selected."
                 echo ""
                 break
                 ;;
-            2)
+            3)
                 _HARBOR_MODE="package"
                 echo "  → Package Handover selected."
-                echo ""
-                break
-                ;;
-            3)
-                _HARBOR_MODE="config"
-                echo "  → Configurations selected."
                 echo ""
                 break
                 ;;
@@ -178,7 +178,7 @@ _show_config_menu() {
     while true; do
         echo ""
         echo "  ╔══════════════════════════════════════════════════════════════════╗"
-        echo "  ║                     Configurations                              ║"
+        echo "  ║                     Configurations                               ║"
         echo "  ╠══════════════════════════════════════════════════════════════════╣"
         echo "  ║                                                                  ║"
         echo "  ║  [1]  Create new platform                                        ║"
@@ -223,7 +223,7 @@ _print_next_steps() {
 
     echo ""
     echo "  ╔══════════════════════════════════════════════════════════════════╗"
-    echo "  ║                  BUILD COMPLETE — NEXT STEPS                    ║"
+    echo "  ║                  BUILD COMPLETE — NEXT STEPS                     ║"
     echo "  ╠══════════════════════════════════════════════════════════════════╣"
     echo "  ║                                                                  ║"
     echo "  ║  Image  : ${IMAGE_NAME}:${PROJECT_VERSION}"
@@ -244,8 +244,8 @@ _print_next_steps() {
     echo "  ║    ./project_handover/clientside/ubuntu/ubuntu_only_entrance.sh start"
     echo "  ║                                                                  ║"
     echo "  ╠══════════════════════════════════════════════════════════════════╣"
-    echo "  ║  ⚠  DEPRECATED (no longer maintained):                          ║"
-    echo "  ║     • Windows client      — windows support has been dropped    ║"
+    echo "  ║  ⚠  DEPRECATED (no longer maintained):                           ║"
+    echo "  ║     • Windows client      — windows support has been dropped     ║"
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
     echo ""
 }
@@ -419,8 +419,8 @@ _select_host_config() {
         echo "  ║              No Host Configurations Found                        ║"
         echo "  ╠══════════════════════════════════════════════════════════════════╣"
         echo "  ║                                                                  ║"
-        echo "  ║  A host config is required to build.                            ║"
-        echo "  ║  It defines which platform to use and host-specific settings.   ║"
+        echo "  ║  A host config is required to build.                             ║"
+        echo "  ║  It defines which platform to use and host-specific settings.    ║"
         echo "  ║                                                                  ║"
         printf "  ║  [1]  Create host config for this machine (%-20s)║\n" "${LOCAL_HOSTNAME})"
         echo "  ║                                                                  ║"
@@ -440,7 +440,7 @@ _select_host_config() {
     # Build menu with host configs
     echo ""
     echo "  ╔══════════════════════════════════════════════════════════════════╗"
-    echo "  ║                    Select Host Configuration                    ║"
+    echo "  ║                    Select Host Configuration                     ║"
     echo "  ╠══════════════════════════════════════════════════════════════════╣"
     echo "  ║                                                                  ║"
 
@@ -459,7 +459,7 @@ _select_host_config() {
     done
 
     echo "  ║                                                                  ║"
-    echo "  ║  [${idx}]  Create new host    — configure for a new machine       ║"
+    echo "  ║  [${idx}]  Create new host    — configure for a new machine      ║"
     echo "  ║                                                                  ║"
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
     echo ""
@@ -498,14 +498,14 @@ _create_host_config() {
 
     echo ""
     echo "  ╔══════════════════════════════════════════════════════════════════╗"
-    echo "  ║                    Create Host Configuration                    ║"
+    echo "  ║                    Create Host Configuration                     ║"
     echo "  ╠══════════════════════════════════════════════════════════════════╣"
     echo "  ║                                                                  ║"
     printf "  ║  Hostname: %-52s║\n" "${LOCAL_HOSTNAME}"
     printf "  ║  File:     %-52s║\n" "${HOST_CONFIG}"
     echo "  ║                                                                  ║"
-    echo "  ║  This will create a host-specific config file.                  ║"
-    echo "  ║  You'll be guided through 1 platform + ${total_questions} settings.                 ║"
+    echo "  ║  This will create a host-specific config file.                   ║"
+    echo "  ║You'll be guided through 1 platform + ${total_questions} settings.║"
     echo "  ║                                                                  ║"
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
     echo ""
@@ -523,7 +523,7 @@ _create_host_config() {
     echo ""
     echo "  ╔══════════════════════════════════════════════════════════════════╗"
     echo "  ║                                                                  ║"
-    echo "  ║  Step 1: Select a base platform for this host                   ║"
+    echo "  ║  Step 1: Select a base platform for this host                    ║"
     echo "  ║                                                                  ║"
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
     echo ""
@@ -540,7 +540,7 @@ _create_host_config() {
     echo ""
     echo "  ╔══════════════════════════════════════════════════════════════════╗"
     echo "  ║                                                                  ║"
-    echo "  ║  Step 2: Configure host-specific overrides                      ║"
+    echo "  ║  Step 2: Configure host-specific overrides                       ║"
     echo "  ║                                                                  ║"
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
 
@@ -702,7 +702,7 @@ _check_and_prompt_host_config() {
 
     echo ""
     echo "  ╔══════════════════════════════════════════════════════════════════╗"
-    echo "  ║                    Host Configuration Check                     ║"
+    echo "  ║                    Host Configuration Check                      ║"
     echo "  ╠══════════════════════════════════════════════════════════════════╣"
     echo "  ║                                                                  ║"
     printf "  ║  Hostname: %-53s║\n" "${LOCAL_HOSTNAME}"
@@ -710,7 +710,7 @@ _check_and_prompt_host_config() {
     echo "  ║                                                                  ║"
 
     if [ -f "${HOST_CONFIG}" ]; then
-        echo "  ║  ✅ Host config found!                                          ║"
+        echo "  ║  ✅ Host config found!                                            ║"
         echo "  ║                                                                  ║"
         echo "  ║  The following host-specific overrides will be applied:          ║"
         echo "  ║                                                                  ║"
@@ -723,13 +723,13 @@ _check_and_prompt_host_config() {
             [[ $count -ge 5 ]] && break
         done < "${HOST_CONFIG}"
         if [[ $count -ge 5 ]]; then
-            echo "  ║    ... (more overrides in file)                                 ║"
+            echo "  ║    ... (more overrides in file)                                  ║"
         fi
         echo "  ║                                                                  ║"
         echo "  ║  These overrides customize the platform config for this machine. ║"
         echo "  ║  They will NOT affect the Docker image, only runtime behavior.   ║"
     else
-        echo "  ║  ⚠️  No host-specific config found for this machine.            ║"
+        echo "  ║  ⚠️  No host-specific config found for this machine.             ║"
         echo "  ║                                                                  ║"
         echo "  ║  You have two options:                                           ║"
         echo "  ║                                                                  ║"
@@ -747,7 +747,7 @@ _check_and_prompt_host_config() {
         echo "  ║  To create:                                                      ║"
         printf "  ║    echo 'YOUR_VARS' > configs/3_hosts/%-25s║\n" "${LOCAL_HOSTNAME}.env"
         echo "  ║                                                                  ║"
-        echo "  ║  📌 Note: Host configs are gitignored and NOT part of the image. ║"
+        echo "  ║  📌 Note: Host configs are gitignored and NOT part of the image.  ║"
         echo "  ║     They only exist on this machine for runtime customization.   ║"
     fi
 
