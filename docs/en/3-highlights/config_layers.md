@@ -27,14 +27,16 @@ Adding a new global flag meant editing every platform file. A new platform meant
 Borrowed from Ansible, Helm, Kubernetes, and Yocto — any system that needs "sensible defaults with targeted overrides":
 
 ```
-Layer 1  configs/1_defaults/*.env          Global defaults — every platform inherits
+Layer 1  configs/1_defaults/*.env          Global defaults — automatic, invisible to user
    ↓  (later layers override earlier ones)
-Layer 2  configs/2_platforms/<platform>.env Platform-specific overrides only
-   ↓
-Layer 3  configs/3_hosts/<hostname>.env     Host-level overrides (optional, gitignored)
+Layer 2  configs/2_platforms/<platform>.env Platform identity — automatic, invisible to user
+   ↓                                       (resolved via BASE_PLATFORM in host config)
+Layer 3  configs/3_hosts/<hostname>.env     Host config — THE user-facing object
 ```
 
 **The rule:** a platform file only contains values that *differ* from the defaults. If it's not in the platform file, the default is used. A host file only contains values that *differ* from the platform — if it's not in the host file, the platform value is used.
+
+**Key design decision:** Layers 1 and 2 are *support layers* — they exist to reduce duplication but are never directly selected by the user. The **host config is the primary user object**: it declares which platform it uses (via `BASE_PLATFORM`) and contains all machine-specific overrides. Users only interact with host configs when running `./harbor`.
 
 ---
 
@@ -117,24 +119,28 @@ These are **host-specific** and should be in Layer 3:
 
 ---
 
-## Layer 3 — Host-Level Overrides (`configs/3_hosts/<hostname>.env`)
+## Layer 3 — Host Configuration (`configs/3_hosts/<hostname>.env`)
 
-This layer is **optional** and **auto-loaded by hostname**. It solves the problem of running the same platform on different machines with different hardware, network, or paths.
+This is the **primary user-facing object** in HarborPilot. Each host config declares which platform it uses and contains all machine-specific overrides.
 
 ### How It Works
 
-The system runs `hostname` and looks for `configs/3_hosts/<hostname>.env`. If the file exists, it is sourced after the platform file. If it doesn't exist, the system skips this layer entirely.
+The system runs `hostname` and looks for `configs/3_hosts/<hostname>.env`. If the file exists:
+1. It reads `BASE_PLATFORM` to determine which platform file to load
+2. It sources the platform file (Layer 2)
+3. It sources the host config (Layer 3 overrides)
+
+If the file doesn't exist, `./harbor` guides you to create one.
 
 ### Getting Started
 
 ```bash
-# 1. Get your hostname
+# Option 1: Use the wizard (recommended)
+./harbor  →  Select "Create new host config"
+
+# Option 2: Manual setup
 hostname
-
-# 2. Copy the template
 cp configs/3_hosts/TEMPLATE.env.example configs/3_hosts/$(hostname).env
-
-# 3. Edit with your settings
 nano configs/3_hosts/$(hostname).env
 ```
 
@@ -142,15 +148,28 @@ nano configs/3_hosts/$(hostname).env
 
 | Category | Variables | Reason |
 |----------|-----------|--------|
+| **Platform Reference** | `BASE_PLATFORM` | **REQUIRED** — determines which platform to load |
+| **Paths** | `HOST_VOLUME_DIR`, `EXTRA_VOLUME_*` | Host filesystem paths |
+| **Hardware** | `USE_NVIDIA_GPU`, `CONTAINER_SHM_SIZE` | Machine-specific hardware |
 | **Network** | `HAS_PROXY`, `HTTP_PROXY_IP`, `HTTPS_PROXY_IP`, `NPM_USE_CHINA_MIRROR` | Network environment |
 | **Servers** | `HAVE_GITLAB_SERVER`, `GITLAB_SERVER_*`, `HAVE_HARBOR_SERVER`, `HARBOR_SERVER_*` | Server reachability |
-| **Hardware** | `USE_NVIDIA_GPU`, `CONTAINER_SHM_SIZE` | Machine-specific hardware |
-| **Paths** | `HOST_VOLUME_DIR`, `EXTRA_VOLUME_*` | Host filesystem paths |
 
 ### Example: Host file
 
 ```bash
 # configs/3_hosts/my-desktop.env
+
+# Platform Reference (REQUIRED)
+BASE_PLATFORM="rk3588-rk3588s_ubuntu-24.04"
+
+# Paths
+HOST_VOLUME_DIR="/mnt/ssd/docker-volumes/${PRODUCT_NAME}"
+EXTRA_VOLUME_0="/home/james/notes:/volumes_notes"
+EXTRA_VOLUME_1="/home/james/projects:/volumes_projects"
+
+# Hardware
+USE_NVIDIA_GPU="true"
+CONTAINER_SHM_SIZE="1g"
 
 # Network
 HAS_PROXY="true"
@@ -164,15 +183,6 @@ GITLAB_SERVER_IP="192.168.3.67"
 GITLAB_SERVER_PORT="80"
 HARBOR_SERVER_IP="192.168.3.67"
 HARBOR_SERVER_PORT="9000"
-
-# Hardware
-USE_NVIDIA_GPU="true"
-CONTAINER_SHM_SIZE="1g"
-
-# Paths
-HOST_VOLUME_DIR="/mnt/ssd/docker-volumes/${PRODUCT_NAME}"
-EXTRA_VOLUME_0="/home/james/notes:/volumes_notes"
-EXTRA_VOLUME_1="/home/james/projects:/volumes_projects"
 ```
 
 ### Git Policy
@@ -221,10 +231,11 @@ Later layers override earlier ones. If a variable is not set in any layer, it is
 |---|---|---|
 | Add a global flag | Edit N platform files | Edit one file in `defaults/` |
 | Add a new platform | Copy 180-line file, change 5 lines | Write ~20 lines of overrides only |
-| Customise one platform | Already there | Add one line in the platform file |
+| Add a new machine | N/A (no concept of host) | Create host config, set BASE_PLATFORM |
 | Different GPU per machine | Duplicate platform file | Add host override file |
 | Understand what makes a platform unique | Diff against every other file | Read the platform file — it *is* the diff |
 | Share config across team | Commit everything | Commit defaults + platform, host is private |
+| User selects what to build | Select platform | Select host (platform auto-resolved) |
 
 ---
 
@@ -243,15 +254,27 @@ do
     [ -f "${defaults_file}" ] && source "${defaults_file}"
 done
 
-# Layer 2
-source "${PLATFORM_ENV_PATH}"               # <platform>.env via symlink
-
-# Layer 3 — optional, auto-loaded by hostname
+# Layer 2 + 3 — host-driven platform resolution
 HOST_CONFIG="${CONFIGS_DIR}/3_hosts/$(hostname).env"
-[ -f "${HOST_CONFIG}" ] && source "${HOST_CONFIG}"
-```
+if [ -f "${HOST_CONFIG}" ]; then
+    # Read BASE_PLATFORM without sourcing the whole file
+    base_platform=$(grep -E '^BASE_PLATFORM=' "${HOST_CONFIG}" | head -1 | sed 's/^BASE_PLATFORM=//;s/^"//;s/"$//' | tr -d "'")
 
-The symlink in `project_handover/` (`project_handover/.env`) is set automatically by `./harbor` when you pick a platform.
+    if [ -n "${base_platform}" ]; then
+        # New path: platform determined by host config
+        source "${CONFIGS_DIR}/2_platforms/${base_platform}.env"
+    else
+        # Legacy: platform from .env symlink
+        source "${PLATFORM_ENV_PATH}"
+    fi
+
+    # Source host config AFTER platform (host overrides platform)
+    source "${HOST_CONFIG}"
+else
+    # No host config — use .env symlink (legacy)
+    source "${PLATFORM_ENV_PATH}"
+fi
+```
 
 Scripts that implement this pattern:
 
@@ -259,7 +282,7 @@ Scripts that implement this pattern:
 |---|---|
 | `harbor` | Build orchestrator |
 | `docker/dev-env-clientside/build.sh` | Docker image builder |
-| `project_handover/clientside/ubuntu/ubuntu_only_entrance.sh` | Container lifecycle manager |
+| `project_handover/clientside/ubuntu/scripts/01_env_loader.sh` | Container env loader |
 
 ---
 
@@ -268,9 +291,9 @@ Scripts that implement this pattern:
 1. Copy an existing platform `.env` as a starting point or run `./scripts/create_platform.sh`
 2. Fill in the **required** section (identity, port slot, SDK paths)
 3. Add only the optional overrides that differ from defaults
-4. Run `./harbor` — your new platform appears in the selection menu automatically
+4. Create a host config that references this platform via `BASE_PLATFORM`
 
-No changes to any script or default file are needed.
+No changes to any script or default file are needed. The platform is invisible to users — they interact with host configs that reference it.
 
 ---
 
@@ -284,14 +307,21 @@ The platform files that need a non-default value can then override it with a sin
 
 ---
 
-## Adding a Host-Level Override
+## Adding a New Host
 
-1. Run `hostname` to find your machine name
-2. Copy the template: `cp configs/3_hosts/TEMPLATE.env.example configs/3_hosts/$(hostname).env`
-3. Edit the file, uncommenting and setting only the variables you need
-4. The system auto-loads this file — no script changes needed
+The host config is the primary user object. To add a new machine:
 
-See `configs/3_hosts/README.md` for detailed examples and troubleshooting.
+```bash
+# Option 1: Use the wizard (recommended)
+./harbor  →  Select "Create new host config"
+
+# Option 2: Manual setup
+hostname
+cp configs/3_hosts/TEMPLATE.env.example configs/3_hosts/$(hostname).env
+nano configs/3_hosts/$(hostname).env
+```
+
+At minimum, set `BASE_PLATFORM` and `HOST_VOLUME_DIR`. See `configs/3_hosts/README.md` for detailed examples.
 
 ---
 

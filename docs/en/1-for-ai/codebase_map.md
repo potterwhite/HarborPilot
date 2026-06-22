@@ -108,21 +108,21 @@ mcp/
 ## 2. Top-Level Scripts — Detailed Reference
 
 ### `harbor` (repo root)
-The **master orchestrator**. Interactive platform selection → 3-layer config loading → build → tag → push → cleanup.
+The **master orchestrator**. Interactive host selection → 3-layer config loading → build → tag → push → cleanup.
 
 **Execution flow:**
-1. `1_specify_platform()` — Lists platforms sorted by PORT_SLOT, user picks by number. Also offers "Create new platform" which calls `create_platform.sh`.
-2. Layer 1: sources all `configs/1_defaults/*.env` in order (00→11)
-3. Layer 2: sources selected `<platform>.env`
-4. Layer 3: sources `configs/3_hosts/$(hostname).env` (optional, auto-loaded)
-5. `port_calc.sh` — derives SSH/GDB ports from PORT_SLOT
-6. `0_check_registry_login()` — Verifies Docker is logged into Harbor; prompts interactive login if not
-7. `1_1_setup_volume_soft_link()` — Symlinks HOST_VOLUME_DIR
-8. `2_build_images()` → calls `docker/dev-env-clientside/build.sh`
-9. `3_prepare_version_info()` — Gets final image ID
-10. `4_tag_images()` — Tags with version + latest (local or registry)
-11. `5_push_images()` — Pushes + verifies manifest digest
-12. `6_cleanup_images()` — Removes intermediate images (keeps final)
+1. `_select_host_config()` — Lists host configs with their BASE_PLATFORM, user picks by number. Also offers "Create new host config" wizard.
+2. `_load_config_layers()` — Loads all 3 layers:
+   - Layer 1: sources all `configs/1_defaults/*.env` in order (00→11)
+   - Layer 2: sources platform from `BASE_PLATFORM` in host config (or .env symlink for legacy)
+   - Layer 3: sources `configs/3_hosts/$(hostname).env` (overrides platform)
+3. `port_calc.sh` — derives SSH/GDB ports from PORT_SLOT
+4. `0_check_registry_login()` — Verifies Docker is logged into Harbor; prompts interactive login if not
+5. `2_build_images()` → calls `docker/dev-env-clientside/build.sh`
+6. `3_prepare_version_info()` — Gets final image ID
+7. `4_tag_images()` — Tags with version + latest (local or registry)
+8. `5_push_images()` — Pushes + verifies manifest digest
+9. `6_cleanup_images()` — Removes intermediate images (keeps final)
 
 **Key behaviors:**
 - Each step (build/tag/push/cleanup) has a `prompt_with_timeout` — user can skip with 'n', auto-proceeds after 10s

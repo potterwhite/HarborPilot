@@ -108,21 +108,21 @@ mcp/
 ## 2. 顶级脚本 — 详细参考
 
 ### `harbor`（仓库根目录）
-**主编排器**。交互式选择平台 → 加载 3 层配置 → 构建 → 打 tag → 推送 → 清理。
+**主编排器**。交互式选择主机 → 加载 3 层配置 → 构建 → 打 tag → 推送 → 清理。
 
 **执行流程：**
-1. `1_specify_platform()` — 按 PORT_SLOT 排序列出平台，用户按编号选择。也可选择"创建新平台"，此时调用 `create_platform.sh`。
-2. Layer 1：按顺序 source `configs/1_defaults/*.env`（00→11）
-3. Layer 2：source 所选 `<platform>.env`
-4. Layer 3：source `configs/3_hosts/$(hostname).env`（可选，自动加载）
-5. `port_calc.sh` — 从 PORT_SLOT 派生 SSH/GDB 端口
-6. `0_check_registry_login()` — 验证 Docker 已登录 Harbor；未登录则提示交互式登录
-7. `1_1_setup_volume_soft_link()` — 创建 HOST_VOLUME_DIR 软链接
-8. `2_build_images()` → 调用 `docker/dev-env-clientside/build.sh`
-9. `3_prepare_version_info()` — 获取最终镜像 ID
-10. `4_tag_images()` — 打 version + latest 标签（本地或 registry）
-11. `5_push_images()` — 推送 + 验证 manifest digest
-12. `6_cleanup_images()` — 删除中间镜像（保留最终镜像）
+1. `_select_host_config()` — 列出 host 配置及其 BASE_PLATFORM，用户按编号选择。也可选择"创建新 host 配置"向导。
+2. `_load_config_layers()` — 加载 3 层配置：
+   - Layer 1：按顺序 source `configs/1_defaults/*.env`（00→11）
+   - Layer 2：从 host 的 `BASE_PLATFORM` 加载 platform（旧版从 .env 软链接）
+   - Layer 3：source `configs/3_hosts/$(hostname).env`（覆盖 platform）
+3. `port_calc.sh` — 从 PORT_SLOT 派生 SSH/GDB 端口
+4. `0_check_registry_login()` — 验证 Docker 已登录 Harbor；未登录则提示交互式登录
+5. `2_build_images()` → 调用 `docker/dev-env-clientside/build.sh`
+6. `3_prepare_version_info()` — 获取最终镜像 ID
+7. `4_tag_images()` — 打 version + latest 标签（本地或 registry）
+8. `5_push_images()` — 推送 + 验证 manifest digest
+9. `6_cleanup_images()` — 删除中间镜像（保留最终镜像）
 
 **关键行为：**
 - 每步（构建/打 tag/推送/清理）都有 `prompt_with_timeout` — 用户可用 'n' 跳过，10 秒后自动继续
