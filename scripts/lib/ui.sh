@@ -3,7 +3,7 @@
 # Module: ui.sh
 # Description: UI interaction functions for HarborPilot
 # Functions: prompt_with_timeout, prompt_simple, 0_show_main_menu,
-#            1_specify_platform, _select_config_source, _create_host_config,
+#            1_specify_platform, _select_host_config, _create_host_config,
 #            _load_host_config, _check_and_prompt_host_config, _print_next_steps
 ################################################################################
 
@@ -317,10 +317,11 @@ _print_next_steps() {
 }
 
 ################################################################################
-# 1.5 Select configuration source: platform or host
-# Scans for existing host configs and presents unified menu
+# 1.5 Select host configuration
+# Host is the primary user object. Platform is resolved automatically
+# via BASE_PLATFORM in the host config.
 ################################################################################
-_select_config_source() {
+_select_host_config() {
     LOCAL_HOSTNAME=$(hostname)
     HOST_CONFIG="${TOP_CONFIGS_DIR}/3_hosts/${LOCAL_HOSTNAME}.env"
 
@@ -333,83 +334,70 @@ _select_config_source() {
         host_configs+=("${basename}")
     done
 
-    # Build menu options
-    echo ""
-    echo "  ╔══════════════════════════════════════════════════════════════════╗"
-    echo "  ║                    Configuration Source                         ║"
-    echo "  ╠══════════════════════════════════════════════════════════════════╣"
-    echo "  ║                                                                  ║"
-    echo "  ║  Choose how to configure this build:                             ║"
-    echo "  ║                                                                  ║"
-    echo "  ║  [1]  Select existing platform     — use a platform config as-is ║"
-    echo "  ║  [2]  Create new platform          — define a new platform       ║"
-    echo "  ║                                                                  ║"
-
-    local host_start_idx=3
     local host_count=${#host_configs[@]}
 
-    if [[ $host_count -gt 0 ]]; then
-        echo "  ║  Existing host configs (machine-specific overrides):            ║"
+    # If no host configs exist, force create one
+    if [[ $host_count -eq 0 ]]; then
+        echo ""
+        echo "  ╔══════════════════════════════════════════════════════════════════╗"
+        echo "  ║              No Host Configurations Found                        ║"
+        echo "  ╠══════════════════════════════════════════════════════════════════╣"
         echo "  ║                                                                  ║"
-        local idx=$host_start_idx
-        for host_name in "${host_configs[@]}"; do
-            local marker=""
-            [[ "${host_name}" == "${LOCAL_HOSTNAME}" ]] && marker=" ← this machine"
-            printf "  ║  [%d]  %-20s%-30s║\n" "${idx}" "${host_name}" "${marker}"
-            ((idx++))
-        done
+        echo "  ║  A host config is required to build.                            ║"
+        echo "  ║  It defines which platform to use and host-specific settings.   ║"
         echo "  ║                                                                  ║"
-        echo "  ║  [${idx}]  Create new host config — customize for a specific machine ║"
-    else
-        echo "  ║  [3]  Create new host config       — customize for this machine ║"
+        printf "  ║  [1]  Create host config for this machine (%-20s)║\n" "${LOCAL_HOSTNAME})"
+        echo "  ║                                                                  ║"
+        echo "  ╚══════════════════════════════════════════════════════════════════╝"
+        echo ""
+        read -p "  Please select [1]: " _config_choice
+        _create_host_config
+        return
     fi
 
+    # Build menu with host configs
+    echo ""
+    echo "  ╔══════════════════════════════════════════════════════════════════╗"
+    echo "  ║                    Select Host Configuration                    ║"
+    echo "  ╠══════════════════════════════════════════════════════════════════╣"
+    echo "  ║                                                                  ║"
+
+    local idx=1
+    for host_name in "${host_configs[@]}"; do
+        # Read BASE_PLATFORM from host config for display
+        local host_file="${TOP_CONFIGS_DIR}/3_hosts/${host_name}.env"
+        local base_platform
+        base_platform=$(grep -E '^BASE_PLATFORM=' "${host_file}" 2>/dev/null | head -1 | sed 's/^BASE_PLATFORM=//;s/^"//;s/"$//' | tr -d "'")
+        [[ -z "${base_platform}" ]] && base_platform="(legacy — no BASE_PLATFORM)"
+
+        local marker=""
+        [[ "${host_name}" == "${LOCAL_HOSTNAME}" ]] && marker=" ← this machine"
+        printf "  ║  [%d]  %-20s platform: %-24s%s║\n" "${idx}" "${host_name}" "${base_platform}" "${marker}"
+        ((idx++))
+    done
+
+    echo "  ║                                                                  ║"
+    echo "  ║  [${idx}]  Create new host    — configure for a new machine       ║"
     echo "  ║                                                                  ║"
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
     echo ""
 
-    local max_option=$((host_start_idx + host_count))
-    [[ $host_count -eq 0 ]] && max_option=3
+    local max_option=${idx}
 
     read -p "  Please select [1-${max_option}]: " _config_choice
 
-    case "${_config_choice}" in
-        1)
-            # Select existing platform
-            while true; do
-                1_specify_platform
-                if [ $? -eq 0 ]; then
-                    break
-                fi
-            done
-            _check_and_prompt_host_config
-            ;;
-        2)
-            # Create new platform
-            if "${TOP_ROOT_DIR}/scripts/create_platform.sh"; then
-                echo "Platform created. Reloading..."
-                _select_config_source
-            else
-                echo "Platform creation cancelled."
-                _select_config_source
-            fi
-            ;;
-        ${max_option})
-            # Create new host config
-            _create_host_config
-            ;;
-        *)
-            # Check if it's an existing host selection
-            if [[ $_config_choice -ge $host_start_idx && $_config_choice -lt $max_option ]]; then
-                local host_idx=$(( _config_choice - host_start_idx ))
-                local selected_host="${host_configs[$host_idx]}"
-                _load_host_config "${selected_host}"
-            else
-                echo "  ✗ Invalid choice."
-                _select_config_source
-            fi
-            ;;
-    esac
+    if [[ "${_config_choice}" -eq "${max_option}" ]]; then
+        # Create new host config
+        _create_host_config
+    elif [[ "${_config_choice}" -ge 1 && "${_config_choice}" -lt "${max_option}" ]]; then
+        # Load existing host config
+        local host_idx=$(( _config_choice - 1 ))
+        local selected_host="${host_configs[$host_idx]}"
+        _load_host_config "${selected_host}"
+    else
+        echo "  ✗ Invalid choice."
+        _select_host_config
+    fi
 }
 
 ################################################################################
@@ -438,7 +426,7 @@ _create_host_config() {
         echo "  ⚠️  Host config already exists: ${HOST_CONFIG}"
         if ! prompt_simple "Overwrite existing config?" "1" "${total_questions}" "n"; then
             echo "  → Cancelled."
-            _select_config_source
+            _select_host_config
             return
         fi
     fi
@@ -592,12 +580,13 @@ EOF
     if prompt_simple "Continue with build using this host config?"; then
         _load_host_config "${LOCAL_HOSTNAME}"
     else
-        _select_config_source
+        _select_host_config
     fi
 }
 
 ################################################################################
 # Load an existing host configuration
+# Platform is resolved via BASE_PLATFORM in the host config (no user action needed)
 ################################################################################
 _load_host_config() {
     local host_name="$1"
@@ -605,29 +594,21 @@ _load_host_config() {
 
     if [ ! -f "${HOST_CONFIG}" ]; then
         echo "  ✗ Error: Host config not found: ${HOST_CONFIG}"
-        _select_config_source
+        _select_host_config
         return
     fi
 
+    # Read BASE_PLATFORM for display
+    local base_platform
+    base_platform=$(grep -E '^BASE_PLATFORM=' "${HOST_CONFIG}" | head -1 | sed 's/^BASE_PLATFORM=//;s/^"//;s/"$//' | tr -d "'")
+
     echo ""
     echo "  ✅ Loading host config: ${host_name}"
-    echo ""
-
-    # We still need a platform as base, so load the .env symlink
-    # The host config will override specific values
-    # Check if .env symlink exists
-    if [ ! -e "${PLATFORM_ENV_DEST_PATH}" ]; then
-        echo "  ⚠️  No platform selected yet. Please select a base platform:"
-        echo ""
-        while true; do
-            1_specify_platform
-            if [ $? -eq 0 ]; then
-                break
-            fi
-        done
+    if [ -n "${base_platform}" ]; then
+        echo "  → Platform: ${base_platform} (from BASE_PLATFORM)"
+    else
+        echo "  → Platform: (legacy — from .env symlink)"
     fi
-
-    echo "  → Host config will be applied as Layer 3 overrides."
     echo ""
 }
 

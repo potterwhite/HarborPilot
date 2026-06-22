@@ -65,10 +65,10 @@ main() {
     0_show_main_menu
 
     ##################################################################
-    # Platform and Host configuration (only for build mode)
+    # Host configuration (only for build mode)
     ##################################################################
     if [ "${_HARBOR_MODE}" = "build" ]; then
-        _select_config_source
+        _select_host_config
     fi
 
     ##################################################################
