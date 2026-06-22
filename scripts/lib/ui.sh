@@ -201,7 +201,17 @@ _print_next_steps() {
 ################################################################################
 # 1. Platform selection: list available platforms and create .env symlink
 ################################################################################
-1_specify_platform() {
+################################################################################
+# _pick_platform — interactive platform selection (no side effects)
+#
+# Displays the platform list, reads user choice, validates input.
+# On success: sets global TARGET_PLATFORM and returns 0.
+# On failure: returns 1.
+#
+# Safe to call from $() — all display goes to /dev/tty,
+# only the return code and TARGET_PLATFORM variable matter.
+################################################################################
+_pick_platform() {
     TARGET_DIR="${PLATFORM_ENV_SRC_DIR}"
     declare -a platforms_array=()
 
@@ -227,7 +237,6 @@ _print_next_steps() {
     done
 
     # Sort by CHIP_FAMILY first, then by PORT_SLOT within the same family
-    # Build sort key: "<family> <slot_padded> <basename>"
     while IFS= read -r line; do
         platforms_array+=("${line}")
     done < <(
@@ -240,13 +249,13 @@ _print_next_steps() {
 
     #-------------------------------------------------------
     if [ "${#platforms_array[@]}" == "0" ]; then
-        echo "No platforms exists, return now"
+        echo "No platforms exists, return now" >/dev/tty
         return 1
     fi
 
-    echo
-    echo "Now we have below platforms:"
-    echo ""
+    echo "" >/dev/tty
+    echo "Now we have below platforms:" >/dev/tty
+    echo "" >/dev/tty
 
     local i=0
     local prev_family=""
@@ -261,45 +270,60 @@ _print_next_steps() {
 
         # Print family header when family changes
         if [[ "${fam}" != "${prev_family}" ]]; then
-            [[ -n "${prev_family}" ]] && echo ""
-            echo -e "  ── ${fam} ──"
+            [[ -n "${prev_family}" ]] && echo "" >/dev/tty
+            echo -e "  ── ${fam} ──" >/dev/tty
             prev_family="${fam}"
         fi
 
-        printf "    [%d] %-14s  os=%-5s  %s\n" "${i}" "${extract}" "${os_ver}" "${slot_label}"
+        printf "    [%d] %-14s  os=%-5s  %s\n" "${i}" "${extract}" "${os_ver}" "${slot_label}" >/dev/tty
     done
 
-    echo ""
+    echo "" >/dev/tty
     local create_idx=$(( i + 1 ))
-    echo -e "  [${create_idx}].${_CREATE_PLATFORM_LABEL:-+ Create new platform}"
+    echo -e "  [${create_idx}].${_CREATE_PLATFORM_LABEL:-+ Create new platform}" >/dev/tty
 
     #-------------------------------------------------------
-    read -p "Please type the index your choice: " user_type
+    read -p "Please type the index your choice: " user_type </dev/tty
 
     platform_number="$((${#platforms_array[@]}))"
 
     if ! [[ "${user_type}" =~ ^[0-9]+$ ]]; then
-        echo "✗ Error: Invalid input. Please enter a number."
+        echo "✗ Error: Invalid input. Please enter a number." >/dev/tty
         return 1
     fi
 
     # Handle "Create new platform" selection
     if [ "${user_type}" -eq "${create_idx}" ]; then
         if "${TOP_ROOT_DIR}/scripts/create_platform.sh"; then
-            echo "Platform created. Reloading platform list..."
-            return 1  # return 1 triggers the while-true retry in main()
+            echo "Platform created. Reloading platform list..." >/dev/tty
+            return 1  # return 1 triggers the while-true retry
         else
-            echo "Platform creation cancelled or failed."
+            echo "Platform creation cancelled or failed." >/dev/tty
             return 1
         fi
     fi
 
     if [ ${user_type} -lt 1 ] || [ ${user_type} -gt ${platform_number} ]; then
-        echo "$user_type is not valid, please input from 1 to ${platform_number}"
+        echo "$user_type is not valid, please input from 1 to ${platform_number}" >/dev/tty
         return 1
     fi
 
-    target_platform="${platforms_array[((${user_type} - 1))]}"
+    TARGET_PLATFORM="${platforms_array[((${user_type} - 1))]}"
+    return 0
+}
+
+################################################################################
+# 1_specify_platform — full interactive platform setup (legacy entry point)
+#
+# Calls _pick_platform() for selection, then creates the .env symlink.
+# Used by harbor's main menu for standalone platform selection.
+################################################################################
+1_specify_platform() {
+    if ! _pick_platform; then
+        return 1
+    fi
+
+    local target_platform="${TARGET_PLATFORM}"
     echo ${target_platform}
     cd ${TOP_ROOT_DIR}
 
@@ -441,9 +465,8 @@ _create_host_config() {
     echo ""
     local selected_platform=""
     while true; do
-        # Capture the platform name from 1_specify_platform() output
-        selected_platform=$(1_specify_platform 2>&1 | grep -E '^[a-z].*_ubuntu-[0-9]' | head -1)
-        if [ $? -eq 0 ] && [ -n "${selected_platform}" ]; then
+        if _pick_platform; then
+            selected_platform="${TARGET_PLATFORM}"
             break
         fi
     done
@@ -565,22 +588,21 @@ CONTAINER_RESTART_POLICY="${auto_restart}"
 EOF
 
     echo ""
-    echo "  ╔══════════════════════════════════════════════════════════════════╗"
-    echo "  ║                                                                  ║"
-    echo "  ║  ✅ Host config created successfully!                           ║"
-    echo "  ║                                                                  ║"
-    printf "  ║  File: %-56s║\n" "${HOST_CONFIG}"
-    echo "  ║                                                                  ║"
-    echo "  ║  This config will be auto-loaded when you run './harbor'        ║"
-    printf "  ║  on this machine (%-44s)║\n" "${LOCAL_HOSTNAME})"
-    echo "  ║                                                                  ║"
-    echo "  ╚══════════════════════════════════════════════════════════════════╝"
+    echo "  -----"
+    echo ""
+    echo "  ✅ Host config created: ${LOCAL_HOSTNAME}.env"
+    echo "  → File: ${HOST_CONFIG}"
+    echo "  → Auto-loaded when you run './harbor' on ${LOCAL_HOSTNAME}"
     echo ""
 
-    if prompt_simple "Continue with build using this host config?"; then
+    read -p "  Build '${LOCAL_HOSTNAME}' host now? (y/N): " _build_choice
+    if [[ "${_build_choice}" =~ ^[yY]$ ]]; then
         _load_host_config "${LOCAL_HOSTNAME}"
     else
-        _select_host_config
+        echo "  → Skipped. You can build anytime by running './harbor'."
+        echo ""
+        echo "  -----"
+        echo ""
     fi
 }
 
@@ -603,7 +625,9 @@ _load_host_config() {
     base_platform=$(grep -E '^BASE_PLATFORM=' "${HOST_CONFIG}" | head -1 | sed 's/^BASE_PLATFORM=//;s/^"//;s/"$//' | tr -d "'")
 
     echo ""
-    echo "  ✅ Loading host config: ${host_name}"
+    echo "  -----"
+    echo ""
+    echo "  ✅ Host config loaded: ${host_name}"
     if [ -n "${base_platform}" ]; then
         echo "  → Platform: ${base_platform} (from BASE_PLATFORM)"
     else
