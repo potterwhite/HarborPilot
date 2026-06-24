@@ -64,8 +64,8 @@
 
     "REGISTRY_URL": {
       "type": "string",
-      "description": "Full Harbor registry URL for push/pull. Default: ${HARBOR_SERVER_IP}:${HARBOR_SERVER_PORT}/team_${CONTAINER_NAME}. Override if your Harbor project naming differs.",
-      "default": "${HARBOR_SERVER_IP}:${HARBOR_SERVER_PORT}/team_${CONTAINER_NAME}"
+      "description": "DEPRECATED in platform files — now defined in host config (Layer 3) because it depends on HARBOR_SERVER_IP which is host-specific. Kept here for schema compatibility.",
+      "default": "${HARBOR_SERVER_IP}:${HARBOR_SERVER_PORT}/team_${CHIP_FAMILY}"
     },
 
     "HAVE_GITLAB_SERVER": {
@@ -97,8 +97,8 @@
 
     "SDK_GIT_REPO": {
       "type": "string",
-      "description": "Git SSH URL of the SDK repository.",
-      "examples": ["git@192.168.3.68:team_rk3588s/rk3588s_sdk.git"]
+      "description": "DEPRECATED in platform files — now defined in host config (Layer 3) because it depends on GITLAB_SERVER_IP which is host-specific. Kept here for schema compatibility.",
+      "examples": ["git@192.168.3.67:team_rk3588/rk3588-rk3588s_ubuntu-24-04_sdk.git"]
     },
 
     "SDK_GIT_KEY_FILE": {

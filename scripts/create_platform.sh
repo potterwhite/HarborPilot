@@ -469,14 +469,14 @@ ${gitlab_block}
 # =============================================================================
 HARBOR_SERVER_IP="${harbor_ip}"
 HARBOR_SERVER_PORT="${harbor_port}"
-REGISTRY_URL="\${HARBOR_SERVER_IP}:\${HARBOR_SERVER_PORT}/team_\${CHIP_FAMILY}"
+# REGISTRY_URL is computed in host config (Layer 3) — depends on host-specific IP.
 
 # =============================================================================
 # SDK  [auto-generated — only used when INSTALL_SDK=true]
 # =============================================================================
-SDK_GIT_REPO="git@\${GITLAB_SERVER_IP:-${harbor_ip}}:team_\${CHIP_FAMILY}/\${PRODUCT_NAME}_sdk.git"
 SDK_GIT_KEY_FILE="SDK_\${CHIP_FAMILY}_ED25519"
 SDK_GIT_DEFAULT_BRANCH="${sdk_branch}"
+# SDK_GIT_REPO is computed in host config (Layer 3) — depends on GITLAB_SERVER_IP.
 
 # =============================================================================
 # Docker Volumes  [REQUIRED — no universal default]
@@ -700,14 +700,14 @@ ${gitlab_block}
 # =============================================================================
 HARBOR_SERVER_IP="${harbor_ip}"
 HARBOR_SERVER_PORT="${harbor_port}"
-REGISTRY_URL="\${HARBOR_SERVER_IP}:\${HARBOR_SERVER_PORT}/team_\${CHIP_FAMILY}"
+# REGISTRY_URL is computed in host config (Layer 3) — depends on host-specific IP.
 
 # =============================================================================
 # SDK  [auto-generated — only used when INSTALL_SDK=true]
 # =============================================================================
-SDK_GIT_REPO="git@\${GITLAB_SERVER_IP:-${harbor_ip}}:team_\${CHIP_FAMILY}/\${PRODUCT_NAME}_sdk.git"
 SDK_GIT_KEY_FILE="SDK_\${CHIP_FAMILY}_ED25519"
 SDK_GIT_DEFAULT_BRANCH="${sdk_branch}"
+# SDK_GIT_REPO is computed in host config (Layer 3) — depends on GITLAB_SERVER_IP.
 
 # =============================================================================
 # Docker Volumes  [REQUIRED — no universal default]

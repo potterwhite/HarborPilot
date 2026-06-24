@@ -42,7 +42,8 @@ Only add values that **differ** from your platform config:
 | Category | Variables | Example |
 |----------|-----------|---------|
 | **Network** | `HAS_PROXY`, `NPM_USE_CHINA_MIRROR` | Corporate proxy settings |
-| **Servers** | `GITLAB_SERVER_*`, `HARBOR_SERVER_*` | Server reachability |
+| **Servers** | `GITLAB_SERVER_*`, `HARBOR_SERVER_*`, `REGISTRY_URL` | Server reachability + registry URL |
+| **SDK** | `SDK_GIT_REPO` | GitLab repo URL (depends on GITLAB_SERVER_IP) |
 | **Hardware** | `USE_NVIDIA_GPU`, `CONTAINER_SHM_SIZE` | GPU availability |
 | **Paths** | `HOST_VOLUME_DIR`, `EXTRA_VOLUME_*` | User-specific paths |
 
