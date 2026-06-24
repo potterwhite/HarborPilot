@@ -146,6 +146,7 @@ func_1_1_setup_env(){
         "${DEFAULTS_DIR}/09_runtime.env"
         "${DEFAULTS_DIR}/11_proxy.env"
         "${PLATFORM_ENV_PATH}"
+        "${HOST_CONFIG}"
     )
 
     for file in "${all_env_files[@]}"; do
