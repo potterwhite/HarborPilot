@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.1](https://github.com/potterwhite/HarborPilot/compare/v1.12.0...v1.12.1) (2026-06-24)
+
+
+### 🐛 Fixed
+
+* **build:** include Layer 3 host config in build-arg collection ([0572830](https://github.com/potterwhite/HarborPilot/commit/0572830d847a97573ad536c8eb4f91b0e2d834f0))
+* **build:** include Layer 3 host config in build-arg collection ([633f6a7](https://github.com/potterwhite/HarborPilot/commit/633f6a78ceb385e43389eaee338a94da04fbc18f))
+
 ## [1.12.0](https://github.com/potterwhite/HarborPilot/compare/v1.11.2...v1.12.0) (2026-06-24)
 
 
