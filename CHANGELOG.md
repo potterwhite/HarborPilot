@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0](https://github.com/potterwhite/HarborPilot/compare/v1.11.2...v1.12.0) (2026-06-24)
+
+
+### ✨ Added
+
+* add BASE_PLATFORM to host config for platform auto-resolution ([7d2b162](https://github.com/potterwhite/HarborPilot/commit/7d2b162cc847008521308735a1d5c0837ea4eed8))
+* **config:** add Configurations menu to ./harbor ([589349e](https://github.com/potterwhite/HarborPilot/commit/589349ee8e8741e667dcd103fc166856d1ef1c07))
+* **ui:** add host configuration check and prompt ([055760a](https://github.com/potterwhite/HarborPilot/commit/055760ad72c34bb03e414267cb7d0fc29dd0a7e0))
+* **ui:** add recommended options to prompt_simple() ([fce3deb](https://github.com/potterwhite/HarborPilot/commit/fce3debe5a5ba058586150e7cc8fc83f391c10a7))
+
+
+### 🐛 Fixed
+
+* **build:** add missing MIT license headers to scripts/lib/ ([d1920d9](https://github.com/potterwhite/HarborPilot/commit/d1920d9d8059329c80ca9dd46db174babb1756d8))
+* **config:** move REGISTRY_URL and SDK_GIT_REPO from Layer 2 to Layer 3 ([967867f](https://github.com/potterwhite/HarborPilot/commit/967867f9403a36fc8f419a8c4a39c71fcfdf841a))
+* rename remaining 3_host to 3_hosts across all files ([63f2cb0](https://github.com/potterwhite/HarborPilot/commit/63f2cb0d0eff9d3b921057a9f8453918ae3946ea))
+* **ui:** fix question numbering and harbor exit on skip ([0ee1651](https://github.com/potterwhite/HarborPilot/commit/0ee16519f61f33fbdc8dd310ad2001d0533383ae))
+* **ui:** reorder main menu and fix box alignment ([5c5a9e0](https://github.com/potterwhite/HarborPilot/commit/5c5a9e0a3ead147d7061ff409489d1442334ba5b))
+
 ## [1.11.2](https://github.com/potterwhite/HarborPilot/compare/v1.11.1...v1.11.2) (2026-06-11)
 
 
