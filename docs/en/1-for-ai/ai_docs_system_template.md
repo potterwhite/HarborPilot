@@ -276,7 +276,7 @@ Read every session, before codebase_map.  Contains:
 ## 6. Key Architecture Facts
 
 - **<Fact 1>** — e.g. "Config is the single source of truth; no hardcoded values in scripts"
-- **<Fact 2>** — e.g. "Three-layer config: defaults/ → common.env → platform.env (last wins)"
+- **<Fact 2>** — e.g. "Three-layer config: defaults/ → platform.env → host.env (last wins)"
 - **<Fact 3>** — e.g. "Ports are never hardcoded; always derived from PORT_SLOT via port_calc.sh"
 - *(5–10 facts — the things the agent most commonly gets wrong)*
 

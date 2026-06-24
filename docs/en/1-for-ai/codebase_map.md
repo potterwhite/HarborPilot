@@ -7,7 +7,7 @@
 > **Maintenance rule:** Any AI agent that modifies a file listed here MUST update
 > the relevant section in this document in the same commit/session.
 >
-> Last updated: 2026-03-28 (Phase 4 ASO plan added; task-logs archiving rules documented; Phase 5 MCP renumbered)
+> Last updated: 2026-06-18 (SDK_INSTALL_PATH moved to defaults; SDK vars documented in host template)
 > **Related:** [中文版 →](../../zh/1-for-ai/codebase_map.md)
 
 ---
@@ -24,26 +24,28 @@ HarborPilot.git/
 ├── release-please-config.json          ← Versioning automation config
 │
 ├── configs/                            ← ★ Three-layer configuration system
-│   ├── defaults/                       ←   Layer 1: 11 domain-scoped default files
+│   ├── defaults/                       ←   Layer 1: 12 domain-scoped default files
+│   │   ├── 00_project.env              ←     Project version, maintainer, SDK versions
 │   │   ├── 01_base.env                 ←     OS, user, timezone, locale
 │   │   ├── 02_build.env                ←     Docker BuildKit settings
 │   │   ├── 03_tools.env                ←     Dev tool switches & versions (CUDA, OpenCV, Node…)
 │   │   ├── 04_workspace.env            ←     Workspace directory structure & build settings
 │   │   ├── 05_registry.env             ←     Harbor / GitLab server addresses
-│   │   ├── 06_sdk.env                  ←     SDK install switch (default: false)
+│   │   ├── 06_sdk.env                  ←     SDK switch (default: false) + SDK_INSTALL_PATH
 │   │   ├── 07_volumes.env              ←     Docker volume root path
 │   │   ├── 08_samba.env                ←     Samba share credentials
 │   │   ├── 09_runtime.env              ←     SSH / GDB / syslog / NVIDIA switches
 │   │   └── 11_proxy.env                ←     HTTP/HTTPS proxy (default: off)
-│   ├── platform-independent/
-│   │   └── common.env                  ←   Layer 2: project version, maintainer, dates
-│   ├── platforms/                               ←   Layer 3: per-platform overrides (only differences)
+│   ├── platforms/                               ←   Layer 2: per-platform overrides (only differences)
 │   │   ├── rk3588-rk3588s_ubuntu-22.04.env      ←     PORT_SLOT=0, Ubuntu 22.04, NVIDIA GPU
 │   │   ├── rv1126-rv1126bp_ubuntu-22.04.env      ←     PORT_SLOT=1, Ubuntu 22.04
 │   │   ├── rk3568-rk3568_ubuntu-20.04.env        ←     PORT_SLOT=2, Ubuntu 20.04
 │   │   ├── rv1126-rv1126_ubuntu-22.04.env        ←     PORT_SLOT=3, Ubuntu 22.04
 │   │   ├── rk3568-rk3568_ubuntu-22.04.env        ←     PORT_SLOT=4, Ubuntu 22.04
 │   │   └── rk3588-rk3588s_ubuntu-24.04.env      ←     PORT_SLOT=5, Ubuntu 24.04, no NVIDIA
+│   ├── hosts/                                  ←   Layer 3: host-level overrides (optional, gitignored)
+│   │   ├── .gitkeep                            ←     Keeps directory in git
+│   │   └── README.md                           ←     Usage documentation
 │   └── platform_schema.json            ←   JSON Schema for validating platform .env files
 │
 ├── scripts/                            ← ★ Host-side utilities
@@ -106,21 +108,23 @@ mcp/
 ## 2. Top-Level Scripts — Detailed Reference
 
 ### `harbor` (repo root)
-The **master orchestrator**. Interactive platform selection → 3-layer config loading → build → tag → push → cleanup.
+The **master orchestrator**. Interactive host selection → 3-layer config loading → build → tag → push → cleanup.
 
 **Execution flow:**
-1. `1_specify_platform()` — Lists platforms sorted by PORT_SLOT, user picks by number. Also offers "Create new platform" which calls `create_platform.sh`.
-2. Layer 1: sources all `configs/defaults/*.env` in order (01→11)
-3. Layer 2: sources `common.env`
-4. Layer 3: sources selected `<platform>.env`
+1. `0_show_main_menu()` — Top-level menu: [1] Build & Push, [2] Package Handover, [3] Configurations
+2. `_show_config_menu()` (if Configurations selected) — Create platform, create host (based on existing platform), or back
+3. `_select_host_config()` (if Build selected) — Lists host configs with their BASE_PLATFORM, user picks by number. Also offers "Create new host config" wizard.
+4. `_load_config_layers()` — Loads all 3 layers:
+   - Layer 1: sources all `configs/1_defaults/*.env` in order (00→11)
+   - Layer 2: sources platform from `BASE_PLATFORM` in host config (or .env symlink for legacy)
+   - Layer 3: sources `configs/3_hosts/$(hostname).env` (overrides platform)
 5. `port_calc.sh` — derives SSH/GDB ports from PORT_SLOT
 6. `0_check_registry_login()` — Verifies Docker is logged into Harbor; prompts interactive login if not
-7. `1_1_setup_volume_soft_link()` — Symlinks HOST_VOLUME_DIR
-8. `2_build_images()` → calls `docker/dev-env-clientside/build.sh`
-9. `3_prepare_version_info()` — Gets final image ID
-10. `4_tag_images()` — Tags with version + latest (local or registry)
-11. `5_push_images()` — Pushes + verifies manifest digest
-12. `6_cleanup_images()` — Removes intermediate images (keeps final)
+7. `2_build_images()` → calls `docker/dev-env-clientside/build.sh`
+8. `3_prepare_version_info()` — Gets final image ID
+9. `4_tag_images()` — Tags with version + latest (local or registry)
+10. `5_push_images()` — Pushes + verifies manifest digest
+11. `6_cleanup_images()` — Removes intermediate images (keeps final)
 
 **Key behaviors:**
 - Each step (build/tag/push/cleanup) has a `prompt_with_timeout` — user can skip with 'n', auto-proceeds after 10s
@@ -196,7 +200,7 @@ Single monolithic Dockerfile, 5 stages. Each stage has sub-stages for template p
 
 ## 4. Configuration System — Variable Reference
 
-### Layer 1: `configs/defaults/` (10 files)
+### Layer 1: `configs/1_defaults/` (10 files)
 
 | File | Key Variables | Notes |
 |---|---|---|
@@ -205,13 +209,13 @@ Single monolithic Dockerfile, 5 stages. Each stage has sub-stages for template p
 | `03_tools.env` | `INSTALL_CUDA=false`, `INSTALL_OPENCV=false`, `INSTALL_HOST_CMAKE=true`, `NPM_USE_CHINA_MIRROR=false`, `CUDA_VERSION=12.0`, `OPENCV_VERSION=4.9.0`, `CONAN_VERSION=2.0.17` | Version pinning for reproducibility |
 | `04_workspace.env` | `WORKSPACE_ROOT=/development`, subdirs: `i_src`…`vi_tools`, `WORKSPACE_BUILD_THREADS=4`, `WORKSPACE_LOG_LEVEL=INFO`, `WORKSPACE_DEBUG_PORT=3000` | 6 workspace subdirectories |
 | `05_registry.env` | `HAVE_GITLAB_SERVER=TRUE`, `HAVE_HARBOR_SERVER=TRUE`, `HARBOR_SERVER_PORT=9000` | `REGISTRY_URL` uses `CHIP_FAMILY` in Layer 3 |
-| `06_sdk.env` | `INSTALL_SDK=false`, `CHIP_FAMILY=${PRODUCT_NAME}` | `CHIP_FAMILY` groups same-silicon variants; `REGISTRY_URL` and `SDK_GIT_REPO` use `${CHIP_FAMILY}` |
+| `06_sdk.env` | `INSTALL_SDK=false`, `SDK_INSTALL_PATH=${WORKSPACE_ROOT}/sdk`, `CHIP_FAMILY=${PRODUCT_NAME}` | `SDK_INSTALL_PATH` is a repo convention (same across all platforms). `CHIP_FAMILY` groups same-silicon variants; `SDK_GIT_KEY_FILE`, `SDK_GIT_DEFAULT_BRANCH` are set per platform (Layer 2); `SDK_GIT_REPO` is computed in Layer 3 (host) because it depends on `GITLAB_SERVER_IP` |
 | `07_volumes.env` | `VOLUMES_ROOT=${WORKSPACE_ROOT}`, `HOST_VOLUME_DIR` (no default — required per platform), `EXTRA_VOLUME_N` (no default — optional per platform, 0..N indexed) | `HOST_VOLUME_DIR` must be set in platform override. `EXTRA_VOLUME_N` uses `<host>:<container>` format; indices must be contiguous from 0; scanning stops at first missing index. Injected into compose by `04_compose_generator.sh`. |
 | `08_samba.env` | `SAMBA_SERVER_IP=""`, `SAMBA_PUBLIC_ACCOUNT_NAME/PASSWORD=sambashare`, `SAMBA_FILE_MODE=0777`, `SAMBA_DIR_MODE=0777` | Default Samba credentials + permissions |
 | `09_runtime.env` | `ENABLE_SSH=true`, `ENABLE_GDB_SERVER=true`, `USE_NVIDIA_GPU=false`, `ENABLE_CORE_DUMPS=true`, `CONTAINER_RESTART_POLICY=unless-stopped`, `CONTAINER_PRIVILEGED=true`, `CONTAINER_SERIAL_DEVICE=/dev/ttyUSB0`, `CONTAINER_SHM_SIZE=8g`, `NVIDIA_VISIBLE_DEVICES=all`, `NVIDIA_DRIVER_CAPABILITIES=all` | Ports from port_calc.sh; compose overrides for container runtime |
 | `11_proxy.env` | `HAS_PROXY=false`, `HTTP_PROXY_IP`, `HTTPS_PROXY_IP` | Proxy IPs have defaults but HAS_PROXY is off |
 
-### Layer 2: `configs/platform-independent/common.env`
+### Layer 1 (continued): `configs/1_defaults/00_project.env`
 
 | Variable | Value | Notes |
 |---|---|---|
@@ -221,7 +225,7 @@ Single monolithic Dockerfile, 5 stages. Each stage has sub-stages for template p
 | `PROJECT_RELEASE_DATE` | 2026-03-19 | Manual update |
 | `SDK_VERSION` | 1.1.2 | |
 
-### Layer 3: `configs/platforms/<name>.env`
+### Layer 2: `configs/2_platforms/<name>.env`
 
 Only override what differs. Required fields: `PRODUCT_NAME`, `OS_VERSION`, `OS_VERSION_ID`, `PORT_SLOT`, `HOST_VOLUME_DIR`.
 
@@ -278,7 +282,7 @@ Container lifecycle manager. Commands: `start`/`stop`/`restart`/`recreate`/`remo
 
 - **release-please** manages `CHANGELOG.md` and version bumps
 - Config: `release-please-config.json` — `release-type: simple`
-- Version source of truth: `VERSION` in `configs/platform-independent/common.env`
+- Version source of truth: `VERSION` in `configs/1_defaults/00_project.env`
 - `x-release-please-version` marker enables auto-bump
 - Changelog sections: feat→✨, fix→🐛, perf→⚡, revert→🔙. Docs/style/chore/refactor hidden.
 - `.devcontainer/devcontainer.json` — VS Code Dev Container for developing HarborPilot itself (not for end users). Forwards ports 2109+2345, installs C++ / CMake / Python / Git extensions.
@@ -287,7 +291,7 @@ Container lifecycle manager. Commands: `start`/`stop`/`restart`/`recreate`/`remo
 
 ## 8. Key Architectural Patterns
 
-1. **Three-Layer Config Inheritance** — Defaults provide sensible values for 90% of variables. Platform files only override the differences. Adding a new platform requires ~15–20 lines. Layer 2 (common.env) holds project-wide constants like version.
+1. **Three-Layer Config Inheritance** — Defaults provide sensible values for 90% of variables. Platform files only override the differences. Adding a new platform requires ~15–20 lines. Host-level overrides (Layer 3, optional) allow per-machine customization without duplicating platform configs.
 
 2. **PORT_SLOT-Based Port Allocation** — A single integer determines all port mappings. Prevents port collisions between platforms. Formula is defined once in `port_calc.sh` and referenced everywhere.
 

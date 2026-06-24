@@ -117,9 +117,9 @@ No other tool ships opinionated defaults for `arm-linux-gnueabihf` + `gdbserver`
 ```
 defaults/*.env   ← 90% of values, sensible for all platforms
     ↓ (inherit all, can override any)
-common.env       ← version, maintainer (once, project-wide)
-    ↓
 platform.env     ← only what DIFFERS (~15–20 lines per platform)
+    ↓
+host.env         ← per-machine overrides (optional, gitignored)
 ```
 
 A new platform is 15 lines of config. No copy-paste. No drift. Change a default once → all platforms inherit it.

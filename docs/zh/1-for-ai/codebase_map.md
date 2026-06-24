@@ -6,7 +6,7 @@
 >
 > **维护规则：** 任何修改本文中所列文件的 AI Agent，必须在同一次提交/会话中更新本文档的相关章节。
 >
-> 最后更新：2026-03-28（新增 Phase 4 ASO 计划；task-logs 存档规则已文档化；MCP 重新编号为 Phase 5）
+> 最后更新：2026-06-18（SDK_INSTALL_PATH 移至默认层；SDK 变量在 host 模板中完整注释）
 > **Related:** [English Version →](../../en/1-for-ai/codebase_map.md)
 
 ---
@@ -23,26 +23,28 @@ HarborPilot.git/
 ├── release-please-config.json          ← 版本自动化配置
 │
 ├── configs/                            ← ★ 三层配置系统
-│   ├── defaults/                       ←   Layer 1：11 个按领域划分的默认文件
+│   ├── defaults/                       ←   Layer 1：12 个按领域划分的默认文件
+│   │   ├── 00_project.env              ←     项目版本、维护者、SDK 版本
 │   │   ├── 01_base.env                 ←     OS、用户、时区、语言
 │   │   ├── 02_build.env                ←     Docker BuildKit 设置
 │   │   ├── 03_tools.env                ←     开发工具开关与版本（CUDA、OpenCV、Node…）
 │   │   ├── 04_workspace.env            ←     工作区目录结构与构建设置
 │   │   ├── 05_registry.env             ←     Harbor / GitLab 服务器地址
-│   │   ├── 06_sdk.env                  ←     SDK 安装开关（默认：false）
+│   │   ├── 06_sdk.env                  ←     SDK 开关（默认：false）+ SDK_INSTALL_PATH
 │   │   ├── 07_volumes.env              ←     Docker volume 根路径
 │   │   ├── 08_samba.env                ←     Samba 共享凭证
 │   │   ├── 09_runtime.env              ←     SSH / GDB / syslog / NVIDIA 开关
 │   │   └── 11_proxy.env                ←     HTTP/HTTPS 代理（默认：关）
-│   ├── platform-independent/
-│   │   └── common.env                  ←   Layer 2：项目版本、维护者、日期
-│   ├── platforms/                               ←   Layer 3：每平台覆盖（只写差异）
+│   ├── platforms/                               ←   Layer 2：每平台覆盖（只写差异）
 │   │   ├── rk3588-rk3588s_ubuntu-22.04.env      ←     PORT_SLOT=0，Ubuntu 22.04，NVIDIA GPU
 │   │   ├── rv1126-rv1126bp_ubuntu-22.04.env      ←     PORT_SLOT=1，Ubuntu 22.04
 │   │   ├── rk3568-rk3568_ubuntu-20.04.env        ←     PORT_SLOT=2，Ubuntu 20.04
 │   │   ├── rv1126-rv1126_ubuntu-22.04.env        ←     PORT_SLOT=3，Ubuntu 22.04
 │   │   ├── rk3568-rk3568_ubuntu-22.04.env        ←     PORT_SLOT=4，Ubuntu 22.04
 │   │   └── rk3588-rk3588s_ubuntu-24.04.env      ←     PORT_SLOT=5，Ubuntu 24.04，无 NVIDIA
+│   ├── hosts/                                  ←   Layer 3：主机级覆盖（可选，gitignore）
+│   │   ├── .gitkeep                            ←     保留目录
+│   │   └── README.md                           ←     使用说明
 │   └── platform_schema.json            ←   平台 .env 文件的 JSON Schema
 │
 ├── scripts/                            ← ★ 宿主机工具
@@ -106,21 +108,23 @@ mcp/
 ## 2. 顶级脚本 — 详细参考
 
 ### `harbor`（仓库根目录）
-**主编排器**。交互式选择平台 → 加载 3 层配置 → 构建 → 打 tag → 推送 → 清理。
+**主编排器**。交互式选择主机 → 加载 3 层配置 → 构建 → 打 tag → 推送 → 清理。
 
 **执行流程：**
-1. `1_specify_platform()` — 按 PORT_SLOT 排序列出平台，用户按编号选择。也可选择"创建新平台"，此时调用 `create_platform.sh`。
-2. Layer 1：按顺序 source `configs/defaults/*.env`（01→11）
-3. Layer 2：source `common.env`
-4. Layer 3：source 所选 `<platform>.env`
+1. `0_show_main_menu()` — 顶级菜单：[1] Build & Push，[2] Package Handover，[3] Configurations
+2. `_show_config_menu()`（选择 Configurations 时）— 创建 platform、创建 host（基于已有 platform）、或返回
+3. `_select_host_config()`（选择 Build 时）— 列出 host 配置及其 BASE_PLATFORM，用户按编号选择。也可选择"创建新 host 配置"向导。
+4. `_load_config_layers()` — 加载 3 层配置：
+   - Layer 1：按顺序 source `configs/1_defaults/*.env`（00→11）
+   - Layer 2：从 host 的 `BASE_PLATFORM` 加载 platform（旧版从 .env 软链接）
+   - Layer 3：source `configs/3_hosts/$(hostname).env`（覆盖 platform）
 5. `port_calc.sh` — 从 PORT_SLOT 派生 SSH/GDB 端口
 6. `0_check_registry_login()` — 验证 Docker 已登录 Harbor；未登录则提示交互式登录
-7. `1_1_setup_volume_soft_link()` — 创建 HOST_VOLUME_DIR 软链接
-8. `2_build_images()` → 调用 `docker/dev-env-clientside/build.sh`
-9. `3_prepare_version_info()` — 获取最终镜像 ID
-10. `4_tag_images()` — 打 version + latest 标签（本地或 registry）
-11. `5_push_images()` — 推送 + 验证 manifest digest
-12. `6_cleanup_images()` — 删除中间镜像（保留最终镜像）
+7. `2_build_images()` → 调用 `docker/dev-env-clientside/build.sh`
+8. `3_prepare_version_info()` — 获取最终镜像 ID
+9. `4_tag_images()` — 打 version + latest 标签（本地或 registry）
+10. `5_push_images()` — 推送 + 验证 manifest digest
+11. `6_cleanup_images()` — 删除中间镜像（保留最终镜像）
 
 **关键行为：**
 - 每步（构建/打 tag/推送/清理）都有 `prompt_with_timeout` — 用户可用 'n' 跳过，10 秒后自动继续
@@ -196,7 +200,7 @@ mcp/
 
 ## 4. 配置系统 — 变量参考
 
-### Layer 1：`configs/defaults/`（10 个文件）
+### Layer 1：`configs/1_defaults/`（10 个文件）
 
 | 文件 | 关键变量 | 备注 |
 |---|---|---|
@@ -205,13 +209,13 @@ mcp/
 | `03_tools.env` | `INSTALL_CUDA=false`、`INSTALL_OPENCV=false`、`INSTALL_HOST_CMAKE=true`、`NPM_USE_CHINA_MIRROR=false`、`CUDA_VERSION=12.0`、`OPENCV_VERSION=4.9.0`、`CONAN_VERSION=2.0.17` | 版本锁定以确保可复现 |
 | `04_workspace.env` | `WORKSPACE_ROOT=/development`，子目录：`i_src`…`vi_tools`，`WORKSPACE_BUILD_THREADS=4`、`WORKSPACE_LOG_LEVEL=INFO`、`WORKSPACE_DEBUG_PORT=3000` | 6 个工作区子目录 |
 | `05_registry.env` | `HAVE_GITLAB_SERVER=TRUE`、`HAVE_HARBOR_SERVER=TRUE`、`HARBOR_SERVER_PORT=9000` | `REGISTRY_URL` 在 Layer 3 中使用 `CHIP_FAMILY` |
-| `06_sdk.env` | `INSTALL_SDK=false`、`CHIP_FAMILY=${PRODUCT_NAME}` | `CHIP_FAMILY` 将同芯片的变体归组；`REGISTRY_URL` 和 `SDK_GIT_REPO` 使用 `${CHIP_FAMILY}` |
+| `06_sdk.env` | `INSTALL_SDK=false`、`SDK_INSTALL_PATH=${WORKSPACE_ROOT}/sdk`、`CHIP_FAMILY=${PRODUCT_NAME}` | `SDK_INSTALL_PATH` 是仓库约定（所有平台相同）。`CHIP_FAMILY` 将同芯片变体归组；`SDK_GIT_REPO`、`SDK_GIT_KEY_FILE`、`SDK_GIT_DEFAULT_BRANCH` 由平台文件（Layer 2）自动生成 |
 | `07_volumes.env` | `VOLUMES_ROOT=${WORKSPACE_ROOT}` | `HOST_VOLUME_DIR` 无默认值 — 每平台**必须**设置 |
 | `08_samba.env` | `SAMBA_SERVER_IP=""`、`SAMBA_PUBLIC_ACCOUNT_NAME/PASSWORD=sambashare`、`SAMBA_FILE_MODE=0777`、`SAMBA_DIR_MODE=0777` | 默认 Samba 凭证 + 权限 |
 | `09_runtime.env` | `ENABLE_SSH=true`、`ENABLE_GDB_SERVER=true`、`USE_NVIDIA_GPU=false`、`ENABLE_CORE_DUMPS=true`、`CONTAINER_RESTART_POLICY=unless-stopped`、`CONTAINER_PRIVILEGED=true`、`CONTAINER_SERIAL_DEVICE=/dev/ttyUSB0`、`CONTAINER_SHM_SIZE=8g`、`NVIDIA_VISIBLE_DEVICES=all`、`NVIDIA_DRIVER_CAPABILITIES=all` | 端口由 port_calc.sh 计算；compose 运行时覆盖 |
 | `11_proxy.env` | `HAS_PROXY=false`、`HTTP_PROXY_IP`、`HTTPS_PROXY_IP` | 代理 IP 有默认值但 HAS_PROXY 默认关闭 |
 
-### Layer 2：`configs/platform-independent/common.env`
+### Layer 1（续）：`configs/1_defaults/00_project.env`
 
 | 变量 | 值 | 备注 |
 |---|---|---|
@@ -221,7 +225,7 @@ mcp/
 | `PROJECT_RELEASE_DATE` | 2026-03-19 | 手动更新 |
 | `SDK_VERSION` | 1.1.2 | |
 
-### Layer 3：`configs/platforms/<name>.env`
+### Layer 2：`configs/2_platforms/<name>.env`
 
 只覆盖与默认值不同的内容。必填字段：`PRODUCT_NAME`、`OS_VERSION`、`PORT_SLOT`、`HOST_VOLUME_DIR`。
 
@@ -278,7 +282,7 @@ mcp/
 
 - **release-please** 管理 `CHANGELOG.md` 和版本更新
 - 配置：`release-please-config.json` — `release-type: simple`
-- 版本唯一来源：`configs/platform-independent/common.env` 中的 `VERSION`
+- 版本唯一来源：`configs/1_defaults/00_project.env` 中的 `VERSION`
 - `x-release-please-version` 标记启用自动更新
 - Changelog 章节：feat→✨，fix→🐛，perf→⚡，revert→🔙。docs/style/chore/refactor 隐藏。
 - `.devcontainer/devcontainer.json` — VS Code Dev Container，用于开发 HarborPilot 本身（非最终用户使用）。转发端口 2109+2345，安装 C++ / CMake / Python / Git 扩展。
@@ -287,7 +291,7 @@ mcp/
 
 ## 8. 关键架构模式
 
-1. **三层配置继承** — 默认值为 90% 的变量提供合理初值。平台文件只覆盖差异。新增平台只需 ~15–20 行。Layer 2（common.env）保存版本等项目级常量。
+1. **三层配置继承** — 默认值为 90% 的变量提供合理初值。平台文件只覆盖差异。新增平台只需 ~15–20 行。主机级覆盖（Layer 3，可选）允许每台机器自定义配置，无需复制平台文件。
 
 2. **基于 PORT_SLOT 的端口分配** — 单个整数决定所有端口映射。防止平台间端口冲突。公式在 `port_calc.sh` 中定义一次，处处引用。
 

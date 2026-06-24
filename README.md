@@ -59,9 +59,9 @@ Architecture is platform-agnostic — adding a Debian platform or a different ch
 
 | Feature | Details |
 |---|---|
-| **One command to build** | `./harbor` — select platform → build → tag → push → verify manifest |
+| **One command to build** | `./harbor` — select host → build → tag → push → verify manifest |
 | **One command to run** | `ubuntu_only_entrance.sh start` — fully configured container in seconds |
-| **New platform in 20 lines** | Three-layer config: `defaults/` → `common.env` → `platform.env` · only overrides needed |
+| **Host-primary architecture** | Host config is the user object; platform/defaults are invisible support layers |
 | **Zero port conflicts** | `PORT_SLOT` formula — SSH and GDB ports derived automatically, never collide |
 | **Registry lifecycle** | Auto push + manifest digest verification — not just "hope it uploaded" |
 | **Chip-family grouping** | `CHIP_FAMILY` drives Harbor project, SDK repo, SSH keys — RK3588 variants share one team |
@@ -75,19 +75,22 @@ Architecture is platform-agnostic — adding a Debian platform or a different ch
 ## How does the three-layer config work?
 
 ```
-Layer 1:  configs/defaults/*.env        ← Global defaults (OS, tools, ports, registry…)
-Layer 2:  configs/platform-independent/common.env  ← Project version & constants
-Layer 3:  configs/platforms/<name>.env  ← Per-platform overrides only (≤20 lines)
+Layer 1:  configs/1_defaults/*.env        ← Global defaults (automatic, invisible)
+Layer 2:  configs/2_platforms/<name>.env  ← Platform identity (automatic, invisible)
+Layer 3:  configs/3_hosts/<hostname>.env   ← Host config (THE user-facing object)
 ```
 
-Last layer wins. A new platform file only contains what **differs** from the defaults — typically:
-`PRODUCT_NAME`, `OS_VERSION`, `PORT_SLOT`, `HOST_VOLUME_DIR`, and any chip-specific overrides.
+**Host is the primary object.** Each host config declares its platform via `BASE_PLATFORM` and contains all machine-specific overrides. Users only interact with host configs — the platform and defaults layers are internal support layers.
+
+A host config needs at minimum:
+- `BASE_PLATFORM` — which platform to use (e.g., `rk3588-rk3588s_ubuntu-24.04`)
+- `HOST_VOLUME_DIR` — where to store Docker volumes on this machine
 
 **PORT_SLOT** is the single source of port truth:
 - `CLIENT_SSH_PORT = 2109 + PORT_SLOT × 10`
 - `GDB_PORT = 2345 + PORT_SLOT × 10`
 
-Add a new platform with `./scripts/create_platform.sh` (interactive) or `--non-interactive` for CI.
+Add a new host with `./harbor` → "Create new host config", or manually copy `TEMPLATE.env.example`.
 
 → Deep dive: [docs/en/3-highlights/config_layers.md](docs/en/3-highlights/config_layers.md)
 
@@ -101,7 +104,8 @@ HarborPilot/
 ├── harbor                            ← Entry point: build → tag → push → verify
 │
 ├── configs/
-│   ├── defaults/                     ← Layer 1 · 10 domain-scoped default files
+│   ├── defaults/                     ← Layer 1 · 12 domain-scoped default files
+│   │   ├── 00_project.env            Project version, maintainer, SDK versions
 │   │   ├── 01_base.env               OS, user, timezone, locale
 │   │   ├── 02_build.env              Docker BuildKit settings
 │   │   ├── 03_tools.env              Dev tool switches & versions (CUDA, OpenCV, Node…)
@@ -112,15 +116,14 @@ HarborPilot/
 │   │   ├── 08_samba.env              Samba credentials
 │   │   ├── 09_runtime.env            SSH / GDB / NVIDIA / serial switches
 │   │   └── 11_proxy.env              HTTP/HTTPS proxy (off by default)
-│   ├── platform-independent/
-│   │   └── common.env                ← Layer 2 · project version & constants
-│   └── platforms/
-│       ├── rk3588-rk3588s_ubuntu-22.04.env   ← Layer 3 · platform overrides only
-│       ├── rk3588-rk3588s_ubuntu-24.04.env
-│       ├── rk3568-rk3568_ubuntu-20.04.env
-│       ├── rk3568-rk3568_ubuntu-22.04.env
-│       ├── rv1126-rv1126_ubuntu-22.04.env
-│       └── rv1126-rv1126bp_ubuntu-22.04.env
+│   ├── platforms/                    ← Layer 2 · per-platform overrides only
+│   │   ├── rk3588-rk3588s_ubuntu-22.04.env
+│   │   ├── rk3588-rk3588s_ubuntu-24.04.env
+│   │   ├── rk3568-rk3568_ubuntu-20.04.env
+│   │   ├── rk3568-rk3568_ubuntu-22.04.env
+│   │   ├── rv1126-rv1126_ubuntu-22.04.env
+│   │   └── rv1126-rv1126bp_ubuntu-22.04.env
+│   └── hosts/                        ← Layer 3 · host configs (THE user-facing object)
 │
 ├── docker/
 │   └── dev-env-clientside/           ← 5-stage Dockerfile

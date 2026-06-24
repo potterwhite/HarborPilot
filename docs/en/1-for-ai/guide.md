@@ -91,8 +91,8 @@
 | Edit code, forget to update codebase_map | Always sync codebase_map in same commit |
 | Vague commit message "fix bugs" | Specific: `fix: handle pre-existing UID/GID in func_create_user` |
 | Hardcode a port number in a script | Use PORT_SLOT and port_calc.sh for all port derivation |
-| Hardcode platform-specific values in defaults/ | Put overrides in `configs/platforms/<name>.env` only |
-| Add a new config variable only to one platform | Add default in `configs/defaults/`, override per-platform |
+| Hardcode platform-specific values in defaults/ | Put overrides in `configs/2_platforms/<name>.env` only |
+| Add a new config variable only to one platform | Add default in `configs/1_defaults/`, override per-platform |
 | Modify a `*_template` file without testing envsubst | Always verify rendered output matches intent |
 | Forget OS_VERSION conditionals | Ubuntu 20.04 / 22.04 / 24.04 have different packages and apt formats |
 | Use `sed` for template rendering | Use `envsubst` — the sed-based system has been removed |
@@ -102,7 +102,7 @@
 
 ## 6. Key Architecture Facts
 
-1. **Three-Layer Config Inheritance**: `configs/defaults/*.env` (Layer 1, global) → `configs/platform-independent/common.env` (Layer 2, project constants) → `configs/platforms/<platform>.env` (Layer 3, overrides). Last layer wins. A platform file only contains what **differs** from defaults.
+1. **Three-Layer Config Inheritance**: `configs/1_defaults/*.env` (Layer 1, global) → `configs/2_platforms/<platform>.env` (Layer 2, overrides) → `configs/3_hosts/<hostname>.env` (Layer 3, host-level, optional). Last layer wins. A platform file only contains what **differs** from defaults.
 
 2. **PORT_SLOT is the single source of port truth**: `CLIENT_SSH_PORT = 2109 + PORT_SLOT × 10`, `GDB_PORT = 2345 + PORT_SLOT × 10`. Calculated by `scripts/port_calc.sh`. Never hardcode ports — always set PORT_SLOT.
 
@@ -116,7 +116,7 @@
 
 7. **Platform configs use `${VAR}` self-references**: e.g. `IMAGE_NAME="${PRODUCT_NAME}-dev-env"`. These are bash variable expansions evaluated at `source` time, not template placeholders.
 
-8. **Versioning is automated**: `release-please` bumps `VERSION` in `configs/platform-independent/common.env` (via `x-release-please-version` marker) and maintains `CHANGELOG.md`.
+8. **Versioning is automated**: `release-please` bumps `VERSION` in `configs/1_defaults/00_project.env` (via `x-release-please-version` marker) and maintains `CHANGELOG.md`.
 
 9. **OS-specific conditionals are critical**: Ubuntu 24.04 uses DEB822 apt format. Ubuntu 20.04 needs `libncurses5-dev` not `libncurses-dev`. `bsdextrautils` is not available on 20.04. UID 1000 is pre-occupied on 24.04. Always check OS_VERSION in any package-related code.
 

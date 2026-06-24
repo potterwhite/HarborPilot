@@ -75,7 +75,7 @@ set -euo pipefail
 # ─── Resolve paths ───────────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TOP_ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-PLATFORMS_DIR="${TOP_ROOT_DIR}/configs/platforms"
+PLATFORMS_DIR="${TOP_ROOT_DIR}/configs/2_platforms"
 
 # ─── Colors ──────────────────────────────────────────────────────────────────
 _BOLD='\033[1m'
@@ -423,10 +423,10 @@ HTTPS_PROXY_IP=\"${https_proxy_url}\""
 
     cat > "${output_file}" << ENVEOF
 ################################################################################
-# File: configs/platforms/${platform_name}.env
+# File: configs/2_platforms/${platform_name}.env
 #
 # Description: Platform-specific overrides for ${platform_name} (${os_distro} ${os_version}).
-#              Only values that DIFFER from configs/defaults/*.env are listed.
+#              Only values that DIFFER from configs/1_defaults/*.env are listed.
 #              All other settings are inherited from the defaults layer.
 #
 # Author: PotterWhite
@@ -469,15 +469,14 @@ ${gitlab_block}
 # =============================================================================
 HARBOR_SERVER_IP="${harbor_ip}"
 HARBOR_SERVER_PORT="${harbor_port}"
-REGISTRY_URL="\${HARBOR_SERVER_IP}:\${HARBOR_SERVER_PORT}/team_\${CHIP_FAMILY}"
+# REGISTRY_URL is computed in host config (Layer 3) — depends on host-specific IP.
 
 # =============================================================================
-# SDK  [CHIP_FAMILY groups same-silicon variants together]
+# SDK  [auto-generated — only used when INSTALL_SDK=true]
 # =============================================================================
-SDK_INSTALL_PATH="\${WORKSPACE_ROOT}/sdk"
-SDK_GIT_REPO="git@\${GITLAB_SERVER_IP:-${harbor_ip}}:team_\${CHIP_FAMILY}/\${PRODUCT_NAME}_sdk.git"
 SDK_GIT_KEY_FILE="SDK_\${CHIP_FAMILY}_ED25519"
 SDK_GIT_DEFAULT_BRANCH="${sdk_branch}"
+# SDK_GIT_REPO is computed in host config (Layer 3) — depends on GITLAB_SERVER_IP.
 
 # =============================================================================
 # Docker Volumes  [REQUIRED — no universal default]
@@ -657,10 +656,10 @@ HTTPS_PROXY_IP=\"${https_proxy_url}\""
 
     cat > "${output_file}" << ENVEOF
 ################################################################################
-# File: configs/platforms/${platform_name}.env
+# File: configs/2_platforms/${platform_name}.env
 #
 # Description: Platform-specific overrides for ${platform_name} (${os_distro} ${os_version}).
-#              Only values that DIFFER from configs/defaults/*.env are listed.
+#              Only values that DIFFER from configs/1_defaults/*.env are listed.
 #              All other settings are inherited from the defaults layer.
 #
 # Generated: $(date +%Y-%m-%d) by create_platform.sh --non-interactive
@@ -701,15 +700,14 @@ ${gitlab_block}
 # =============================================================================
 HARBOR_SERVER_IP="${harbor_ip}"
 HARBOR_SERVER_PORT="${harbor_port}"
-REGISTRY_URL="\${HARBOR_SERVER_IP}:\${HARBOR_SERVER_PORT}/team_\${CHIP_FAMILY}"
+# REGISTRY_URL is computed in host config (Layer 3) — depends on host-specific IP.
 
 # =============================================================================
-# SDK  [CHIP_FAMILY groups same-silicon variants together]
+# SDK  [auto-generated — only used when INSTALL_SDK=true]
 # =============================================================================
-SDK_INSTALL_PATH="\${WORKSPACE_ROOT}/sdk"
-SDK_GIT_REPO="git@\${GITLAB_SERVER_IP:-${harbor_ip}}:team_\${CHIP_FAMILY}/\${PRODUCT_NAME}_sdk.git"
 SDK_GIT_KEY_FILE="SDK_\${CHIP_FAMILY}_ED25519"
 SDK_GIT_DEFAULT_BRANCH="${sdk_branch}"
+# SDK_GIT_REPO is computed in host config (Layer 3) — depends on GITLAB_SERVER_IP.
 
 # =============================================================================
 # Docker Volumes  [REQUIRED — no universal default]
