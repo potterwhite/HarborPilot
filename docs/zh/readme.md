@@ -62,18 +62,13 @@ HarborPilot/
 ├── harbor                            ← 入口脚本：构建 → 打 tag → 推送
 │
 ├── configs/
-│   ├── defaults/                     ← Layer 1 · 12 个按领域划分的默认配置文件
-│   │   ├── 00_project.env            项目版本、维护者、SDK 版本
-│   │   ├── 01_base.env               OS、用户、时区
-│   │   ├── 02_build.env              Docker BuildKit 开关
-│   │   ├── 03_tools.env              开发工具开关 & 版本号
-│   │   ├── 04_workspace.env          工作区路径 & 行为
-│   │   ├── 05_registry.env           Harbor / GitLab 服务器地址
-│   │   ├── 06_sdk.env                SDK 安装开关
-│   │   ├── 07_volumes.env            Volume 根路径
-│   │   ├── 08_samba.env              Samba 账号密码
-│   │   ├── 09_runtime.env            SSH / GDB / syslog 开关
-│   │   └── 11_proxy.env              代理（默认关闭）
+│   ├── 1_defaults/                   ← Layer 1 · 6 个阶段对齐的默认配置文件
+│   │   ├── 00_global.env             项目版本、元数据、SDK 版本
+│   │   ├── 01_stage_1st_base.env     OS、用户、时区
+│   │   ├── 02_stage_2nd_build.env    BuildKit、开发工具、CUDA、OpenCV
+│   │   ├── 03_stage_3rd_sdk.env      Registry 地址 + SDK 开关与路径
+│   │   ├── 04_stage_4th_proxy.env    代理（默认关闭）
+│   │   └── 05_stage_5th_runtime.env  工作区、卷、Samba、SSH/GDB/NVIDIA
 │   ├── platforms/                    ← Layer 2 · 平台特有覆盖
 │   │   ├── rk3588s.env
 │   │   ├── rk3568.env

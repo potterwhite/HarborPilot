@@ -19,7 +19,7 @@
       "type": "string",
       "enum": ["ubuntu", "debian"],
       "default": "ubuntu",
-      "description": "Linux distribution for the base Docker image. Default: ubuntu (from configs/1_defaults/01_base.env)."
+      "description": "Linux distribution for the base Docker image. Default: ubuntu (from configs/1_defaults/01_stage_1st_base.env)."
     },
 
     "OS_VERSION": {

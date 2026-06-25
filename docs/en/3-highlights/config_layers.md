@@ -42,23 +42,18 @@ Layer 3  configs/3_hosts/<hostname>.env     Host config — THE user-facing obje
 
 ## Layer 1 — Global Defaults (`configs/1_defaults/`)
 
-Twelve files, each scoped to one concern. The ordinal prefix makes the load order explicit at a glance.
+Six stage-aligned files. The ordinal prefix makes the load order explicit at a glance.
 
-| File | Variables |
-|---|---|
-| `00_project.env` | `VERSION`, `PROJECT_VERSION`, `PROJECT_RELEASE_DATE`, `PROJECT_MAINTAINER`, `SDK_VERSION` |
-| `01_base.env` | `OS_VERSION`, `DEV_USERNAME`, `DEV_UID/GID`, `TIMEZONE`, `DEBIAN_FRONTEND` |
-| `02_build.env` | `DOCKER_BUILDKIT` |
-| `03_tools.env` | `INSTALL_CUDA/OPENCV/CMAKE`, tool versions (`CONAN_VERSION`, etc.), `GCC_OFFLINE_PACKAGE` |
-| `04_workspace.env` | `WORKSPACE_ROOT` and all subdirectory paths, `WORKSPACE_BUILD_THREADS`, debug settings |
-| `05_registry.env` | `HAVE_GITLAB_SERVER`, `HARBOR_SERVER_IP`, `HARBOR_SERVER_PORT`, `HAVE_HARBOR_SERVER`, `GITLAB_SERVER_IP`, `GITLAB_SERVER_PORT` |
-| `06_sdk.env` | `INSTALL_SDK`, `SDK_INSTALL_PATH`, `CHIP_FAMILY=${PRODUCT_NAME}` (URLs depend on `CHIP_FAMILY`, set in Layer 2) |
-| `07_volumes.env` | `VOLUMES_ROOT` (note: `HOST_VOLUME_DIR` has no universal default — must be set in Layer 2 or 3) |
-| `08_samba.env` | `SAMBA_PUBLIC/PRIVATE_ACCOUNT_NAME/PASSWORD`, `ENABLE_VSC_INTEGRATION` |
-| `09_runtime.env` | `ENABLE_SSH`, `ENABLE_SYSLOG`, `ENABLE_GDB_SERVER`, `ENABLE_CORE_DUMPS`, `USE_NVIDIA_GPU` |
-| `11_proxy.env` | `HAS_PROXY` (default: `false`), `HTTP/HTTPS_PROXY_IP` |
+| File | Variables | Notes |
+|---|---|---|
+| `00_global.env` | `VERSION`, `PROJECT_VERSION`, `PROJECT_RELEASE_DATE`, `PROJECT_MAINTAINER`, `SDK_VERSION` | Stage-independent project constants. `VERSION` auto-bumped by release-please. |
+| `01_stage_1st_base.env` | `OS_VERSION`, `OS_VERSION_ID`, `DEV_USERNAME`, `DEV_UID/GID`, `TIMEZONE`, `DEBIAN_FRONTEND` | Stage 1: OS + user setup. |
+| `02_stage_2nd_build.env` | `DOCKER_BUILDKIT`, `INSTALL_CUDA/OPENCV/CMAKE`, tool versions (`CONAN_VERSION`, etc.), `GCC_OFFLINE_PACKAGE` | Stage 2: Merged from old `02_build.env` + `03_tools.env`. |
+| `03_stage_3rd_sdk.env` | `HAVE_GITLAB_SERVER`, `HARBOR_SERVER_IP`, `HARBOR_SERVER_PORT`, `HAVE_HARBOR_SERVER`, `GITLAB_SERVER_IP`, `GITLAB_SERVER_PORT`, `INSTALL_SDK`, `SDK_INSTALL_PATH`, `CHIP_FAMILY=${PRODUCT_NAME}` | Stage 3: Merged from old `05_registry.env` + `06_sdk.env`. |
+| `04_stage_4th_proxy.env` | `HAS_PROXY` (default: `false`), `HTTP/HTTPS_PROXY_IP` | Stage 4: Renamed from old `11_proxy.env`. |
+| `05_stage_5th_runtime.env` | `WORKSPACE_ROOT` and subdirs, `WORKSPACE_BUILD_THREADS`, debug settings, `VOLUMES_ROOT`, `SAMBA_*`, `ENABLE_SSH`, `ENABLE_GDB_SERVER`, `USE_NVIDIA_GPU`, `CONTAINER_SHM_SIZE` | Stage 5: Merged from old `04_workspace.env` + `07_volumes.env` + `08_samba.env` + `09_runtime.env`. |
 
-**Loading order matters.** The files are sourced in numerical order (00 → 11). A variable defined in `05_registry.env` can reference `CONTAINER_NAME` only if it has already been set — it hasn't yet at Layer 1, which is why `REGISTRY_URL` is intentionally left out of Layer 1 and computed in Layer 2 instead.
+**Loading order matters.** The files are sourced in numerical order (00 → 05). A variable defined in `03_stage_3rd_sdk.env` can reference `CONTAINER_NAME` only if it has already been set — it hasn't yet at Layer 1, which is why `REGISTRY_URL` is intentionally left out of Layer 1 and computed in Layer 2 instead.
 
 ---
 
@@ -206,16 +201,16 @@ This protects:
 Later layers override earlier ones. If a variable is not set in any layer, it is empty.
 
 ```
-00_project.env  →  01_base.env  →  ...  →  11_proxy.env  →  <platform>.env  →  <hostname>.env
-     ↑                                          ↑                ↑                  ↑
-  version/maintainer                        server IPs,      platform ID,     proxy settings,
-  SDK versions                              OS version,      port slot,       volume paths,
-                                            proxy default    SDK config       GPU, servers
+00_global.env  →  01_stage_1st_base.env  →  ...  →  05_stage_5th_runtime.env  →  <platform>.env  →  <hostname>.env
+     ↑                                                  ↑                           ↑                  ↑
+  version/maintainer/SDK                            server IPs,                 platform ID,     proxy settings,
+  versions                                          OS version,                 port slot,       volume paths,
+                                                    proxy default               SDK config       GPU, servers
 ```
 
 **Example: HAS_PROXY precedence chain**
 
-| Scenario | defaults/11_proxy | platforms/rk3588.env | host/my-desktop.env | Result |
+| Scenario | defaults/04_stage_4th_proxy | platforms/rk3588.env | host/my-desktop.env | Result |
 |---|---|---|---|---|
 | No host file | `"false"` | *(not set)* | *(file missing)* | `"false"` |
 | Host file with proxy | `"false"` | *(not set)* | `"true"` | `"true"` |
@@ -223,7 +218,7 @@ Later layers override earlier ones. If a variable is not set in any layer, it is
 
 **Example: GITLAB_SERVER_IP precedence chain**
 
-| Scenario | defaults/05_registry | platforms/rk3588.env | host/my-desktop.env | Result |
+| Scenario | defaults/03_stage_3rd_sdk | platforms/rk3588.env | host/my-desktop.env | Result |
 |---|---|---|---|---|
 | No host file | `"192.168.0.19"` | *(not set)* | *(file missing)* | `"192.168.0.19"` |
 | Host overrides | `"192.168.0.19"` | *(not set)* | `"192.168.3.67"` | `"192.168.3.67"` |
@@ -251,10 +246,10 @@ All three scripts that consume configuration implement identical loading logic:
 ```bash
 # Layer 1 — source all defaults in order
 for defaults_file in \
-    "${DEFAULTS_DIR}/00_project.env" \
-    "${DEFAULTS_DIR}/01_base.env" \
+    "${DEFAULTS_DIR}/00_global.env" \
+    "${DEFAULTS_DIR}/01_stage_1st_base.env" \
     ...
-    "${DEFAULTS_DIR}/11_proxy.env"
+    "${DEFAULTS_DIR}/05_stage_5th_runtime.env"
 do
     [ -f "${defaults_file}" ] && source "${defaults_file}"
 done
@@ -306,7 +301,7 @@ No changes to any script or default file are needed. The platform is invisible t
 
 1. Open the appropriate `configs/1_defaults/NN_<domain>.env` file
 2. Add the variable with its default value
-3. If you need a new *domain* that doesn't fit any existing file, create `configs/1_defaults/12_<domain>.env` and append it to the load list in all four scripts
+3. If you need a new *domain* that doesn't fit any existing file, create `configs/1_defaults/06_<domain>.env` and append it to the load list in all scripts
 
 The platform files that need a non-default value can then override it with a single line.
 

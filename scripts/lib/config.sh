@@ -35,17 +35,12 @@ _load_config_layers() {
     #          can override individual values
     DEFAULTS_DIR="${TOP_CONFIGS_DIR}/1_defaults"
     for defaults_file in \
-        "${DEFAULTS_DIR}/00_project.env" \
-        "${DEFAULTS_DIR}/01_base.env" \
-        "${DEFAULTS_DIR}/02_build.env" \
-        "${DEFAULTS_DIR}/03_tools.env" \
-        "${DEFAULTS_DIR}/04_workspace.env" \
-        "${DEFAULTS_DIR}/05_registry.env" \
-        "${DEFAULTS_DIR}/06_sdk.env" \
-        "${DEFAULTS_DIR}/07_volumes.env" \
-        "${DEFAULTS_DIR}/08_samba.env" \
-        "${DEFAULTS_DIR}/09_runtime.env" \
-        "${DEFAULTS_DIR}/11_proxy.env"
+        "${DEFAULTS_DIR}/00_global.env" \
+        "${DEFAULTS_DIR}/01_stage_1st_base.env" \
+        "${DEFAULTS_DIR}/02_stage_2nd_build.env" \
+        "${DEFAULTS_DIR}/03_stage_3rd_sdk.env" \
+        "${DEFAULTS_DIR}/04_stage_4th_proxy.env" \
+        "${DEFAULTS_DIR}/05_stage_5th_runtime.env"
     do
         if [ -f "${defaults_file}" ]; then
             source "${defaults_file}"
@@ -105,17 +100,12 @@ _load_layer1_defaults() {
     DEFAULTS_DIR="${TOP_CONFIGS_DIR}/1_defaults"
 
     for defaults_file in \
-        "${DEFAULTS_DIR}/00_project.env" \
-        "${DEFAULTS_DIR}/01_base.env" \
-        "${DEFAULTS_DIR}/02_build.env" \
-        "${DEFAULTS_DIR}/03_tools.env" \
-        "${DEFAULTS_DIR}/04_workspace.env" \
-        "${DEFAULTS_DIR}/05_registry.env" \
-        "${DEFAULTS_DIR}/06_sdk.env" \
-        "${DEFAULTS_DIR}/07_volumes.env" \
-        "${DEFAULTS_DIR}/08_samba.env" \
-        "${DEFAULTS_DIR}/09_runtime.env" \
-        "${DEFAULTS_DIR}/11_proxy.env"
+        "${DEFAULTS_DIR}/00_global.env" \
+        "${DEFAULTS_DIR}/01_stage_1st_base.env" \
+        "${DEFAULTS_DIR}/02_stage_2nd_build.env" \
+        "${DEFAULTS_DIR}/03_stage_3rd_sdk.env" \
+        "${DEFAULTS_DIR}/04_stage_4th_proxy.env" \
+        "${DEFAULTS_DIR}/05_stage_5th_runtime.env"
     do
         if [ -f "${defaults_file}" ]; then
             source "${defaults_file}"

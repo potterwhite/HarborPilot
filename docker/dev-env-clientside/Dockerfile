@@ -58,7 +58,7 @@ ARG DOCKER_BUILDKIT
 ARG BUILD_DATE
 
 # -----------------------------------------------------------------------------
-# Development Tools Configuration (10 arguments)
+# Development Tools Configuration (13 arguments)
 # -----------------------------------------------------------------------------
 ARG INSTALL_CUDA
 ARG INSTALL_OPENCV
@@ -70,6 +70,19 @@ ARG CMAKE_FORMAT_VERSION
 ARG PRE_COMMIT_VERSION
 ARG CUDA_VERSION
 ARG OPENCV_VERSION
+
+# ── stage_2nd_tools: Component-level toggles ───────────────────────────────
+ARG INSTALL_DEV_TOOLS
+ARG INSTALL_MINICOM_CONFIG
+ARG INSTALL_DOC_TOOLS
+ARG INSTALL_VCS_TOOLS
+ARG INSTALL_KERNEL_TOOLS
+ARG INSTALL_PYTHON_PACKAGES
+
+# ── stage_2nd_tools: AI Coding Tools ────────────────────────────────────────
+ARG INSTALL_CODEX
+ARG INSTALL_CLAUDE_CODE
+ARG INSTALL_OPENCODE
 
 # -----------------------------------------------------------------------------
 # Workspace Configuration (16 arguments)
@@ -208,6 +221,15 @@ ENV WORKSPACE_ROOT=${WORKSPACE_ROOT} \
     INSTALL_HOST_CMAKE=${INSTALL_HOST_CMAKE} \
     INSTALL_MAN_DOC=${INSTALL_MAN_DOC} \
     NPM_USE_CHINA_MIRROR=${NPM_USE_CHINA_MIRROR} \
+    INSTALL_DEV_TOOLS=${INSTALL_DEV_TOOLS} \
+    INSTALL_MINICOM_CONFIG=${INSTALL_MINICOM_CONFIG} \
+    INSTALL_DOC_TOOLS=${INSTALL_DOC_TOOLS} \
+    INSTALL_VCS_TOOLS=${INSTALL_VCS_TOOLS} \
+    INSTALL_KERNEL_TOOLS=${INSTALL_KERNEL_TOOLS} \
+    INSTALL_PYTHON_PACKAGES=${INSTALL_PYTHON_PACKAGES} \
+    INSTALL_CODEX=${INSTALL_CODEX} \
+    INSTALL_CLAUDE_CODE=${INSTALL_CLAUDE_CODE} \
+    INSTALL_OPENCODE=${INSTALL_OPENCODE} \
     CONAN_VERSION=${CONAN_VERSION} \
     CMAKE_FORMAT_VERSION=${CMAKE_FORMAT_VERSION} \
     PRE_COMMIT_VERSION=${PRE_COMMIT_VERSION} \
@@ -368,31 +390,6 @@ COPY --from=stage_3rd_template-processor /tmp/scripts/analyze_dir_structure.sh /
 
 # Git analysis script
 RUN chmod +x /usr/local/bin/analyze_dir_structure.sh
-
-# Verify the processed scripts
-RUN echo -e "\n\n----------------1st----------------" && \
-    ls -lha /usr/local/bin/verify_ssh_key.sh && \
-    cat /usr/local/bin/verify_ssh_key.sh
-
-RUN echo -e "\n\n----------------2nd----------------" && \
-    ls -lha /usr/local/bin/pull_sdk.sh && \
-    cat /usr/local/bin/pull_sdk.sh
-
-RUN echo -e "\n\n----------------3rd----------------" && \
-    ls -lha /usr/local/bin/push_sdk.sh && \
-    cat /usr/local/bin/push_sdk.sh
-
-RUN echo -e "\n\n----------------4th----------------" && \
-    ls -lha /usr/local/bin/version_of_dev_env.sh && \
-    cat /usr/local/bin/version_of_dev_env.sh
-
-RUN echo -e "\n\n----------------5th----------------" && \
-    ls -lha /tmp/sdk_config.conf && \
-    cat /tmp/sdk_config.conf
-
-RUN echo -e "\n\n----------------6th----------------" && \
-    ls -lha /tmp/install_sdk.sh && \
-    cat /tmp/install_sdk.sh
 
 # Install SDK
 # RUN /tmp/install_sdk.sh
