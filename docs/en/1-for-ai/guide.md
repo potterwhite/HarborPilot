@@ -116,7 +116,7 @@
 
 7. **Platform configs use `${VAR}` self-references**: e.g. `IMAGE_NAME="${PRODUCT_NAME}-dev-env"`. These are bash variable expansions evaluated at `source` time, not template placeholders.
 
-8. **Versioning is automated**: `release-please` bumps `VERSION` in `configs/1_defaults/00_project.env` (via `x-release-please-version` marker) and maintains `CHANGELOG.md`.
+8. **Versioning is automated**: `release-please` bumps `VERSION` in `configs/1_defaults/00_global.env` (via `x-release-please-version` marker) and maintains `CHANGELOG.md`.
 
 9. **OS-specific conditionals are critical**: Ubuntu 24.04 uses DEB822 apt format. Ubuntu 20.04 needs `libncurses5-dev` not `libncurses-dev`. `bsdextrautils` is not available on 20.04. UID 1000 is pre-occupied on 24.04. Always check OS_VERSION in any package-related code.
 

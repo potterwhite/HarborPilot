@@ -104,18 +104,13 @@ HarborPilot/
 ├── harbor                            ← Entry point: build → tag → push → verify
 │
 ├── configs/
-│   ├── defaults/                     ← Layer 1 · 12 domain-scoped default files
-│   │   ├── 00_project.env            Project version, maintainer, SDK versions
-│   │   ├── 01_base.env               OS, user, timezone, locale
-│   │   ├── 02_build.env              Docker BuildKit settings
-│   │   ├── 03_tools.env              Dev tool switches & versions (CUDA, OpenCV, Node…)
-│   │   ├── 04_workspace.env          Workspace paths & build settings
-│   │   ├── 05_registry.env           Harbor / GitLab server address
-│   │   ├── 06_sdk.env                SDK install switch
-│   │   ├── 07_volumes.env            Volume root path
-│   │   ├── 08_samba.env              Samba credentials
-│   │   ├── 09_runtime.env            SSH / GDB / NVIDIA / serial switches
-│   │   └── 11_proxy.env              HTTP/HTTPS proxy (off by default)
+│   ├── 1_defaults/                   ← Layer 1 · 6 stage-aligned default files
+│   │   ├── 00_global.env             Project version, metadata, SDK versions
+│   │   ├── 01_stage_1st_base.env     OS, user, timezone, locale
+│   │   ├── 02_stage_2nd_build.env    BuildKit, dev tools, CUDA, OpenCV
+│   │   ├── 03_stage_3rd_sdk.env      Registry addresses + SDK switch & paths
+│   │   ├── 04_stage_4th_proxy.env    HTTP/HTTPS proxy (off by default)
+│   │   └── 05_stage_5th_runtime.env  Workspace, volumes, Samba, SSH/GDB/NVIDIA
 │   ├── platforms/                    ← Layer 2 · per-platform overrides only
 │   │   ├── rk3588-rk3588s_ubuntu-22.04.env
 │   │   ├── rk3588-rk3588s_ubuntu-24.04.env

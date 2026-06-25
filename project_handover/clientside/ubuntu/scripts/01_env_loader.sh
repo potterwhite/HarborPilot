@@ -60,17 +60,12 @@ env_loader_1st_1st_setup_paths() {
 # =============================================================================
 env_loader_1st_2nd_load_defaults() {
     local defaults_files=(
-        "${ENTRY_DEFAULTS_DIR}/00_project.env"
-        "${ENTRY_DEFAULTS_DIR}/01_base.env"
-        "${ENTRY_DEFAULTS_DIR}/02_build.env"
-        "${ENTRY_DEFAULTS_DIR}/03_tools.env"
-        "${ENTRY_DEFAULTS_DIR}/04_workspace.env"
-        "${ENTRY_DEFAULTS_DIR}/05_registry.env"
-        "${ENTRY_DEFAULTS_DIR}/06_sdk.env"
-        "${ENTRY_DEFAULTS_DIR}/07_volumes.env"
-        "${ENTRY_DEFAULTS_DIR}/08_samba.env"
-        "${ENTRY_DEFAULTS_DIR}/09_runtime.env"
-        "${ENTRY_DEFAULTS_DIR}/11_proxy.env"
+        "${ENTRY_DEFAULTS_DIR}/00_global.env"
+        "${ENTRY_DEFAULTS_DIR}/01_stage_1st_base.env"
+        "${ENTRY_DEFAULTS_DIR}/02_stage_2nd_build.env"
+        "${ENTRY_DEFAULTS_DIR}/03_stage_3rd_sdk.env"
+        "${ENTRY_DEFAULTS_DIR}/04_stage_4th_proxy.env"
+        "${ENTRY_DEFAULTS_DIR}/05_stage_5th_runtime.env"
     )
     
     for defaults_file in "${defaults_files[@]}"; do

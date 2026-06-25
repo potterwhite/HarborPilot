@@ -115,7 +115,7 @@
 
 7. **平台配置使用 `${VAR}` 自引用**：如 `IMAGE_NAME="${PRODUCT_NAME}-dev-env"`。这是 bash 变量展开，在 `source` 时求值，不是模板占位符。
 
-8. **版本管理自动化**：`release-please` 通过 `x-release-please-version` 标记自动更新 `configs/1_defaults/00_project.env` 中的 `VERSION` 并维护 `CHANGELOG.md`。
+8. **版本管理自动化**：`release-please` 通过 `x-release-please-version` 标记自动更新 `configs/1_defaults/00_global.env` 中的 `VERSION` 并维护 `CHANGELOG.md`。
 
 9. **OS 特定条件判断至关重要**：Ubuntu 24.04 使用 DEB822 apt 格式。Ubuntu 20.04 需要 `libncurses5-dev` 而非 `libncurses-dev`。`bsdextrautils` 在 20.04 上不可用。24.04 上 UID 1000 已被占用。任何涉及包的代码都必须检查 OS_VERSION。
 
