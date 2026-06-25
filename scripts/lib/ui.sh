@@ -218,7 +218,7 @@ _show_config_menu() {
                 _create_host_config
                 read -p "  Build this host now? (y/N): " _build_choice
                 if [[ "${_build_choice}" =~ ^[yY]$ ]]; then
-                    _load_host_config "${LOCAL_HOSTNAME}"
+                    _load_host_config "$(basename "${HOST_CONFIG}" .env)"
                     _HARBOR_MODE="build"
                     break
                 fi
@@ -450,7 +450,7 @@ _select_host_config() {
         _create_host_config
         read -p "  Build this host now? (y/N): " _build_choice
         if [[ "${_build_choice}" =~ ^[yY]$ ]]; then
-            _load_host_config "${LOCAL_HOSTNAME}"
+            _load_host_config "$(basename "${HOST_CONFIG}" .env)"
         else
             echo "  → Build cancelled. You can build anytime by running './harbor'."
             _HARBOR_SKIP_BUILD=1
@@ -474,7 +474,7 @@ _select_host_config() {
         [[ -z "${base_platform}" ]] && base_platform="(legacy — no BASE_PLATFORM)"
 
         local marker=""
-        [[ "${host_name}" == "${LOCAL_HOSTNAME}" ]] && marker=" ← this machine"
+        [[ "${host_name}" == "${LOCAL_HOSTNAME}" || "${host_name}" == ${LOCAL_HOSTNAME}_* ]] && marker=" ← this machine"
         printf "  ║  [%d]  %-20s platform: %-24s%s║\n" "${idx}" "${host_name}" "${base_platform}" "${marker}"
         ((idx++))
     done
@@ -494,7 +494,7 @@ _select_host_config() {
         _create_host_config
         read -p "  Build this host now? (y/N): " _build_choice
         if [[ "${_build_choice}" =~ ^[yY]$ ]]; then
-            _load_host_config "${LOCAL_HOSTNAME}"
+            _load_host_config "$(basename "${HOST_CONFIG}" .env)"
         else
             echo "  → Build cancelled. You can build anytime by running './harbor'."
             _select_host_config
@@ -515,22 +515,35 @@ _select_host_config() {
 ################################################################################
 _create_host_config() {
     LOCAL_HOSTNAME=$(hostname)
-    HOST_CONFIG="${TOP_CONFIGS_DIR}/3_hosts/${LOCAL_HOSTNAME}.env"
     local TEMPLATE="${TOP_CONFIGS_DIR}/3_hosts/TEMPLATE.env.example"
     local total_questions=5  # Questions after platform selection
 
+    # Step 1: Select a base platform FIRST (determines filename)
     echo ""
     echo "  ╔══════════════════════════════════════════════════════════════════╗"
     echo "  ║                    Create Host Configuration                     ║"
     echo "  ╠══════════════════════════════════════════════════════════════════╣"
     echo "  ║                                                                  ║"
     printf "  ║  Hostname: %-52s║\n" "${LOCAL_HOSTNAME}"
-    printf "  ║  File:     %-52s║\n" "${HOST_CONFIG}"
     echo "  ║                                                                  ║"
-    echo "  ║  This will create a host-specific config file.                   ║"
-    echo "  ║You'll be guided through 1 platform + ${total_questions} settings.║"
+    echo "  ║  Step 1: Select a base platform for this host                    ║"
     echo "  ║                                                                  ║"
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
+    echo ""
+    local selected_platform=""
+    while true; do
+        if _pick_platform; then
+            selected_platform="${TARGET_PLATFORM}"
+            break
+        fi
+    done
+    echo "  → Selected platform: ${selected_platform}"
+
+    # Derive filename from hostname + platform
+    HOST_CONFIG="${TOP_CONFIGS_DIR}/3_hosts/${LOCAL_HOSTNAME}_${selected_platform}.env"
+
+    echo ""
+    printf "  ║  File:     %-52s║\n" "${HOST_CONFIG}"
     echo ""
 
     if [ -f "${HOST_CONFIG}" ]; then
@@ -549,23 +562,6 @@ _create_host_config() {
     fi
     cp "${TEMPLATE}" "${HOST_CONFIG}"
     echo "  → Copied template to ${HOST_CONFIG}"
-
-    # Step 1: Select a base platform
-    echo ""
-    echo "  ╔══════════════════════════════════════════════════════════════════╗"
-    echo "  ║                                                                  ║"
-    echo "  ║  Step 1: Select a base platform for this host                    ║"
-    echo "  ║                                                                  ║"
-    echo "  ╚══════════════════════════════════════════════════════════════════╝"
-    echo ""
-    local selected_platform=""
-    while true; do
-        if _pick_platform; then
-            selected_platform="${TARGET_PLATFORM}"
-            break
-        fi
-    done
-    echo "  → Selected platform: ${selected_platform}"
 
     # Now configure host-specific overrides with guided prompts
     echo ""
@@ -645,9 +641,9 @@ _create_host_config() {
     echo ""
     echo "  -----"
     echo ""
-    echo "  ✅ Host config created: ${LOCAL_HOSTNAME}.env"
+    echo "  ✅ Host config created: $(basename "${HOST_CONFIG}")"
     echo "  → File: ${HOST_CONFIG}"
-    echo "  → Auto-loaded when you run './harbor' on ${LOCAL_HOSTNAME}"
+    echo "  → Use: ./harbor --host $(basename "${HOST_CONFIG}" .env)"
     echo ""
 
     return 0

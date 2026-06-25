@@ -65,9 +65,13 @@ func_1_1_setup_env(){
     # Layer 2 + 3: Host-driven platform resolution
     # If host config declares BASE_PLATFORM, use that to determine the platform.
     # Otherwise fall back to the .env symlink (backward compatibility).
+    # If HOST_CONFIG is already set by the parent process (e.g. ./harbor --host),
+    # use it directly instead of re-deriving from hostname.
     # ------------------------------------------------------------------
-    LOCAL_HOSTNAME=$(hostname)
-    HOST_CONFIG="${CONFIGS_DIR}/3_hosts/${LOCAL_HOSTNAME}.env"
+    if [ -z "${HOST_CONFIG}" ]; then
+        LOCAL_HOSTNAME=$(hostname)
+        HOST_CONFIG="${CONFIGS_DIR}/3_hosts/${LOCAL_HOSTNAME}.env"
+    fi
 
     if [ -f "${HOST_CONFIG}" ]; then
         # Read BASE_PLATFORM without sourcing the whole file
