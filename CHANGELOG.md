@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0](https://github.com/potterwhite/HarborPilot/compare/v1.12.0...v1.13.0) (2026-06-25)
+
+
+### ✨ Added
+
+* **config:** add per-component install flags for stage_2 tools ([1362d17](https://github.com/potterwhite/HarborPilot/commit/1362d17530541c77e8e1ea1e4bb73a35a7073eb4))
+* **config:** add per-tool install flags for AI coding tools ([468a89a](https://github.com/potterwhite/HarborPilot/commit/468a89a27454d95475283c039076867ef46eb058))
+* **config:** AI tools toggles + defaults reorganization + template-based host creation ([18aed3b](https://github.com/potterwhite/HarborPilot/commit/18aed3be6d4657571b15058cc7437eee71eda6f9))
+
+
+### 🐛 Fixed
+
+* **build:** include Layer 3 host config in build-arg collection ([0572830](https://github.com/potterwhite/HarborPilot/commit/0572830d847a97573ad536c8eb4f91b0e2d834f0))
+* **build:** include Layer 3 host config in build-arg collection ([633f6a7](https://github.com/potterwhite/HarborPilot/commit/633f6a78ceb385e43389eaee338a94da04fbc18f))
+* **ui:** use TEMPLATE.env.example when creating host configs ([528bbdf](https://github.com/potterwhite/HarborPilot/commit/528bbdf1b5cc827ec11f37ef4f09656e0d1b5280))
+
 ## [1.12.0](https://github.com/potterwhite/HarborPilot/compare/v1.11.2...v1.12.0) (2026-06-24)
 
 
