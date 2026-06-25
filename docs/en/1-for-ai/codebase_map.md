@@ -7,7 +7,7 @@
 > **Maintenance rule:** Any AI agent that modifies a file listed here MUST update
 > the relevant section in this document in the same commit/session.
 >
-> Last updated: 2026-06-18 (defaults files renamed to stage-aligned names; merges applied)
+> Last updated: 2026-06-25 (Jetson Orin NX platform added; rv1126bp libs generalized)
 > **Related:** [中文版 →](../../zh/1-for-ai/codebase_map.md)
 
 ---
@@ -37,7 +37,9 @@ HarborPilot.git/
 │   │   ├── rk3568-rk3568_ubuntu-20.04.env        ←     PORT_SLOT=2, Ubuntu 20.04
 │   │   ├── rv1126-rv1126_ubuntu-22.04.env        ←     PORT_SLOT=3, Ubuntu 22.04
 │   │   ├── rk3568-rk3568_ubuntu-22.04.env        ←     PORT_SLOT=4, Ubuntu 22.04
-│   │   └── rk3588-rk3588s_ubuntu-24.04.env      ←     PORT_SLOT=5, Ubuntu 24.04, no NVIDIA
+│   │   ├── rk3588-rk3588s_ubuntu-24.04.env      ←     PORT_SLOT=5, Ubuntu 24.04, no NVIDIA
+│   │   ├── rk3588-rk3588s_ubuntu-20.04.env      ←     PORT_SLOT=6, Ubuntu 20.04
+│   │   └── jetson-orin-nx-16g-super_ubuntu-22.04.env ← PORT_SLOT=7, Ubuntu 22.04, Jetson cross-compile
 │   ├── hosts/                                  ←   Layer 3: host-level overrides (optional, gitignored)
 │   │   ├── .gitkeep                            ←     Keeps directory in git
 │   │   └── README.md                           ←     Usage documentation
@@ -220,6 +222,8 @@ Only override what differs. Required fields: `PRODUCT_NAME`, `OS_VERSION`, `OS_V
 | `rv1126-rv1126_ubuntu-22.04` | 3 | rv1126 | rv1126 | rv1126-rv1126_ubuntu-22-04 | 2139 | 2375 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
 | `rk3568-rk3568_ubuntu-22.04` | 4 | rk3568 | rk3568 | rk3568-rk3568_ubuntu-22-04 | 2149 | 2385 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
 | `rk3588-rk3588s_ubuntu-24.04` | 5 | rk3588 | rk3588s | rk3588-rk3588s_ubuntu-24-04 | 2159 | 2395 | 24.04 | — | ✅ | ✅ 192.168.3.67 |
+| `rk3588-rk3588s_ubuntu-20.04` | 6 | rk3588 | rk3588s | rk3588-rk3588s_ubuntu-20-04 | 2169 | 2405 | 20.04 | — | — | — |
+| `jetson-orin-nx-16g-super_ubuntu-22.04` | 7 | jetson | orin-nx-16g-super | jetson-orin-nx-16g-super_ubuntu-22-04 | 2179 | 2415 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
 
 ### `configs/platform_schema.json`
 JSON Schema for platform `.env` validation. Required: `PRODUCT_NAME`, `OS_VERSION`, `OS_VERSION_ID`, `PORT_SLOT`. Defines enums (OS_VERSION: 20.04/22.04/24.04/11/12), ranges (PORT_SLOT: 0–99), patterns (PRODUCT_NAME: `[a-zA-Z0-9_-]+`). Conditional: if `HAVE_GITLAB_SERVER=TRUE` → requires `GITLAB_SERVER_IP` + `GITLAB_SERVER_PORT`. `additionalProperties: true`.

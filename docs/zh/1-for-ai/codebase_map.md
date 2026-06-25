@@ -6,7 +6,7 @@
 >
 > **维护规则：** 任何修改本文中所列文件的 AI Agent，必须在同一次提交/会话中更新本文档的相关章节。
 >
-> 最后更新：2026-06-18（默认文件重命名为阶段对齐名称；已应用合并）
+> 最后更新：2026-06-25（新增 Jetson Orin NX 平台；rv1126bp 库已通用化）
 > **Related:** [English Version →](../../en/1-for-ai/codebase_map.md)
 
 ---
@@ -36,7 +36,9 @@ HarborPilot.git/
 │   │   ├── rk3568-rk3568_ubuntu-20.04.env        ←     PORT_SLOT=2，Ubuntu 20.04
 │   │   ├── rv1126-rv1126_ubuntu-22.04.env        ←     PORT_SLOT=3，Ubuntu 22.04
 │   │   ├── rk3568-rk3568_ubuntu-22.04.env        ←     PORT_SLOT=4，Ubuntu 22.04
-│   │   └── rk3588-rk3588s_ubuntu-24.04.env      ←     PORT_SLOT=5，Ubuntu 24.04，无 NVIDIA
+│   │   ├── rk3588-rk3588s_ubuntu-24.04.env      ←     PORT_SLOT=5，Ubuntu 24.04，无 NVIDIA
+│   │   ├── rk3588-rk3588s_ubuntu-20.04.env      ←     PORT_SLOT=6，Ubuntu 20.04
+│   │   └── jetson-orin-nx-16g-super_ubuntu-22.04.env ← PORT_SLOT=7，Ubuntu 22.04，Jetson 交叉编译
 │   ├── hosts/                                  ←   Layer 3：主机级覆盖（可选，gitignore）
 │   │   ├── .gitkeep                            ←     保留目录
 │   │   └── README.md                           ←     使用说明
@@ -220,6 +222,8 @@ mcp/
 | `rv1126-rv1126_ubuntu-22.04` | 3 | rv1126 | rv1126 | rv1126-rv1126_ubuntu-22.04 | 2139 | 2375 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
 | `rk3568-rk3568_ubuntu-22.04` | 4 | rk3568 | rk3568 | rk3568-rk3568_ubuntu-22.04 | 2149 | 2385 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
 | `rk3588-rk3588s_ubuntu-24.04` | 5 | rk3588 | rk3588s | rk3588-rk3588s_ubuntu-24.04 | 2159 | 2395 | 24.04 | — | ✅ | ✅ 192.168.3.67 |
+| `rk3588-rk3588s_ubuntu-20.04` | 6 | rk3588 | rk3588s | rk3588-rk3588s_ubuntu-20.04 | 2169 | 2405 | 20.04 | — | — | — |
+| `jetson-orin-nx-16g-super_ubuntu-22.04` | 7 | jetson | orin-nx-16g-super | jetson-orin-nx-16g-super_ubuntu-22.04 | 2179 | 2415 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
 
 ### `configs/platform_schema.json`
 平台 `.env` 验证 JSON Schema。必填：`PRODUCT_NAME`、`OS_VERSION`、`PORT_SLOT`。定义枚举（OS_VERSION：20.04/22.04/24.04/11/12）、范围（PORT_SLOT：0–99）、模式（PRODUCT_NAME：`[a-zA-Z0-9_-]+`）。条件约束：若 `HAVE_GITLAB_SERVER=TRUE` → 需要 `GITLAB_SERVER_IP` + `GITLAB_SERVER_PORT`。`additionalProperties: true`。
