@@ -209,14 +209,18 @@ fourth_install_doc_tools() {
 # Description: Version control and development utilities installation
 ###############################################################################
 fifth_install_vcs_tools() {
+    # git and git-lfs are always installed (dependencies for SDK, gitlfs_tracker, etc.)
     apt-get install -y \
         git \
-        git-lfs \
-        bash-completion
+        git-lfs
 
-    # Configure git completion for both root and dev user
-    for user_home in "/root" "/home/${DEV_USERNAME}"; do
-        tee -a "${user_home}/.bashrc" > /dev/null << EOF
+    # bash-completion is optional
+    if [[ "${INSTALL_VCS_TOOLS}" == "true" ]]; then
+        apt-get install -y bash-completion
+
+        # Configure git completion for both root and dev user
+        for user_home in "/root" "/home/${DEV_USERNAME}"; do
+            tee -a "${user_home}/.bashrc" > /dev/null << EOF
 # Enable git completion
 source /usr/share/bash-completion/completions/git
 
@@ -225,7 +229,10 @@ if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
     . /etc/bash_completion
 fi
 EOF
-    done
+        done
+    else
+        echo "--- Skipping bash-completion (INSTALL_VCS_TOOLS=${INSTALL_VCS_TOOLS}) ---"
+    fi
 }
 
 ###############################################################################
@@ -507,20 +514,56 @@ nintyninth_cleanup() {
 # Description: Execute all installation steps in order
 ###############################################################################
 main() {
+    # Core build tools — always installed (dependency for OpenCV, SDK, etc.)
     first_install_core_tools
-    second_install_dev_tools
-    third_config_minicom
-    fourth_install_doc_tools
-    fifth_install_vcs_tools
-    sixth_install_kernel_tools
 
+    # Dev/debug tools: gdb, valgrind, clang, cppcheck, minicom, repo
+    if [[ "${INSTALL_DEV_TOOLS}" == "true" ]]; then
+        second_install_dev_tools
+    else
+        echo "--- Skipping dev tools (INSTALL_DEV_TOOLS=${INSTALL_DEV_TOOLS}) ---"
+    fi
+
+    # Minicom serial port config files
+    if [[ "${INSTALL_MINICOM_CONFIG}" == "true" ]]; then
+        third_config_minicom
+    else
+        echo "--- Skipping minicom config (INSTALL_MINICOM_CONFIG=${INSTALL_MINICOM_CONFIG}) ---"
+    fi
+
+    # Documentation tools: doxygen, graphviz (man pages controlled by INSTALL_MAN_DOC)
+    if [[ "${INSTALL_DOC_TOOLS}" == "true" ]]; then
+        fourth_install_doc_tools
+    else
+        echo "--- Skipping doc tools (INSTALL_DOC_TOOLS=${INSTALL_DOC_TOOLS}) ---"
+    fi
+
+    # VCS tools: git, git-lfs, bash-completion
+    # git/git-lfs are always installed (dependency for SDK, gitlfs_tracker).
+    # bash-completion is controlled by INSTALL_VCS_TOOLS.
+    fifth_install_vcs_tools
+
+    # Kernel development tools: dtc, liblz4, bison, flex, texinfo, ctags, cscope, ncurses
+    if [[ "${INSTALL_KERNEL_TOOLS}" == "true" ]]; then
+        sixth_install_kernel_tools
+    else
+        echo "--- Skipping kernel tools (INSTALL_KERNEL_TOOLS=${INSTALL_KERNEL_TOOLS}) ---"
+    fi
+
+    # Node.js — always installed (dependency for AI coding tools)
     if ! seventh_install_nodejs; then
         echo "Critical: Node.js environment setup failed. Exiting..."
         exit 1
     fi
 
-    eighth_install_python_packages
+    # Python packages: cmake-format, pre-commit
+    if [[ "${INSTALL_PYTHON_PACKAGES}" == "true" ]]; then
+        eighth_install_python_packages
+    else
+        echo "--- Skipping Python packages (INSTALL_PYTHON_PACKAGES=${INSTALL_PYTHON_PACKAGES}) ---"
+    fi
 
+    # AI coding tools: Codex, Claude Code, OpenCode (each has its own flag)
     ninth_install_ai_tools
 
     #------------------------------
