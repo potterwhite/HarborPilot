@@ -58,7 +58,7 @@ ARG DOCKER_BUILDKIT
 ARG BUILD_DATE
 
 # -----------------------------------------------------------------------------
-# Development Tools Configuration (10 arguments)
+# Development Tools Configuration (13 arguments)
 # -----------------------------------------------------------------------------
 ARG INSTALL_CUDA
 ARG INSTALL_OPENCV
@@ -70,6 +70,11 @@ ARG CMAKE_FORMAT_VERSION
 ARG PRE_COMMIT_VERSION
 ARG CUDA_VERSION
 ARG OPENCV_VERSION
+
+# ── stage_2nd_tools: AI Coding Tools ────────────────────────────────────────
+ARG INSTALL_CODEX
+ARG INSTALL_CLAUDE_CODE
+ARG INSTALL_OPENCODE
 
 # -----------------------------------------------------------------------------
 # Workspace Configuration (16 arguments)
@@ -208,6 +213,9 @@ ENV WORKSPACE_ROOT=${WORKSPACE_ROOT} \
     INSTALL_HOST_CMAKE=${INSTALL_HOST_CMAKE} \
     INSTALL_MAN_DOC=${INSTALL_MAN_DOC} \
     NPM_USE_CHINA_MIRROR=${NPM_USE_CHINA_MIRROR} \
+    INSTALL_CODEX=${INSTALL_CODEX} \
+    INSTALL_CLAUDE_CODE=${INSTALL_CLAUDE_CODE} \
+    INSTALL_OPENCODE=${INSTALL_OPENCODE} \
     CONAN_VERSION=${CONAN_VERSION} \
     CMAKE_FORMAT_VERSION=${CMAKE_FORMAT_VERSION} \
     PRE_COMMIT_VERSION=${PRE_COMMIT_VERSION} \

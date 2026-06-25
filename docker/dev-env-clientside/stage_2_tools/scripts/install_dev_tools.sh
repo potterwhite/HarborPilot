@@ -441,38 +441,50 @@ ninth_install_ai_tools() {
     npm config set prefix /usr/local
 
     # ── 1. OpenAI Codex ───────────────────────────────────────────────────────
-    echo "--- Installing OpenAI Codex ---"
-    if npm i -g @openai/codex; then
-        echo "OpenAI Codex installed: $(codex --version 2>/dev/null || echo 'ok')"
+    if [[ "${INSTALL_CODEX}" == "true" ]]; then
+        echo "--- Installing OpenAI Codex ---"
+        if npm i -g @openai/codex; then
+            echo "OpenAI Codex installed: $(codex --version 2>/dev/null || echo 'ok')"
+        else
+            echo "Warning: Failed to install OpenAI Codex, continuing anyway..."
+        fi
     else
-        echo "Warning: Failed to install OpenAI Codex, continuing anyway..."
+        echo "--- Skipping OpenAI Codex (INSTALL_CODEX=${INSTALL_CODEX}) ---"
     fi
 
     # ── 2. Claude Code ────────────────────────────────────────────────────────
-    echo "--- Installing Claude Code ---"
-    if npm install -g @anthropic-ai/claude-code; then
-        echo "Claude Code installed: $(claude --version 2>/dev/null || echo 'ok')"
+    if [[ "${INSTALL_CLAUDE_CODE}" == "true" ]]; then
+        echo "--- Installing Claude Code ---"
+        if npm install -g @anthropic-ai/claude-code; then
+            echo "Claude Code installed: $(claude --version 2>/dev/null || echo 'ok')"
+        else
+            echo "Warning: Failed to install Claude Code, continuing anyway..."
+        fi
     else
-        echo "Warning: Failed to install Claude Code, continuing anyway..."
+        echo "--- Skipping Claude Code (INSTALL_CLAUDE_CODE=${INSTALL_CLAUDE_CODE}) ---"
     fi
 
     # ── 3. OpenCode ───────────────────────────────────────────────────────────
     # The official installer respects $HOME; redirect it to /usr/local so the
     # binary lands in /usr/local/.opencode/bin/ — a root-owned system path
     # accessible to all users. Then symlink into /usr/local/bin/.
-    echo "--- Installing OpenCode ---"
-    local opencode_install_home="/usr/local"
-    local opencode_bin="${opencode_install_home}/.opencode/bin/opencode"
-    if HOME="${opencode_install_home}" curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path; then
-        if [[ -f "${opencode_bin}" ]]; then
-            chmod 755 "${opencode_bin}"
-            ln -sf "${opencode_bin}" /usr/local/bin/opencode
-            echo "OpenCode installed: $(opencode --version 2>/dev/null || echo 'ok')"
+    if [[ "${INSTALL_OPENCODE}" == "true" ]]; then
+        echo "--- Installing OpenCode ---"
+        local opencode_install_home="/usr/local"
+        local opencode_bin="${opencode_install_home}/.opencode/bin/opencode"
+        if HOME="${opencode_install_home}" curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path; then
+            if [[ -f "${opencode_bin}" ]]; then
+                chmod 755 "${opencode_bin}"
+                ln -sf "${opencode_bin}" /usr/local/bin/opencode
+                echo "OpenCode installed: $(opencode --version 2>/dev/null || echo 'ok')"
+            else
+                echo "Warning: opencode binary not found at ${opencode_bin} after install"
+            fi
         else
-            echo "Warning: opencode binary not found at ${opencode_bin} after install"
+            echo "Warning: Failed to install OpenCode, continuing anyway..."
         fi
     else
-        echo "Warning: Failed to install OpenCode, continuing anyway..."
+        echo "--- Skipping OpenCode (INSTALL_OPENCODE=${INSTALL_OPENCODE}) ---"
     fi
 
     echo ""
