@@ -369,31 +369,6 @@ COPY --from=stage_3rd_template-processor /tmp/scripts/analyze_dir_structure.sh /
 # Git analysis script
 RUN chmod +x /usr/local/bin/analyze_dir_structure.sh
 
-# Verify the processed scripts
-RUN echo -e "\n\n----------------1st----------------" && \
-    ls -lha /usr/local/bin/verify_ssh_key.sh && \
-    cat /usr/local/bin/verify_ssh_key.sh
-
-RUN echo -e "\n\n----------------2nd----------------" && \
-    ls -lha /usr/local/bin/pull_sdk.sh && \
-    cat /usr/local/bin/pull_sdk.sh
-
-RUN echo -e "\n\n----------------3rd----------------" && \
-    ls -lha /usr/local/bin/push_sdk.sh && \
-    cat /usr/local/bin/push_sdk.sh
-
-RUN echo -e "\n\n----------------4th----------------" && \
-    ls -lha /usr/local/bin/version_of_dev_env.sh && \
-    cat /usr/local/bin/version_of_dev_env.sh
-
-RUN echo -e "\n\n----------------5th----------------" && \
-    ls -lha /tmp/sdk_config.conf && \
-    cat /tmp/sdk_config.conf
-
-RUN echo -e "\n\n----------------6th----------------" && \
-    ls -lha /tmp/install_sdk.sh && \
-    cat /tmp/install_sdk.sh
-
 # Install SDK
 # RUN /tmp/install_sdk.sh
 RUN /tmp/install_sdk.sh
