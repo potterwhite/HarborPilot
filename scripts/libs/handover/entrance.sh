@@ -76,8 +76,8 @@ _ensure_host_config() {
     done
 
     # First run — create host config interactively
-    # _create_host_config() sets HOST_CONFIG internally
-    _create_host_config
+    # Pass local volume/ as default so user can just press Enter
+    _create_host_config "${BUILD_SCRIPT_DIR}/volume"
 }
 
 ################################################################################

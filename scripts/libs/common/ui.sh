@@ -569,15 +569,16 @@ _create_host_config() {
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
 
     # Question 1: HOST_VOLUME_DIR (required — no universal default)
+    local default_volume_dir="${1:-/mnt/ssd/docker-volumes/\${PRODUCT_NAME}}"
     local host_volume_dir=""
     echo ""
     echo "  (1/${total_questions}) Docker volumes directory on this host"
     echo "      This is where container volumes are stored."
-    echo "      Recommended: /mnt/ssd/docker-volumes/\${PRODUCT_NAME}"
+    echo "      Default: ${default_volume_dir}"
     echo ""
-    read -p "  Enter HOST_VOLUME_DIR path: " host_volume_dir
+    read -p "  Enter HOST_VOLUME_DIR path [${default_volume_dir}]: " host_volume_dir
     if [ -z "${host_volume_dir}" ]; then
-        host_volume_dir="/mnt/ssd/docker-volumes/\${PRODUCT_NAME}"
+        host_volume_dir="${default_volume_dir}"
         echo "  → Using default: ${host_volume_dir}"
     else
         echo "  → Volume dir set to: ${host_volume_dir}"
