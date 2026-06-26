@@ -35,7 +35,7 @@ _has_slot=""
 _has_explicit=""
 _explicit_list=""
 
-if [[ -n "${PORT_SLOT+set}" ]]; then
+if [[ -n "${PORT_SLOT+set}" && "${PORT_SLOT}" != "0" ]]; then
     _has_slot=1
 fi
 
@@ -48,6 +48,8 @@ for _var in CLIENT_SSH_PORT GDB_PORT; do
 done
 
 # ─── Validate: reject mixed mode ────────────────────────────────────────────
+# PORT_SLOT=0 in Layer 1 defaults is a placeholder — treat as "not set".
+# Only flag conflict when PORT_SLOT is non-zero (i.e. explicitly chosen by platform).
 if [[ -n "${_has_slot}" && -n "${_has_explicit}" ]]; then
     echo ""
     echo "  =================================================================="
