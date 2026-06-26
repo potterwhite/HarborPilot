@@ -30,11 +30,11 @@
 # =============================================================================
 compose_generator_4th_1st_ensure_volumes_dir() {
     if [ -z "${VOLUMES_DIR}" ]; then
-        local volumes_link="${BUILD_SCRIPT_DIR}/volumes"
-        if [ -L "${volumes_link}" ] && [ -e "${volumes_link}" ]; then
-            export VOLUMES_DIR="$(realpath "${volumes_link}")"
+        local volume_dir="${BUILD_SCRIPT_DIR}/volume"
+        if [ -e "${volume_dir}" ]; then
+            export VOLUMES_DIR="$(realpath "${volume_dir}")"
         else
-            utils_print_error "VOLUMES_DIR is not set and volumes symlink is not available"
+            utils_print_error "VOLUMES_DIR is not set and volume/ directory is not available"
             return 1
         fi
     fi

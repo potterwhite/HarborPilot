@@ -41,7 +41,7 @@
 #           │   ├── 1_defaults/   (global defaults)
 #           │   ├── 2_platforms/  (selected platform only)
 #           │   └── 3_hosts/      (template only)
-#           └── volumes/
+#           └── volume/
 #
 # The handover is fully self-contained — no external scripts/lib/config.sh
 # or scripts/port_calc.sh are included.  Config loading logic is
@@ -82,7 +82,7 @@
     local stage="${tmp_dir}/${pkg_dirname}"
 
     mkdir -p "${stage}/clientside/ubuntu"
-    mkdir -p "${stage}/clientside/volumes"
+    mkdir -p "${stage}/clientside/volume"
     mkdir -p "${stage}/clientside/ubuntu/configs/1_defaults"
     mkdir -p "${stage}/clientside/ubuntu/configs/2_platforms"
     mkdir -p "${stage}/clientside/ubuntu/configs/3_hosts"
@@ -93,6 +93,7 @@
         "${stage}/clientside/" 2>/dev/null || \
     cp -r "${HANDOVER_DIR}/clientside/ubuntu" \
           "${stage}/clientside/"
+    rm -f "${stage}/clientside/ubuntu/volume"
     rm -f "${stage}/clientside/ubuntu/volumes"
     rm -f "${stage}/clientside/ubuntu/docker-compose.yaml"
 
@@ -106,8 +107,8 @@
     # Remove any stray .md from configs (e.g. host README)
     find "${stage}/clientside/ubuntu/configs" -name "*.md" -delete
 
-    # 3. Volumes placeholder
-    touch "${stage}/clientside/volumes/.gitkeep"
+    # 3. Volume placeholder (gitkeep so git tracks the empty dir)
+    touch "${stage}/clientside/volume/.gitkeep"
 
     # 4. README at root (first thing teammate sees)
     if [ -f "${HANDOVER_DIR}/README_handover.md" ]; then

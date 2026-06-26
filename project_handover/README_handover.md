@@ -44,11 +44,15 @@ nano clientside/ubuntu/configs/3_hosts/$(hostname).env
 project_handover_*/
 ├── README_handover.md                 # 本文件
 ├── ubuntu_only_entrance.sh            # 入口脚本（symlink）
-└── clientside/ubuntu/
-    ├── ubuntu_only_entrance.sh        # 实际入口
-    ├── scripts/                       # 管理脚本
-    └── configs/
-        ├── 1_defaults/                # 默认配置（勿改）
-        ├── 2_platforms/               # 平台配置（勿改）
-        └── 3_hosts/                   # 主机配置（你的配置在这里）
+├── clientside/
+│   ├── ubuntu/
+│   │   ├── ubuntu_only_entrance.sh    # 实际入口
+│   │   ├── scripts/                   # 管理脚本
+│   │   └── configs/
+│   │       ├── 1_defaults/            # 默认配置（勿改）
+│   │       ├── 2_platforms/           # 平台配置（勿改）
+│   │       └── 3_hosts/               # 主机配置（你的配置在这里）
+│   └── volume/                        # 容器工作目录（持久化存储）
 ```
+
+**关于 volume：** `clientside/volume/` 是容器工作目录的默认存储位置。首次启动时脚本会自动创建，无需额外配置。如果需要使用其他路径（如大容量磁盘），首次运行时输入自定义路径即可，脚本会自动创建 symlink。

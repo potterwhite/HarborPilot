@@ -94,9 +94,11 @@ env_loader_1st_3rd_ensure_host_config() {
     fi
 
     # Ask 3 key questions with defaults
+    # Default: use the local volume/ directory (no symlink needed)
+    local default_volume_dir="${BUILD_SCRIPT_DIR}/../volume"
     local host_volume_dir
-    read -p "  Host volume dir [/opt/harborpilot/volumes]: " host_volume_dir
-    host_volume_dir="${host_volume_dir:-/opt/harborpilot/volumes}"
+    read -p "  Host volume dir [${default_volume_dir}]: " host_volume_dir
+    host_volume_dir="${host_volume_dir:-${default_volume_dir}}"
     sed -i "s|^# HOST_VOLUME_DIR=.*|HOST_VOLUME_DIR=\"${host_volume_dir}\"|" "${host_config}"
 
     local use_gpu

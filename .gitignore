@@ -97,13 +97,13 @@ project_handover/clientside/ubuntu/docker-compose.yaml
 # 7. Symlinks & Auto-created Directories
 # =============================================================================
 
-# ubuntu/volumes — symlink auto-created by 03_volumes_init.sh
+# ubuntu/volume — symlink auto-created by 03_volumes_init.sh
 # Created 2024-11 — points to host-specific volume paths
-project_handover/clientside/ubuntu/volumes
+project_handover/clientside/ubuntu/volume
 
-# clientside/volumes/ — staging dir created by 7_package_handover
+# clientside/volume/ — staging dir created by 7_package_handover
 # Created 2026-06 — temp space during tarball packaging
-project_handover/clientside/volumes
+project_handover/clientside/volume
 
 
 # =============================================================================

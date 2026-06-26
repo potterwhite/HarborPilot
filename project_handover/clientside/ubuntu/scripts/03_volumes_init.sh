@@ -22,100 +22,84 @@
 
 ################################################################################
 # File: 03_volumes_init.sh
-# Description: Volumes directory symlink auto-initialization
-#              Creates/repairs volumes symlink automatically when missing or broken
+# Description: Volume directory initialization
+#              Default: use local volume/ directly (zero-config).
+#              Custom:  create symlink from volume/ to user-specified path.
 ################################################################################
 
 # =============================================================================
-# 3rd_group_1st_branch: Check if volumes symlink is valid
+# 3rd_group_1st_branch: Check if volume directory is ready
 # =============================================================================
-volumes_init_3rd_1st_check_symlink() {
-    # Use BUILD_SCRIPT_DIR from env_loader if available
-    local volumes_link="${BUILD_SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}/volumes"
-    
-    if [ -L "${volumes_link}" ] && [ -e "${volumes_link}" ]; then
-        export VOLUMES_DIR="$(realpath "${volumes_link}")"
+volumes_init_3rd_1st_check() {
+    local volume_link="${BUILD_SCRIPT_DIR}/volume"
+
+    # Already a valid symlink or directory
+    if [ -e "${volume_link}" ]; then
+        export VOLUMES_DIR="$(realpath "${volume_link}")"
         return 0
     fi
     return 1
 }
 
 # =============================================================================
-# 3rd_group_2nd_branch: Create volumes symlink with auto-detection
+# 3rd_group_2nd_branch: Initialize volume directory
 # =============================================================================
-volumes_init_3rd_2nd_create_symlink() {
-    local volumes_link="${BUILD_SCRIPT_DIR}/volumes"
-    local volumes_target="${HOST_VOLUME_DIR}"
-    
-    if [ -z "${volumes_target}" ]; then
-        utils_print_error "HOST_VOLUME_DIR is not set. Cannot create volumes symlink."
+volumes_init_3rd_2nd_init() {
+    local volume_link="${BUILD_SCRIPT_DIR}/volume"
+    local target="${HOST_VOLUME_DIR}"
+
+    if [ -z "${target}" ]; then
+        utils_print_error "HOST_VOLUME_DIR is not set."
         return 1
     fi
-    
-    if [ -L "${volumes_link}" ]; then
-        rm -f "${volumes_link}"
+
+    # Resolve target to absolute path for comparison
+    local abs_target
+    abs_target="$(cd -P "${BUILD_SCRIPT_DIR}/.." 2>/dev/null && pwd)/volume"
+    local target_resolved
+    target_resolved="$(cd -P "${target}" 2>/dev/null && pwd)" || target_resolved="${target}"
+
+    # If target is the local volume/ directory — just create it, no symlink
+    if [ "${target_resolved}" = "${abs_target}" ]; then
+        if [ ! -d "${volume_link}" ]; then
+            mkdir -p "${volume_link}"
+            utils_print_success "Created volume directory: ${volume_link}"
+        fi
+        export VOLUMES_DIR="${volume_link}"
+        return 0
     fi
-    
-    if [ ! -d "${volumes_target}" ]; then
-        utils_print_warning "Volumes directory does not exist: ${volumes_target}"
+
+    # Custom path — create symlink
+    if [ ! -d "${target}" ]; then
+        utils_print_warning "Volume directory does not exist: ${target}"
         if utils_prompt_yes_no "Create it automatically?"; then
-            if mkdir -p "${volumes_target}"; then
-                utils_print_success "Created volumes directory: ${volumes_target}"
-            else
-                utils_print_error "Failed to create volumes directory: ${volumes_target}"
-                return 1
-            fi
+            mkdir -p "${target}" || { utils_print_error "Failed to create: ${target}"; return 1; }
+            utils_print_success "Created: ${target}"
         else
-            utils_print_error "Cannot proceed without volumes directory"
+            utils_print_error "Cannot proceed without volume directory"
             return 1
         fi
     fi
-    
-    if ln -sf "${volumes_target}" "${volumes_link}"; then
-        export VOLUMES_DIR="$(realpath "${volumes_link}")"
-        utils_print_success "Created volumes symlink: ${volumes_link} -> ${volumes_target}"
+
+    # Remove existing file/symlink at volume_link
+    rm -f "${volume_link}"
+
+    if ln -sf "${target}" "${volume_link}"; then
+        export VOLUMES_DIR="$(realpath "${volume_link}")"
+        utils_print_success "Linked: ${volume_link} -> ${target}"
         return 0
     else
-        utils_print_error "Failed to create volumes symlink"
+        utils_print_error "Failed to create symlink"
         return 1
     fi
 }
 
 # =============================================================================
-# 3rd_group_3rd_branch: Repair broken symlink
-# =============================================================================
-volumes_init_3rd_3rd_repair_symlink() {
-    local volumes_link="${BUILD_SCRIPT_DIR}/volumes"
-    
-    utils_print_warning "Volumes symlink is broken: ${volumes_link}"
-    
-    if utils_prompt_yes_no "Repair symlink using HOST_VOLUME_DIR (${HOST_VOLUME_DIR})?"; then
-        rm -f "${volumes_link}"
-        if ln -sf "${HOST_VOLUME_DIR}" "${volumes_link}"; then
-            export VOLUMES_DIR="$(realpath "${volumes_link}")"
-            utils_print_success "Repaired volumes symlink"
-            return 0
-        else
-            utils_print_error "Failed to repair volumes symlink"
-            return 1
-        fi
-    else
-        utils_print_error "Cannot proceed with broken symlink"
-        return 1
-    fi
-}
-
-# =============================================================================
-# 3rd_group: Master function - initialize volumes if needed
+# 3rd_group: Master function - initialize volume if needed
 # =============================================================================
 volumes_init_3rd_init_if_needed() {
-    if volumes_init_3rd_1st_check_symlink; then
+    if volumes_init_3rd_1st_check; then
         return 0
     fi
-    
-    if [ -L "${BUILD_SCRIPT_DIR}/volumes" ]; then
-        volumes_init_3rd_3rd_repair_symlink
-    else
-        volumes_init_3rd_2nd_create_symlink
-    fi
+    volumes_init_3rd_2nd_init
 }
