@@ -96,10 +96,10 @@ main() {
     done
 
     ##################################################################
-    # Host configuration (only for build mode)
+    # Host configuration (build and package modes need it)
     ##################################################################
     _HARBOR_SKIP_BUILD=0
-    if [ "${_HARBOR_MODE}" = "build" ]; then
+    if [ "${_HARBOR_MODE}" = "build" ] || [ "${_HARBOR_MODE}" = "package" ]; then
         if [ -n "${CLI_HOST}" ]; then
             _load_host_config "${CLI_HOST}"
         else
