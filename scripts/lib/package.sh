@@ -28,12 +28,24 @@
 ################################################################################
 # 7. Package handover for client delivery
 #
-# Creates a self-contained tarball with:
-#   - configs/1_defaults/         (global defaults)
-#   - configs/2_platforms/<name>  (selected platform only)
-#   - configs/3_hosts/            (template + README only)
-#   - project_handover/           (entrance scripts)
-#   - scripts/                    (port_calc.sh + lib/config.sh)
+# Creates a self-contained tarball.  Layout after extraction:
+#
+#   project_handover_<platform>_v<version>/
+#   ├── README_handover.md
+#   ├── ubuntu_only_entrance.sh -> clientside/ubuntu/ubuntu_only_entrance.sh
+#   └── clientside/
+#       └── ubuntu/
+#           ├── ubuntu_only_entrance.sh
+#           ├── scripts/          (handover scripts, self-contained)
+#           ├── configs/
+#           │   ├── 1_defaults/   (global defaults)
+#           │   ├── 2_platforms/  (selected platform only)
+#           │   └── 3_hosts/      (template only)
+#           └── volumes/
+#
+# The handover is fully self-contained — no external scripts/lib/config.sh
+# or scripts/port_calc.sh are included.  Config loading logic is
+# internalised in 01_env_loader.sh.
 #
 # The tarball is placed in the output/ directory (gitignored).
 ################################################################################
@@ -66,53 +78,49 @@
     # ── Assemble archive in a temp staging directory ──────────────────────────
     local tmp_dir
     tmp_dir="$(mktemp -d)"
-    local stage="${tmp_dir}/stage"
+    local pkg_dirname="project_handover_${base_platform}_v${version}"
+    local stage="${tmp_dir}/${pkg_dirname}"
 
-    mkdir -p "${stage}/project_handover/clientside/volumes"
-    mkdir -p "${stage}/configs/1_defaults"
-    mkdir -p "${stage}/configs/2_platforms"
-    mkdir -p "${stage}/configs/3_hosts"
-    mkdir -p "${stage}/scripts/lib"
+    mkdir -p "${stage}/clientside/ubuntu"
+    mkdir -p "${stage}/clientside/volumes"
+    mkdir -p "${stage}/clientside/ubuntu/configs/1_defaults"
+    mkdir -p "${stage}/clientside/ubuntu/configs/2_platforms"
+    mkdir -p "${stage}/clientside/ubuntu/configs/3_hosts"
 
-    # 1. Copy ubuntu client directory
+    # 1. Copy ubuntu client scripts
     cp -rL --no-dereference \
         "${HANDOVER_DIR}/clientside/ubuntu" \
-        "${stage}/project_handover/clientside/ubuntu" 2>/dev/null || \
+        "${stage}/clientside/" 2>/dev/null || \
     cp -r "${HANDOVER_DIR}/clientside/ubuntu" \
-          "${stage}/project_handover/clientside/ubuntu"
-    rm -f "${stage}/project_handover/clientside/ubuntu/volumes"
-    rm -f "${stage}/project_handover/clientside/ubuntu/docker-compose.yaml"
+          "${stage}/clientside/"
+    rm -f "${stage}/clientside/ubuntu/volumes"
+    rm -f "${stage}/clientside/ubuntu/docker-compose.yaml"
 
-    # 2. Preserve volumes/.gitkeep placeholder
-    touch "${stage}/project_handover/clientside/volumes/.gitkeep"
+    # 2. Copy config layers into clientside/ubuntu/configs/
+    cp "${TOP_CONFIGS_DIR}/1_defaults/"*.env \
+        "${stage}/clientside/ubuntu/configs/1_defaults/"
+    cp "${platform_env}" \
+        "${stage}/clientside/ubuntu/configs/2_platforms/${base_platform}.env"
+    cp "${TOP_CONFIGS_DIR}/3_hosts/TEMPLATE.env.example" \
+        "${stage}/clientside/ubuntu/configs/3_hosts/"
+    # Remove any stray .md from configs (e.g. host README)
+    find "${stage}/clientside/ubuntu/configs" -name "*.md" -delete
 
-    # 3. Copy configs/1_defaults (all .env files)
-    cp "${TOP_CONFIGS_DIR}/1_defaults/"*.env "${stage}/configs/1_defaults/"
+    # 3. Volumes placeholder
+    touch "${stage}/clientside/volumes/.gitkeep"
 
-    # 4. Copy only the selected platform config
-    cp "${platform_env}" "${stage}/configs/2_platforms/${base_platform}.env"
-
-    # 5. Copy host config template + README (not actual host configs)
-    cp "${TOP_CONFIGS_DIR}/3_hosts/TEMPLATE.env.example" "${stage}/configs/3_hosts/"
-    cp "${TOP_CONFIGS_DIR}/3_hosts/README.md" "${stage}/configs/3_hosts/"
-
-    # 6. Copy shared scripts
-    cp "${TOP_ROOT_DIR}/scripts/port_calc.sh" "${stage}/scripts/"
-    cp "${TOP_ROOT_DIR}/scripts/lib/config.sh" "${stage}/scripts/lib/"
-
-    # 7. Copy handover README (Chinese)
+    # 4. README at root (first thing teammate sees)
     if [ -f "${HANDOVER_DIR}/README_handover.md" ]; then
-        cp "${HANDOVER_DIR}/README_handover.md" "${stage}/project_handover/"
+        cp "${HANDOVER_DIR}/README_handover.md" "${stage}/"
     fi
 
-    # ── Create the final tarball ─────────────────────────────────────────────
-    tar -czf "${archive_name}" \
-        -C "${stage}" \
-        "project_handover" \
-        "configs" \
-        "scripts"
+    # 5. Symlink: root-level ubuntu_only_entrance.sh
+    ln -sf clientside/ubuntu/ubuntu_only_entrance.sh \
+        "${stage}/ubuntu_only_entrance.sh"
 
-    # Clean up staging area
+    # ── Create the final tarball ─────────────────────────────────────────────
+    tar -czf "${archive_name}" -C "${tmp_dir}" "${pkg_dirname}"
+
     rm -rf "${tmp_dir}"
 
     if [ ! -f "${archive_name}" ]; then
@@ -136,8 +144,9 @@
     echo "  ║  Deliver this tarball to the client Ubuntu host, then:          ║"
     echo "  ║                                                                  ║"
     printf "  ║    tar -xzf %-51s║\n" "$(basename "${archive_name}")"
-    echo "  ║    cd project_handover/                                         ║"
-    echo "  ║    ./clientside/ubuntu/ubuntu_only_entrance.sh start             ║"
+    printf "  ║    cd %-57s║\n" "${pkg_dirname}/"
+    echo "  ║    cat README_handover.md                                        ║"
+    echo "  ║    ./ubuntu_only_entrance.sh start                               ║"
     echo "  ║                                                                  ║"
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
     echo ""

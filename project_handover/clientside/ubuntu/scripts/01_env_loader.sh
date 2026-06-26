@@ -28,6 +28,8 @@
 
 # =============================================================================
 # 1st_group_1st_branch: Path setup
+# Configs and handover scripts are co-located under ubuntu_dir,
+# so all paths resolve from a single root — no upward traversal needed.
 # =============================================================================
 env_loader_1st_1st_setup_paths() {
     # Get the entrance script directory (not this script's directory)
@@ -37,45 +39,18 @@ env_loader_1st_1st_setup_paths() {
         source="$(readlink "${source}")"
         [[ "${source}" != /* ]] && source="${dir}/${source}"
     done
-    
+
     # Get the parent of scripts/ (which is ubuntu/)
     local scripts_dir="$(cd -P "$(dirname "${source}")" && pwd)"
     local ubuntu_dir="$(dirname "${scripts_dir}")"
-    
-    # Resolve symlinks to get real paths
-    local project_handover_dir
-    project_handover_dir="$(cd -P "${ubuntu_dir}/../.." && pwd)"
-    local top_root_dir
-    top_root_dir="$(cd -P "${project_handover_dir}/.." && pwd)"
-    
+
     export BUILD_SCRIPT_DIR="${ubuntu_dir}"
-    export TOP_ROOT_DIR="${top_root_dir}"
-    export TOP_CONFIGS_DIR="${top_root_dir}/configs"
-    export ENTRY_DEFAULTS_DIR="${top_root_dir}/configs/1_defaults"
-    export ENTRY_CONFIGS_DIR="${top_root_dir}/configs"
+    export TOP_ROOT_DIR="${ubuntu_dir}"
+    export TOP_CONFIGS_DIR="${ubuntu_dir}/configs"
+    export ENTRY_DEFAULTS_DIR="${ubuntu_dir}/configs/1_defaults"
+    export ENTRY_CONFIGS_DIR="${ubuntu_dir}/configs"
 }
 
-# =============================================================================
-# 1st_group_2nd_branch: Layer 1 - Global defaults
-# =============================================================================
-env_loader_1st_2nd_load_defaults() {
-    local defaults_files=(
-        "${ENTRY_DEFAULTS_DIR}/00_global.env"
-        "${ENTRY_DEFAULTS_DIR}/01_stage_1st_base.env"
-        "${ENTRY_DEFAULTS_DIR}/02_stage_2nd_build.env"
-        "${ENTRY_DEFAULTS_DIR}/03_stage_3rd_sdk.env"
-        "${ENTRY_DEFAULTS_DIR}/04_stage_4th_proxy.env"
-        "${ENTRY_DEFAULTS_DIR}/05_stage_5th_runtime.env"
-    )
-    
-    for defaults_file in "${defaults_files[@]}"; do
-        if [ -f "${defaults_file}" ]; then
-            source "${defaults_file}"
-        else
-            echo "Warning: defaults file not found, skipping: ${defaults_file}"
-        fi
-    done
-}
 
 # =============================================================================
 # 1st_group_3rd_branch: Auto-create host config if missing
@@ -140,13 +115,56 @@ env_loader_1st_3rd_ensure_host_config() {
 }
 
 # =============================================================================
-# 1st_group_4th_branch: Load all config layers
-# Reuses _load_config_layers from scripts/lib/config.sh (shared with SDK).
-# Requires TOP_CONFIGS_DIR and TOP_ROOT_DIR to be set by setup_paths.
+# 1st_group_4th_branch: Load all config layers (handover-specific)
+# Loads Layer 1 (defaults) + Layer 2 (platform) + Layer 3 (host).
+# This is a self-contained version — no dependency on scripts/lib/config.sh
+# or scripts/port_calc.sh.  Port values are already baked into the platform
+# config at build time, so port_calc is not needed here.
 # =============================================================================
 env_loader_1st_4th_load_all_configs() {
-    source "${TOP_ROOT_DIR}/scripts/lib/config.sh"
-    _load_config_layers
+    # --- Layer 1: Global defaults ---
+    for defaults_file in \
+        "${ENTRY_DEFAULTS_DIR}/00_global.env" \
+        "${ENTRY_DEFAULTS_DIR}/01_stage_1st_base.env" \
+        "${ENTRY_DEFAULTS_DIR}/02_stage_2nd_build.env" \
+        "${ENTRY_DEFAULTS_DIR}/03_stage_3rd_sdk.env" \
+        "${ENTRY_DEFAULTS_DIR}/04_stage_4th_proxy.env" \
+        "${ENTRY_DEFAULTS_DIR}/05_stage_5th_runtime.env"
+    do
+        if [ -f "${defaults_file}" ]; then
+            source "${defaults_file}"
+        else
+            echo "Warning: defaults file not found, skipping: ${defaults_file}"
+        fi
+    done
+
+    # --- Layer 2 + 3: Host-driven platform resolution ---
+    # Host config declares BASE_PLATFORM → resolve platform → source both.
+    local host_config="${ENTRY_CONFIGS_DIR}/3_hosts/$(hostname).env"
+
+    if [ -f "${host_config}" ]; then
+        # Read BASE_PLATFORM without sourcing the whole file
+        local base_platform
+        base_platform=$(grep -E '^BASE_PLATFORM=' "${host_config}" | head -1 \
+            | sed 's/^BASE_PLATFORM=//;s/^"//;s/"$//' | tr -d "'")
+
+        if [ -n "${base_platform}" ]; then
+            local platform_env="${ENTRY_CONFIGS_DIR}/2_platforms/${base_platform}.env"
+            if [ -f "${platform_env}" ]; then
+                source "${platform_env}"
+                echo "[config] Platform loaded: ${base_platform}"
+            else
+                echo "Error: BASE_PLATFORM='${base_platform}' not found at ${platform_env}"
+                return 1
+            fi
+        fi
+
+        # Source host config AFTER platform (host overrides platform)
+        source "${host_config}"
+        echo "[config] Host override loaded: $(basename "${host_config}")"
+    else
+        echo "[config] No host-specific config found for $(hostname)"
+    fi
 }
 
 # =============================================================================
