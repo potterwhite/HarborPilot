@@ -39,9 +39,9 @@ SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 source "${SCRIPT_DIR}/scripts/libs/common/utils.sh"
 source "${SCRIPT_DIR}/scripts/libs/common/ui.sh"
 source "${SCRIPT_DIR}/scripts/libs/config.sh"
-source "${SCRIPT_DIR}/scripts/libs/handover/volumes.sh"
-source "${SCRIPT_DIR}/scripts/libs/handover/compose.sh"
-source "${SCRIPT_DIR}/scripts/libs/handover/container.sh"
+source "${SCRIPT_DIR}/scripts/libs/volumes.sh"
+source "${SCRIPT_DIR}/scripts/libs/compose.sh"
+source "${SCRIPT_DIR}/scripts/libs/container.sh"
 
 main_show_help() {
     cat << EOF
