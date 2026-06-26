@@ -385,34 +385,6 @@ _pick_platform() {
 }
 
 ################################################################################
-# 1_specify_platform — full interactive platform setup (legacy entry point)
-#
-# Calls _pick_platform() for selection, then creates the .env symlink.
-# Used by harbor's main menu for standalone platform selection.
-################################################################################
-1_specify_platform() {
-    if ! _pick_platform; then
-        return 1
-    fi
-
-    local target_platform="${TARGET_PLATFORM}"
-    echo ${target_platform}
-    cd ${TOP_ROOT_DIR}
-
-    # create configs/2_platforms/.env symlink
-    if [ -e ${PLATFORM_ENV_DEST_PATH} ]; then
-        rm -f ${PLATFORM_ENV_DEST_PATH}
-    fi
-    ln -sf "${PLATFORM_ENV_SRC_DIR}/${target_platform}.env" "${PLATFORM_ENV_DEST_PATH}"
-
-    ls -lha ${PLATFORM_ENV_DEST_PATH}
-
-    echo
-    echo "--- Setup env files (${target_platform}) Successfully ---"
-    echo
-}
-
-################################################################################
 # 1.5 Select host configuration
 # Host is the primary user object. Platform is resolved automatically
 # via BASE_PLATFORM in the host config.

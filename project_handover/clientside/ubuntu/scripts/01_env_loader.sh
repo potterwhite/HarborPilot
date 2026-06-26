@@ -50,7 +50,7 @@ env_loader_1st_1st_setup_paths() {
     
     export BUILD_SCRIPT_DIR="${ubuntu_dir}"
     export TOP_ROOT_DIR="${top_root_dir}"
-    export ENTRY_ENV_PATH="${project_handover_dir}/.env"
+    export TOP_CONFIGS_DIR="${top_root_dir}/configs"
     export ENTRY_DEFAULTS_DIR="${top_root_dir}/configs/1_defaults"
     export ENTRY_CONFIGS_DIR="${top_root_dir}/configs"
 }
@@ -78,57 +78,75 @@ env_loader_1st_2nd_load_defaults() {
 }
 
 # =============================================================================
-# 1st_group_3rd_branch: Layer 2 - Platform-specific overrides
+# 1st_group_3rd_branch: Auto-create host config if missing
 # =============================================================================
-env_loader_1st_3rd_load_platform() {
-    if [ -f "${ENTRY_ENV_PATH}" ]; then
-        source "${ENTRY_ENV_PATH}"
-        echo -e "Done source .env\n"
-    else
-        echo -e "\nNo ${ENTRY_ENV_PATH} exist, quit"
-        exit 1
-    fi
-}
+env_loader_1st_3rd_ensure_host_config() {
+    local host_name=$(hostname)
+    local host_config="${ENTRY_CONFIGS_DIR}/3_hosts/${host_name}.env"
+    local template="${ENTRY_CONFIGS_DIR}/3_hosts/TEMPLATE.env.example"
 
-# =============================================================================
-# 1st_group_4th_branch: Layer 3 - Host-level overrides (optional)
-# If host config declares BASE_PLATFORM, re-load the platform from there
-# (overriding the .env symlink), then apply host overrides.
-# =============================================================================
-env_loader_1st_4th_load_host() {
-    local host_config="${HOST_CONFIG}"
-    if [ -z "${host_config}" ]; then
-        local host_name=$(hostname)
-        host_config="${ENTRY_CONFIGS_DIR}/3_hosts/${host_name}.env"
-    fi
     if [ -f "${host_config}" ]; then
-        # Read BASE_PLATFORM without sourcing the whole file
-        local base_platform
-        base_platform=$(grep -E '^BASE_PLATFORM=' "${host_config}" | head -1 | sed 's/^BASE_PLATFORM=//;s/^"//;s/"$//' | tr -d "'")
-
-        if [ -n "${base_platform}" ]; then
-            # New path: platform determined by host config
-            local platform_env="${ENTRY_CONFIGS_DIR}/2_platforms/${base_platform}.env"
-            if [ -f "${platform_env}" ]; then
-                source "${platform_env}"
-                echo "[config] Platform loaded from BASE_PLATFORM: ${base_platform}"
-            else
-                echo "Error: BASE_PLATFORM='${base_platform}' not found at ${platform_env}"
-                return 1
-            fi
-        fi
-
-        # Source host config (overrides platform values)
-        source "${host_config}"
-        echo "[config] Host override loaded: ${host_config}"
+        return 0
     fi
+
+    echo ""
+    echo "  ╔══════════════════════════════════════════════════════════════╗"
+    echo "  ║           First Run — Auto-creating host config              ║"
+    echo "  ╠══════════════════════════════════════════════════════════════╣"
+    echo "  ║                                                              ║"
+    printf "  ║  Hostname: %-50s║\n" "${host_name}"
+    printf "  ║  Config:   %-50s║\n" "$(basename "${host_config}")"
+    echo "  ║                                                              ║"
+    echo "  ║  Press Enter to accept defaults, or type custom values.      ║"
+    echo "  ║                                                              ║"
+    echo "  ╚══════════════════════════════════════════════════════════════╝"
+    echo ""
+
+    if [ ! -f "${template}" ]; then
+        echo "Error: Template not found: ${template}"
+        return 1
+    fi
+    cp "${template}" "${host_config}"
+
+    # Auto-detect BASE_PLATFORM (the only .env in 2_platforms/)
+    local platform_file
+    platform_file=$(ls "${ENTRY_CONFIGS_DIR}/2_platforms/"*.env 2>/dev/null | head -1)
+    if [ -n "${platform_file}" ]; then
+        local platform_name
+        platform_name=$(basename "${platform_file}" .env)
+        sed -i "s|^# BASE_PLATFORM=.*|BASE_PLATFORM=\"${platform_name}\"|" "${host_config}"
+        echo "  → Platform: ${platform_name}"
+    fi
+
+    # Ask 3 key questions with defaults
+    local host_volume_dir
+    read -p "  Host volume dir [/opt/harborpilot/volumes]: " host_volume_dir
+    host_volume_dir="${host_volume_dir:-/opt/harborpilot/volumes}"
+    sed -i "s|^# HOST_VOLUME_DIR=.*|HOST_VOLUME_DIR=\"${host_volume_dir}\"|" "${host_config}"
+
+    local use_gpu
+    read -p "  Use NVIDIA GPU? [false]: " use_gpu
+    use_gpu="${use_gpu:-false}"
+    sed -i "s|^# USE_NVIDIA_GPU=.*|USE_NVIDIA_GPU=\"${use_gpu}\"|" "${host_config}"
+
+    local shm_size
+    read -p "  Container SHM size [256m]: " shm_size
+    shm_size="${shm_size:-256m}"
+    sed -i "s|^# CONTAINER_SHM_SIZE=.*|CONTAINER_SHM_SIZE=\"${shm_size}\"|" "${host_config}"
+
+    echo ""
+    echo "  ✅ Host config created: $(basename "${host_config}")"
+    echo ""
 }
 
 # =============================================================================
-# 1st_group_5th_branch: Port calculation
+# 1st_group_4th_branch: Load all config layers
+# Reuses _load_config_layers from scripts/lib/config.sh (shared with SDK).
+# Requires TOP_CONFIGS_DIR and TOP_ROOT_DIR to be set by setup_paths.
 # =============================================================================
-env_loader_1st_5th_calc_ports() {
-    source "${TOP_ROOT_DIR}/scripts/port_calc.sh"
+env_loader_1st_4th_load_all_configs() {
+    source "${TOP_ROOT_DIR}/scripts/lib/config.sh"
+    _load_config_layers
 }
 
 # =============================================================================
@@ -147,9 +165,7 @@ env_loader_1st_6th_derive_values() {
 # =============================================================================
 env_loader_1st_load_all() {
     env_loader_1st_1st_setup_paths
-    env_loader_1st_2nd_load_defaults
-    env_loader_1st_3rd_load_platform
-    env_loader_1st_4th_load_host
-    env_loader_1st_5th_calc_ports
+    env_loader_1st_3rd_ensure_host_config
+    env_loader_1st_4th_load_all_configs
     env_loader_1st_6th_derive_values
 }

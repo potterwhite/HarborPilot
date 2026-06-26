@@ -177,61 +177,74 @@ main() {
 7_package_handover() {
     echo -e "\n=== Packaging Client Handover ==="
 
-    local timestamp
-    timestamp="$(date +%m.%d.%Y_%H.%M.%S)"
-    local archive_name="${TOP_ROOT_DIR}/project_handover_${PRODUCT_NAME}_${timestamp}.tar.gz"
-
-    echo "  Platform : ${PRODUCT_NAME}"
-    echo "  Output   : ${archive_name}"
-    echo ""
-
-    # Verify required source files exist
-    if [ ! -f "${PLATFORM_ENV_DEST_PATH}" ]; then
-        echo "✗ Error: .env symlink not found at ${PLATFORM_ENV_DEST_PATH}"
+    # Determine which platform to package from the current host config's BASE_PLATFORM
+    local base_platform="${BASE_PLATFORM}"
+    if [ -z "${base_platform}" ]; then
+        echo "Error: BASE_PLATFORM not set. Cannot determine which platform to package."
         return 1
     fi
 
+    local platform_env="${TOP_CONFIGS_DIR}/2_platforms/${base_platform}.env"
+    if [ ! -f "${platform_env}" ]; then
+        echo "Error: Platform config not found: ${platform_env}"
+        return 1
+    fi
+
+    local version="${PROJECT_VERSION:-unknown}"
+    local archive_name="${TOP_ROOT_DIR}/project_handover_${base_platform}_v${version}.tar.gz"
+
+    echo "  Platform : ${base_platform}"
+    echo "  Version  : ${version}"
+    echo "  Output   : ${archive_name}"
+    echo ""
+
     # ── Assemble archive in a temp staging directory ──────────────────────────
-    # This avoids the GNU tar limitation that -r cannot append to compressed
-    # archives, and gives us full control over the layout.
     local tmp_dir
     tmp_dir="$(mktemp -d)"
     local stage="${tmp_dir}/stage"
 
-    # Mirror the directory structure that 01_env_loader.sh expects:
-    #   ubuntu/ → ../../.. → stage/   (TOP_ROOT_DIR equivalent)
-    #   ENTRY_DEFAULTS_DIR = TOP_ROOT_DIR/configs/1_defaults
-    #   port_calc.sh       = TOP_ROOT_DIR/scripts/port_calc.sh
+    # Directory structure expected by 01_env_loader.sh:
+    #   project_handover/  (HANDOVER_DIR equivalent)
+    #   configs/           (TOP_CONFIGS_DIR equivalent)
+    #   scripts/           (shared scripts)
     mkdir -p "${stage}/project_handover/clientside/volumes"
-    mkdir -p "${stage}/configs"
-    mkdir -p "${stage}/scripts"
+    mkdir -p "${stage}/configs/1_defaults"
+    mkdir -p "${stage}/configs/2_platforms"
+    mkdir -p "${stage}/configs/3_hosts"
+    mkdir -p "${stage}/scripts/lib"
 
-    # 1. Dereference .env (copy real file content)
-    cp -L "${PLATFORM_ENV_DEST_PATH}" "${stage}/project_handover/.env"
-
-    # 2. Copy ubuntu client directory (dereference symlinks with cp -rL)
-    #    Exclude the volumes symlink inside ubuntu/
+    # 1. Copy ubuntu client directory
     cp -rL --no-dereference \
         "${HANDOVER_DIR}/clientside/ubuntu" \
         "${stage}/project_handover/clientside/ubuntu" 2>/dev/null || \
     cp -r "${HANDOVER_DIR}/clientside/ubuntu" \
           "${stage}/project_handover/clientside/ubuntu"
-    # Remove the volumes symlink from the copied ubuntu dir (it's a local symlink)
     rm -f "${stage}/project_handover/clientside/ubuntu/volumes"
-    # Remove docker-compose.yaml — it is dynamically generated at runtime by
-    # 04_compose_generator.sh and should not be included in the delivery package
     rm -f "${stage}/project_handover/clientside/ubuntu/docker-compose.yaml"
 
-    # 3. Preserve volumes/.gitkeep placeholder
+    # 2. Preserve volumes/.gitkeep placeholder
     touch "${stage}/project_handover/clientside/volumes/.gitkeep"
 
-    # 4. Copy configs/1_defaults (all .env files)
-    cp -r "${TOP_ROOT_DIR}/configs/1_defaults" "${stage}/configs/1_defaults"
+    # 3. Copy configs/1_defaults (all .env files)
+    cp -r "${TOP_CONFIGS_DIR}/1_defaults/"*.env "${stage}/configs/1_defaults/"
 
-    # 5. Copy scripts/port_calc.sh
-    cp "${TOP_ROOT_DIR}/scripts/port_calc.sh" "${stage}/scripts/port_calc.sh"
+    # 4. Copy only the selected platform config
+    cp "${platform_env}" "${stage}/configs/2_platforms/${base_platform}.env"
 
-    # ── Create the final tarball from the staging directory ───────────────────
+    # 5. Copy host config template + README (not actual host configs)
+    cp "${TOP_CONFIGS_DIR}/3_hosts/TEMPLATE.env.example" "${stage}/configs/3_hosts/"
+    cp "${TOP_CONFIGS_DIR}/3_hosts/README.md" "${stage}/configs/3_hosts/"
+
+    # 6. Copy shared scripts
+    cp "${TOP_ROOT_DIR}/scripts/port_calc.sh" "${stage}/scripts/"
+    cp "${TOP_ROOT_DIR}/scripts/lib/config.sh" "${stage}/scripts/lib/"
+
+    # 7. Copy handover README (Chinese)
+    if [ -f "${HANDOVER_DIR}/README_handover.md" ]; then
+        cp "${HANDOVER_DIR}/README_handover.md" "${stage}/project_handover/"
+    fi
+
+    # ── Create the final tarball ─────────────────────────────────────────────
     tar -czf "${archive_name}" \
         -C "${stage}" \
         "project_handover" \
@@ -256,13 +269,14 @@ main() {
     echo "  ║                                                                  ║"
     printf "  ║  File     : %-51s║\n" "$(basename "${archive_name}")"
     printf "  ║  Size     : %-51s║\n" "${size}"
-    printf "  ║  Platform : %-51s║\n" "${PRODUCT_NAME}"
+    printf "  ║  Platform : %-51s║\n" "${base_platform}"
+    printf "  ║  Version  : %-51s║\n" "${version}"
     echo "  ║                                                                  ║"
     echo "  ║  Deliver this tarball to the client Ubuntu host, then:          ║"
     echo "  ║                                                                  ║"
     printf "  ║    tar -xzf %-51s║\n" "$(basename "${archive_name}")"
-    echo "  ║    cd project_handover/clientside/ubuntu/                        ║"
-    echo "  ║    ./ubuntu_only_entrance.sh start                               ║"
+    echo "  ║    cd project_handover/                                         ║"
+    echo "  ║    ./clientside/ubuntu/ubuntu_only_entrance.sh start             ║"
     echo "  ║                                                                  ║"
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
     echo ""
