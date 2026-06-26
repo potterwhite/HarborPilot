@@ -96,8 +96,11 @@ env_loader_1st_3rd_load_platform() {
 # (overriding the .env symlink), then apply host overrides.
 # =============================================================================
 env_loader_1st_4th_load_host() {
-    local host_name=$(hostname)
-    local host_config="${ENTRY_CONFIGS_DIR}/3_hosts/${host_name}.env"
+    local host_config="${HOST_CONFIG}"
+    if [ -z "${host_config}" ]; then
+        local host_name=$(hostname)
+        host_config="${ENTRY_CONFIGS_DIR}/3_hosts/${host_name}.env"
+    fi
     if [ -f "${host_config}" ]; then
         # Read BASE_PLATFORM without sourcing the whole file
         local base_platform
