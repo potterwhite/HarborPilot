@@ -326,8 +326,10 @@ _pick_platform() {
     fi
 
     echo "" >/dev/tty
-    echo "Now we have below platforms:" >/dev/tty
-    echo "" >/dev/tty
+    echo "  ╔══════════════════════════════════════════════════════════════════╗" >/dev/tty
+    echo "  ║                      Select Platform                             ║" >/dev/tty
+    echo "  ╠══════════════════════════════════════════════════════════════════╣" >/dev/tty
+    echo "  ║                                                                  ║" >/dev/tty
 
     local i=0
     local prev_family=""
@@ -342,20 +344,23 @@ _pick_platform() {
 
         # Print family header when family changes
         if [[ "${fam}" != "${prev_family}" ]]; then
-            [[ -n "${prev_family}" ]] && echo "" >/dev/tty
-            echo -e "  ── ${fam} ──" >/dev/tty
+            [[ -n "${prev_family}" ]] && echo "  ║                                                                  ║" >/dev/tty
+            printf "  ║  ── %-60s ║\n" "${fam}" >/dev/tty
             prev_family="${fam}"
         fi
 
-        printf "    [%d] %-14s  os=%-5s  %s\n" "${i}" "${extract}" "${os_ver}" "${slot_label}" >/dev/tty
+        printf "  ║  [%d]  %-14s  os=%-5s  %-28s║\n" "${i}" "${extract}" "${os_ver}" "${slot_label}" >/dev/tty
     done
 
-    echo "" >/dev/tty
+    echo "  ║                                                                  ║" >/dev/tty
     local create_idx=$(( i + 1 ))
-    echo -e "  [${create_idx}].${_CREATE_PLATFORM_LABEL:-+ Create new platform}" >/dev/tty
+    printf "  ║  [%d]  %-58s║\n" "${create_idx}" "Create new platform" >/dev/tty
+    echo "  ║                                                                  ║" >/dev/tty
+    echo "  ╚══════════════════════════════════════════════════════════════════╝" >/dev/tty
+    echo "" >/dev/tty
 
     #-------------------------------------------------------
-    read -p "Please type the index your choice: " user_type </dev/tty
+    read -p "  Please select [1-${create_idx}]: " user_type </dev/tty
 
     platform_number="$((${#platforms_array[@]}))"
 

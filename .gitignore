@@ -65,6 +65,9 @@ docker/dev-env-serverside/*
 configs/platforms/.env
 project_handover/.env
 
+# Output directory for handover tarballs
+output/
+
 # Host-level config overrides (per-machine, not committed)
 configs/3_host/*.env
 

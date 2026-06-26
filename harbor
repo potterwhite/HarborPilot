@@ -41,6 +41,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/scripts/lib/ui.sh"
 source "${SCRIPT_DIR}/scripts/lib/config.sh"
 source "${SCRIPT_DIR}/scripts/lib/build.sh"
+source "${SCRIPT_DIR}/scripts/lib/package.sh"
 source "${SCRIPT_DIR}/scripts/lib/utils.sh"
 
 ################################################################################
@@ -96,27 +97,38 @@ main() {
     done
 
     ##################################################################
-    # Host configuration (build and package modes need it)
+    # Host/Platform selection
+    #   build mode   → select host (which determines platform via BASE_PLATFORM)
+    #   package mode → select platform directly
     ##################################################################
     _HARBOR_SKIP_BUILD=0
-    if [ "${_HARBOR_MODE}" = "build" ] || [ "${_HARBOR_MODE}" = "package" ]; then
+    if [ "${_HARBOR_MODE}" = "build" ]; then
         if [ -n "${CLI_HOST}" ]; then
             _load_host_config "${CLI_HOST}"
         else
             _select_host_config
         fi
+        if [ "${_HARBOR_SKIP_BUILD}" = "1" ]; then
+            return 0
+        fi
+        _load_config_layers
+        export HOST_CONFIG
+    elif [ "${_HARBOR_MODE}" = "package" ]; then
+        while true; do
+            if _pick_platform; then
+                break
+            fi
+        done
+        BASE_PLATFORM="${TARGET_PLATFORM}"
+        # Load platform config directly
+        local platform_env="${TOP_CONFIGS_DIR}/2_platforms/${BASE_PLATFORM}.env"
+        if [ -f "${platform_env}" ]; then
+            source "${platform_env}"
+        else
+            echo "Error: Platform config not found: ${platform_env}"
+            return 1
+        fi
     fi
-
-    # User chose not to build after creating host config
-    if [ "${_HARBOR_SKIP_BUILD}" = "1" ]; then
-        return 0
-    fi
-
-    ##################################################################
-    # Load all configuration layers
-    ##################################################################
-    _load_config_layers
-    export HOST_CONFIG
 
     ##################################################################
     # Validate configuration
@@ -153,133 +165,6 @@ main() {
     echo "Total execution time: $((duration / 3600))h $((duration % 3600 / 60))m $((duration % 60))s"
 
     _print_next_steps
-}
-
-################################################################################
-# 7. Package handover: create a self-contained client delivery tarball
-#
-# Archive layout (extracted to any directory):
-#   <output>/
-#   ├── project_handover/
-#   │   ├── .env                     ← platform config (dereferenced)
-#   │   ├── clientside/
-#   │   │   └── ubuntu/              ← entrance script + 6 modules + harbor.crt
-#   │   └── clientside/volumes/
-#   │       └── .gitkeep
-#   ├── configs/
-#   │   └── 1_defaults/              ← 11 default .env files (including 00_project.env)
-#   └── scripts/
-#       └── port_calc.sh             ← port formula script
-#
-# The relative path from ubuntu/ to configs/1_defaults and scripts/ is preserved
-# so 01_env_loader.sh resolves TOP_ROOT_DIR correctly after extraction.
-################################################################################
-7_package_handover() {
-    echo -e "\n=== Packaging Client Handover ==="
-
-    # Determine which platform to package from the current host config's BASE_PLATFORM
-    local base_platform="${BASE_PLATFORM}"
-    if [ -z "${base_platform}" ]; then
-        echo "Error: BASE_PLATFORM not set. Cannot determine which platform to package."
-        return 1
-    fi
-
-    local platform_env="${TOP_CONFIGS_DIR}/2_platforms/${base_platform}.env"
-    if [ ! -f "${platform_env}" ]; then
-        echo "Error: Platform config not found: ${platform_env}"
-        return 1
-    fi
-
-    local version="${PROJECT_VERSION:-unknown}"
-    local archive_name="${TOP_ROOT_DIR}/project_handover_${base_platform}_v${version}.tar.gz"
-
-    echo "  Platform : ${base_platform}"
-    echo "  Version  : ${version}"
-    echo "  Output   : ${archive_name}"
-    echo ""
-
-    # ── Assemble archive in a temp staging directory ──────────────────────────
-    local tmp_dir
-    tmp_dir="$(mktemp -d)"
-    local stage="${tmp_dir}/stage"
-
-    # Directory structure expected by 01_env_loader.sh:
-    #   project_handover/  (HANDOVER_DIR equivalent)
-    #   configs/           (TOP_CONFIGS_DIR equivalent)
-    #   scripts/           (shared scripts)
-    mkdir -p "${stage}/project_handover/clientside/volumes"
-    mkdir -p "${stage}/configs/1_defaults"
-    mkdir -p "${stage}/configs/2_platforms"
-    mkdir -p "${stage}/configs/3_hosts"
-    mkdir -p "${stage}/scripts/lib"
-
-    # 1. Copy ubuntu client directory
-    cp -rL --no-dereference \
-        "${HANDOVER_DIR}/clientside/ubuntu" \
-        "${stage}/project_handover/clientside/ubuntu" 2>/dev/null || \
-    cp -r "${HANDOVER_DIR}/clientside/ubuntu" \
-          "${stage}/project_handover/clientside/ubuntu"
-    rm -f "${stage}/project_handover/clientside/ubuntu/volumes"
-    rm -f "${stage}/project_handover/clientside/ubuntu/docker-compose.yaml"
-
-    # 2. Preserve volumes/.gitkeep placeholder
-    touch "${stage}/project_handover/clientside/volumes/.gitkeep"
-
-    # 3. Copy configs/1_defaults (all .env files)
-    cp -r "${TOP_CONFIGS_DIR}/1_defaults/"*.env "${stage}/configs/1_defaults/"
-
-    # 4. Copy only the selected platform config
-    cp "${platform_env}" "${stage}/configs/2_platforms/${base_platform}.env"
-
-    # 5. Copy host config template + README (not actual host configs)
-    cp "${TOP_CONFIGS_DIR}/3_hosts/TEMPLATE.env.example" "${stage}/configs/3_hosts/"
-    cp "${TOP_CONFIGS_DIR}/3_hosts/README.md" "${stage}/configs/3_hosts/"
-
-    # 6. Copy shared scripts
-    cp "${TOP_ROOT_DIR}/scripts/port_calc.sh" "${stage}/scripts/"
-    cp "${TOP_ROOT_DIR}/scripts/lib/config.sh" "${stage}/scripts/lib/"
-
-    # 7. Copy handover README (Chinese)
-    if [ -f "${HANDOVER_DIR}/README_handover.md" ]; then
-        cp "${HANDOVER_DIR}/README_handover.md" "${stage}/project_handover/"
-    fi
-
-    # ── Create the final tarball ─────────────────────────────────────────────
-    tar -czf "${archive_name}" \
-        -C "${stage}" \
-        "project_handover" \
-        "configs" \
-        "scripts"
-
-    # Clean up staging area
-    rm -rf "${tmp_dir}"
-
-    if [ ! -f "${archive_name}" ]; then
-        echo "✗ Error: archive was not created."
-        return 1
-    fi
-
-    local size
-    size="$(du -sh "${archive_name}" | cut -f1)"
-
-    echo ""
-    echo "  ╔══════════════════════════════════════════════════════════════════╗"
-    echo "  ║              HANDOVER PACKAGE CREATED SUCCESSFULLY              ║"
-    echo "  ╠══════════════════════════════════════════════════════════════════╣"
-    echo "  ║                                                                  ║"
-    printf "  ║  File     : %-51s║\n" "$(basename "${archive_name}")"
-    printf "  ║  Size     : %-51s║\n" "${size}"
-    printf "  ║  Platform : %-51s║\n" "${base_platform}"
-    printf "  ║  Version  : %-51s║\n" "${version}"
-    echo "  ║                                                                  ║"
-    echo "  ║  Deliver this tarball to the client Ubuntu host, then:          ║"
-    echo "  ║                                                                  ║"
-    printf "  ║    tar -xzf %-51s║\n" "$(basename "${archive_name}")"
-    echo "  ║    cd project_handover/                                         ║"
-    echo "  ║    ./clientside/ubuntu/ubuntu_only_entrance.sh start             ║"
-    echo "  ║                                                                  ║"
-    echo "  ╚══════════════════════════════════════════════════════════════════╝"
-    echo ""
 }
 
 # Execute main function
