@@ -349,12 +349,19 @@ _pick_platform() {
             prev_family="${fam}"
         fi
 
-        printf "  ║  [%d]  %-14s  os=%-5s  %-28s║\n" "${i}" "${extract}" "${os_ver}" "${slot_label}" >/dev/tty
+        # Dynamic padding: compute remaining space to fill 66-char inner width
+        local _content="  [${i}]  ${extract}  os=${os_ver}  ${slot_label}"
+        local _pad=$(( 66 - ${#_content} ))
+        [[ ${_pad} -lt 0 ]] && _pad=0
+        printf "  ║%s%*s║\n" "${_content}" "${_pad}" "" >/dev/tty
     done
 
     echo "  ║                                                                  ║" >/dev/tty
     local create_idx=$(( i + 1 ))
-    printf "  ║  [%d]  %-58s║\n" "${create_idx}" "Create new platform" >/dev/tty
+    local _create="  [${create_idx}]  Create new platform"
+    local _pad_create=$(( 66 - ${#_create} ))
+    [[ ${_pad_create} -lt 0 ]] && _pad_create=0
+    printf "  ║%s%*s║\n" "${_create}" "${_pad_create}" "" >/dev/tty
     echo "  ║                                                                  ║" >/dev/tty
     echo "  ╚══════════════════════════════════════════════════════════════════╝" >/dev/tty
     echo "" >/dev/tty
@@ -451,13 +458,27 @@ _select_host_config() {
         [[ -z "${base_platform}" ]] && base_platform="(legacy — no BASE_PLATFORM)"
 
         local marker=""
-        [[ "${host_name}" == "${LOCAL_HOSTNAME}" || "${host_name}" == ${LOCAL_HOSTNAME}_* ]] && marker=" ← this machine"
-        printf "  ║  [%d]  %-20s platform: %-24s%s║\n" "${idx}" "${host_name}" "${base_platform}" "${marker}"
+        [[ "${host_name}" == "${LOCAL_HOSTNAME}" || "${host_name}" == ${LOCAL_HOSTNAME}_* ]] && marker="  ← this machine"
+
+        # Line 1: host name + marker (dynamic padding to 66-char inner width)
+        local _line1="  [${idx}]  ${host_name}${marker}"
+        local _pad1=$(( 66 - ${#_line1} ))
+        [[ ${_pad1} -lt 0 ]] && _pad1=0
+        printf "  ║%s%*s║\n" "${_line1}" "${_pad1}" ""
+
+        # Line 2: platform info (indented to align with host name)
+        local _line2="       platform: ${base_platform}"
+        local _pad2=$(( 66 - ${#_line2} ))
+        [[ ${_pad2} -lt 0 ]] && _pad2=0
+        printf "  ║%s%*s║\n" "${_line2}" "${_pad2}" ""
         ((idx++))
     done
 
     echo "  ║                                                                  ║"
-    echo "  ║  [${idx}]  Create new host    — configure for a new machine      ║"
+    local _create="  [${idx}]  Create new host  — configure for a new machine"
+    local _pad_create=$(( 66 - ${#_create} ))
+    [[ ${_pad_create} -lt 0 ]] && _pad_create=0
+    printf "  ║%s%*s║\n" "${_create}" "${_pad_create}" ""
     echo "  ║                                                                  ║"
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
     echo ""
