@@ -67,8 +67,6 @@ main_entry_1st_load_modules() {
 # main_entry_2nd_branch: Start command
 ################################################################################
 main_entry_2nd_cmd_start() {
-    main_entry_1st_load_modules
-    
     env_loader_1st_load_all
     docker_check_2nd_do_checks
     volumes_init_3rd_init_if_needed
@@ -79,8 +77,6 @@ main_entry_2nd_cmd_start() {
 # main_entry_3rd_branch: Stop command
 ################################################################################
 main_entry_3rd_cmd_stop() {
-    main_entry_1st_load_modules
-    
     env_loader_1st_load_all
     container_lifecycle_5th_stop
 }
@@ -89,8 +85,6 @@ main_entry_3rd_cmd_stop() {
 # main_entry_4th_branch: Restart command
 ################################################################################
 main_entry_4th_cmd_restart() {
-    main_entry_1st_load_modules
-    
     env_loader_1st_load_all
     container_lifecycle_5th_restart
 }
@@ -99,8 +93,6 @@ main_entry_4th_cmd_restart() {
 # main_entry_5th_branch: Recreate command
 ################################################################################
 main_entry_5th_cmd_recreate() {
-    main_entry_1st_load_modules
-
     env_loader_1st_load_all
     docker_check_2nd_do_checks
     volumes_init_3rd_init_if_needed
@@ -111,8 +103,6 @@ main_entry_5th_cmd_recreate() {
 # main_entry_6th_branch: Remove command
 ################################################################################
 main_entry_6th_cmd_remove() {
-    main_entry_1st_load_modules
-    
     env_loader_1st_load_all
     container_lifecycle_5th_remove
 }
@@ -121,6 +111,8 @@ main_entry_6th_cmd_remove() {
 # main_entry: Master router
 ################################################################################
 main_entry() {
+    main_entry_1st_load_modules
+
     case "$1" in
         "start")
             main_entry_2nd_cmd_start
@@ -138,12 +130,10 @@ main_entry() {
             main_entry_6th_cmd_remove
             ;;
         "-h"|"--help"|"")
-            main_entry_1st_load_modules
             main_show_help
             ;;
         *)
             utils_print_error "Unknown command: $1"
-            main_entry_1st_load_modules
             main_show_help
             exit 1
             ;;
