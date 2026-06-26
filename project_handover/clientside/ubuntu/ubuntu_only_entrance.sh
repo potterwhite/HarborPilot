@@ -31,8 +31,8 @@ if [ "${V}" == "1" ]; then
     set -x
 fi
 
-# Get script directory (works both when sourced and executed)
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Get script directory (resolve symlinks to get the real path)
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 source "${SCRIPT_DIR}/scripts/utils.sh"
 
 main_show_help() {
