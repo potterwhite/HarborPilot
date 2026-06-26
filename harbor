@@ -120,7 +120,9 @@ main() {
             fi
         done
         BASE_PLATFORM="${TARGET_PLATFORM}"
-        # Load platform config directly
+        # Load defaults first (PROJECT_VERSION, REGISTRY_URL, etc.)
+        _load_layer1_defaults
+        # Then overlay platform config
         local platform_env="${TOP_CONFIGS_DIR}/2_platforms/${BASE_PLATFORM}.env"
         if [ -f "${platform_env}" ]; then
             source "${platform_env}"
