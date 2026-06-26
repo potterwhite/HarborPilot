@@ -58,11 +58,12 @@ HarborPilot.git/
 │   │   ├── stage_4_config/             ←   Stage 4：环境变量配置、代理（模板）
 │   │   └── stage_5_final/              ←   Stage 5：工作区、入口点、测试（模板）
 │
-├── project_handover/                   ← ★ 客户端部署包
-│   └── clientside/ubuntu/
-│       ├── ubuntu_only_entrance.sh     ←   容器生命周期：start/stop/restart/recreate/remove
-│       ├── harbor.crt                  ←   Harbor CA 证书（每台宿主机安装一次）
-│       └── scripts/                    ←   6 个模块化辅助脚本
+├── scripts/libs/handover/              ← ★ 客户端 handover 脚本（打包进 tarball）
+│   ├── entrance.sh                     ←   入口脚本：start/stop/restart/recreate/remove
+│   ├── volumes.sh                      ←   Volume 目录初始化
+│   ├── compose.sh                      ←   Docker compose 生成器
+│   ├── container.sh                    ←   容器生命周期操作
+│   └── README_handover.md              ←   客户端安装指南（打包在根目录）
 │
 ├── docs/                               ← ★ 文档（双语分离）
 │   ├── en/                             ←   英文文档树
@@ -232,20 +233,21 @@ mcp/
 
 ## 5. 客户端部署
 
-### `project_handover/clientside/ubuntu/ubuntu_only_entrance.sh`
+### `scripts/libs/handover/entrance.sh`
 容器生命周期管理器。命令：`start`/`stop`/`restart`/`recreate`/`remove`/`-h`。
 
 **关键行为：**
-- `1_0_gen_environment_variables()` — 加载与 `harbor` 相同的 3 层配置 + `port_calc.sh`
-- `3_3_generate_compose_config()` — 从环境变量动态生成 `docker-compose.yaml`：
+- 加载 `scripts/libs/` 共享库（common/utils.sh, common/ui.sh, config.sh）
+- `_load_config_layers()` — 加载 3 层配置（与 harbor 相同）+ port_calc.sh
+- `compose_generate()` — 从环境变量动态生成 `docker-compose.yaml`：
   - 镜像：`${REGISTRY_URL}/${IMAGE_NAME}:latest`（无 registry 时使用本地镜像）
   - 端口：`${CLIENT_SSH_PORT}:22` 和 `${GDB_PORT}:${GDB_PORT}`
   - 条件 NVIDIA GPU：带 `nvidia` 驱动的 `deploy.resources.reservations.devices`
   - Samba CIFS volume 挂载
   - TTY + 特权模式 + USB 直通
 - `start` → 交互式菜单：进入运行中的容器 / 重启 / 重建
-- `1_2_check_docker_login()` — 带重试的 Harbor 登录
-- `2_4_retrieve_latest_image()` — 从 registry 拉取
+- `0_check_registry_login()` — Harbor 登录检查
+- `_container_pull_image()` — 从 registry 拉取
 
 ---
 

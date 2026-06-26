@@ -38,11 +38,11 @@ done
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Load all modules
-source "${SCRIPT_DIR}/scripts/lib/ui.sh"
-source "${SCRIPT_DIR}/scripts/lib/config.sh"
-source "${SCRIPT_DIR}/scripts/lib/build.sh"
-source "${SCRIPT_DIR}/scripts/lib/package.sh"
-source "${SCRIPT_DIR}/scripts/lib/utils.sh"
+source "${SCRIPT_DIR}/scripts/libs/common/utils.sh"
+source "${SCRIPT_DIR}/scripts/libs/common/ui.sh"
+source "${SCRIPT_DIR}/scripts/libs/config.sh"
+source "${SCRIPT_DIR}/scripts/libs/build.sh"
+source "${SCRIPT_DIR}/scripts/libs/package.sh"
 
 ################################################################################
 # Main function to orchestrate the entire build process
@@ -58,11 +58,10 @@ main() {
     BUILD_SCRIPT_DIR="$(dirname ${BUILD_SCRIPT_PATH})"
     TOP_ROOT_DIR="${BUILD_SCRIPT_DIR}"
     TOP_CONFIGS_DIR="${TOP_ROOT_DIR}/configs"
-    HANDOVER_DIR="${TOP_ROOT_DIR}/project_handover"
     # src env means they are the original files
     PLATFORM_ENV_SRC_DIR="${TOP_CONFIGS_DIR}/2_platforms"
-    # dest env means destination files, which are used for runtime
-    PLATFORM_ENV_DEST_PATH="${HANDOVER_DIR}/.env"
+    # Legacy fallback (only used when host config has no BASE_PLATFORM)
+    PLATFORM_ENV_DEST_PATH="${TOP_CONFIGS_DIR}/2_platforms/.env"
 
     ##################################################################
     # Check dependencies

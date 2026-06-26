@@ -281,7 +281,7 @@ fi
 |---|---|
 | `harbor` | 构建编排入口 |
 | `docker/dev-env-clientside/build.sh` | Docker 镜像构建 |
-| `project_handover/clientside/ubuntu/scripts/01_env_loader.sh` | 容器环境加载器 |
+| `scripts/libs/config.sh` | 容器环境加载器 |
 
 ---
 

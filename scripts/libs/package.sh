@@ -36,16 +36,23 @@
 #   └── clientside/
 #       └── ubuntu/
 #           ├── ubuntu_only_entrance.sh
-#           ├── scripts/          (handover scripts, self-contained)
+#           ├── scripts/
+#           │   ├── libs/
+#           │   │   ├── common/
+#           │   │   │   ├── utils.sh
+#           │   │   │   └── ui.sh
+#           │   │   ├── config.sh
+#           │   │   ├── volumes.sh
+#           │   │   ├── compose.sh
+#           │   │   └── container.sh
+#           │   └── port_calc.sh
 #           ├── configs/
-#           │   ├── 1_defaults/   (global defaults)
+#           │   ├── 1_defaults/
 #           │   ├── 2_platforms/  (selected platform only)
 #           │   └── 3_hosts/      (template only)
 #           └── volume/
 #
-# The handover is fully self-contained — no external scripts/lib/config.sh
-# or scripts/port_calc.sh are included.  Config loading logic is
-# internalised in 01_env_loader.sh.
+# All scripts come from scripts/libs/ — single source of truth.
 #
 # The tarball is placed in the output/ directory (gitignored).
 ################################################################################
@@ -81,41 +88,49 @@
     local pkg_dirname="project_handover_${base_platform}_v${version}"
     local stage="${tmp_dir}/${pkg_dirname}"
 
-    mkdir -p "${stage}/clientside/ubuntu"
+    local ubuntu_dir="${stage}/clientside/ubuntu"
+    mkdir -p "${ubuntu_dir}/scripts/libs/common"
+    mkdir -p "${ubuntu_dir}/configs/1_defaults"
+    mkdir -p "${ubuntu_dir}/configs/2_platforms"
+    mkdir -p "${ubuntu_dir}/configs/3_hosts"
     mkdir -p "${stage}/clientside/volume"
-    mkdir -p "${stage}/clientside/ubuntu/configs/1_defaults"
-    mkdir -p "${stage}/clientside/ubuntu/configs/2_platforms"
-    mkdir -p "${stage}/clientside/ubuntu/configs/3_hosts"
 
-    # 1. Copy ubuntu client scripts
-    cp -rL --no-dereference \
-        "${HANDOVER_DIR}/clientside/ubuntu" \
-        "${stage}/clientside/" 2>/dev/null || \
-    cp -r "${HANDOVER_DIR}/clientside/ubuntu" \
-          "${stage}/clientside/"
-    rm -f "${stage}/clientside/ubuntu/volume"
-    rm -f "${stage}/clientside/ubuntu/volumes"
-    rm -f "${stage}/clientside/ubuntu/docker-compose.yaml"
+    # 1. Copy shared libraries (single source of truth)
+    cp "${TOP_ROOT_DIR}/scripts/libs/common/utils.sh"   "${ubuntu_dir}/scripts/libs/common/"
+    cp "${TOP_ROOT_DIR}/scripts/libs/common/ui.sh"      "${ubuntu_dir}/scripts/libs/common/"
+    cp "${TOP_ROOT_DIR}/scripts/libs/config.sh"          "${ubuntu_dir}/scripts/libs/"
+    cp "${TOP_ROOT_DIR}/scripts/libs/handover/volumes.sh"   "${ubuntu_dir}/scripts/libs/"
+    cp "${TOP_ROOT_DIR}/scripts/libs/handover/compose.sh"   "${ubuntu_dir}/scripts/libs/"
+    cp "${TOP_ROOT_DIR}/scripts/libs/handover/container.sh" "${ubuntu_dir}/scripts/libs/"
 
-    # 2. Copy config layers into clientside/ubuntu/configs/
-    cp "${TOP_CONFIGS_DIR}/1_defaults/"*.env \
-        "${stage}/clientside/ubuntu/configs/1_defaults/"
-    cp "${platform_env}" \
-        "${stage}/clientside/ubuntu/configs/2_platforms/${base_platform}.env"
-    cp "${TOP_CONFIGS_DIR}/3_hosts/TEMPLATE.env.example" \
-        "${stage}/clientside/ubuntu/configs/3_hosts/"
-    # Remove any stray .md from configs (e.g. host README)
-    find "${stage}/clientside/ubuntu/configs" -name "*.md" -delete
-
-    # 3. Volume placeholder (gitkeep so git tracks the empty dir)
-    touch "${stage}/clientside/volume/.gitkeep"
-
-    # 4. README at root (first thing teammate sees)
-    if [ -f "${HANDOVER_DIR}/README_handover.md" ]; then
-        cp "${HANDOVER_DIR}/README_handover.md" "${stage}/"
+    # 2. Copy port_calc.sh (dependency of config.sh)
+    if [ -f "${TOP_ROOT_DIR}/scripts/port_calc.sh" ]; then
+        cp "${TOP_ROOT_DIR}/scripts/port_calc.sh" "${ubuntu_dir}/scripts/"
     fi
 
-    # 5. Symlink: root-level ubuntu_only_entrance.sh
+    # 3. Copy entrance script
+    cp "${TOP_ROOT_DIR}/scripts/libs/handover/entrance.sh" \
+        "${ubuntu_dir}/ubuntu_only_entrance.sh"
+
+    # 4. Copy config layers
+    cp "${TOP_CONFIGS_DIR}/1_defaults/"*.env \
+        "${ubuntu_dir}/configs/1_defaults/"
+    cp "${platform_env}" \
+        "${ubuntu_dir}/configs/2_platforms/${base_platform}.env"
+    cp "${TOP_CONFIGS_DIR}/3_hosts/TEMPLATE.env.example" \
+        "${ubuntu_dir}/configs/3_hosts/"
+    # Remove any stray .md from configs
+    find "${ubuntu_dir}/configs" -name "*.md" -delete
+
+    # 5. Volume placeholder
+    touch "${stage}/clientside/volume/.gitkeep"
+
+    # 6. README at root
+    if [ -f "${TOP_ROOT_DIR}/scripts/libs/handover/README_handover.md" ]; then
+        cp "${TOP_ROOT_DIR}/scripts/libs/handover/README_handover.md" "${stage}/"
+    fi
+
+    # 7. Symlink: root-level ubuntu_only_entrance.sh
     ln -sf clientside/ubuntu/ubuntu_only_entrance.sh \
         "${stage}/ubuntu_only_entrance.sh"
 

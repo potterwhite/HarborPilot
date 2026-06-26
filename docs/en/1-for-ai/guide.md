@@ -131,10 +131,10 @@
 ./harbor
 
 # Start dev container on client Ubuntu host
-./project_handover/clientside/ubuntu/ubuntu_only_entrance.sh start
+./ubuntu_only_entrance.sh start
 
 # Container lifecycle: stop / restart / recreate / remove
-./project_handover/clientside/ubuntu/ubuntu_only_entrance.sh <command>
+./ubuntu_only_entrance.sh <command>
 
 # Create a new platform (interactive wizard)
 ./scripts/create_platform.sh

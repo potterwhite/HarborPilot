@@ -29,8 +29,9 @@ func_1_1_setup_env(){
     TOP_ROOT_DIR="$(dirname "${DOCKER_DIR}")"
     CONFIGS_DIR="${TOP_ROOT_DIR}/configs"
     DEFAULTS_DIR="${CONFIGS_DIR}/1_defaults"
-    HANDOVER_DIR="${TOP_ROOT_DIR}/project_handover"
-    PLATFORM_ENV_PATH="${HANDOVER_DIR}/.env"
+    # Legacy: PLATFORM_ENV_PATH was project_handover/.env (now removed)
+    # Platform is now determined by HOST_CONFIG's BASE_PLATFORM
+    PLATFORM_ENV_PATH=""
 
     echo "BUILD_SCRIPT_PATH: ${BUILD_SCRIPT_PATH}"
     echo "BUILD_SCRIPT_DIR:  ${BUILD_SCRIPT_DIR}"

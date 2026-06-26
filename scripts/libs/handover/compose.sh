@@ -21,20 +21,20 @@
 # SOFTWARE.
 
 ################################################################################
-# File: 04_compose_generator.sh
+# Module: compose.sh
 # Description: Generate docker-compose.yaml dynamically from environment
 ################################################################################
 
 # =============================================================================
 # 4th_group_1st_branch: Ensure VOLUMES_DIR is set
 # =============================================================================
-compose_generator_4th_1st_ensure_volumes_dir() {
+_compose_ensure_volumes_dir() {
     if [ -z "${VOLUMES_DIR}" ]; then
         local volume_dir="${BUILD_SCRIPT_DIR}/volume"
         if [ -e "${volume_dir}" ]; then
             export VOLUMES_DIR="$(realpath "${volume_dir}")"
         else
-            utils_print_error "VOLUMES_DIR is not set and volume/ directory is not available"
+            _error "VOLUMES_DIR is not set and volume/ directory is not available"
             return 1
         fi
     fi
@@ -43,7 +43,7 @@ compose_generator_4th_1st_ensure_volumes_dir() {
 # =============================================================================
 # 4th_group_2nd_branch: Build NVIDIA GPU section
 # =============================================================================
-compose_generator_4th_2nd_build_gpu_section() {
+_compose_build_gpu_section() {
     local tmp_use="${USE_NVIDIA_GPU:-false}"
     tmp_use="${tmp_use,,}"
     
@@ -69,7 +69,7 @@ GPU_EOF
 # =============================================================================
 # 4th_group_2nd_b_branch: Build extra volumes section (EXTRA_VOLUME_0..N)
 # =============================================================================
-compose_generator_4th_2nd_b_build_extra_volumes_section() {
+_compose_build_extra_volumes_section() {
     COMPOSE_EXTRA_VOLUMES_LINES=""
     local i=0
     while true; do
@@ -81,7 +81,7 @@ compose_generator_4th_2nd_b_build_extra_volumes_section() {
         local host_path="${pair%%:*}"
         local container_path="${pair#*:}"
         if [[ -z "${host_path}" || -z "${container_path}" || "${host_path}" == "${pair}" ]]; then
-            utils_print_error "EXTRA_VOLUME_${i} has invalid format '${pair}' — expected '<host>:<container>'"
+            _error "EXTRA_VOLUME_${i} has invalid format '${pair}' — expected '<host>:<container>'"
             return 1
         fi
 
@@ -97,7 +97,7 @@ compose_generator_4th_2nd_b_build_extra_volumes_section() {
 # =============================================================================
 # 4th_group_3rd_branch: Build serial device section
 # =============================================================================
-compose_generator_4th_3rd_build_device_section() {
+_compose_build_device_section() {
     if [ -n "${CONTAINER_SERIAL_DEVICE}" ] && [ -e "${CONTAINER_SERIAL_DEVICE}" ]; then
         COMPOSE_DEVICES_SETTING="    devices:
       - ${CONTAINER_SERIAL_DEVICE}:${CONTAINER_SERIAL_DEVICE}"
@@ -109,7 +109,7 @@ compose_generator_4th_3rd_build_device_section() {
 # =============================================================================
 # 4th_group_4th_branch: Generate compose file
 # =============================================================================
-compose_generator_4th_4th_generate_file() {
+_compose_generate_file() {
     cat << EOF > "${BUILD_SCRIPT_DIR}/docker-compose.yaml"
 services:
   dev-env:
@@ -159,16 +159,16 @@ volumes:
       device: "//${SAMBA_SERVER_IP}/public"
       o: "username=${SAMBA_PUBLIC_ACCOUNT_NAME},password=${SAMBA_PUBLIC_ACCOUNT_PASSWORD},uid=${DEV_UID},gid=${DEV_GID},file_mode=${SAMBA_FILE_MODE},dir_mode=${SAMBA_DIR_MODE}"
 EOF
-    utils_print_success "Generated docker-compose.yaml"
+    _log "SUCCESS" "Generated docker-compose.yaml"
 }
 
 # =============================================================================
 # 4th_group: Master function - generate compose configuration
 # =============================================================================
-compose_generator_4th_generate() {
-    compose_generator_4th_1st_ensure_volumes_dir || return 1
-    compose_generator_4th_2nd_build_gpu_section
-    compose_generator_4th_2nd_b_build_extra_volumes_section || return 1
-    compose_generator_4th_3rd_build_device_section
-    compose_generator_4th_4th_generate_file
+compose_generate() {
+    _compose_ensure_volumes_dir || return 1
+    _compose_build_gpu_section
+    _compose_build_extra_volumes_section || return 1
+    _compose_build_device_section
+    _compose_generate_file
 }

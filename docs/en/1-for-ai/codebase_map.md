@@ -59,11 +59,12 @@ HarborPilot.git/
 │   │   ├── stage_4_config/             ←   Stage 4: env config, proxy (templates)
 │   │   └── stage_5_final/              ←   Stage 5: workspace, entrypoint, tests (templates)
 │
-├── project_handover/                   ← ★ Client-side deployment package
-│   └── clientside/ubuntu/
-│       ├── ubuntu_only_entrance.sh     ←   Container lifecycle: start/stop/restart/recreate/remove
-│       ├── harbor.crt                  ←   Harbor CA cert (install once per host)
-│       └── scripts/                    ←   6 modular helper scripts
+├── scripts/libs/handover/              ← ★ Client-side handover scripts (packaged into tarball)
+│   ├── entrance.sh                     ←   Entry script: start/stop/restart/recreate/remove
+│   ├── volumes.sh                      ←   Volume directory initialization
+│   ├── compose.sh                      ←   Docker compose generator
+│   ├── container.sh                    ←   Container lifecycle operations
+│   └── README_handover.md              ←   Client setup guide (packaged at root)
 │
 ├── docs/                               ← ★ Documentation (bilingual)
 │   ├── en/                             ←   English documentation tree
@@ -232,20 +233,21 @@ JSON Schema for platform `.env` validation. Required: `PRODUCT_NAME`, `OS_VERSIO
 
 ## 5. Client-Side Deployment
 
-### `project_handover/clientside/ubuntu/ubuntu_only_entrance.sh`
+### `scripts/libs/handover/entrance.sh`
 Container lifecycle manager. Commands: `start`/`stop`/`restart`/`recreate`/`remove`/`-h`.
 
 **Key behavior:**
-- `1_0_gen_environment_variables()` — Loads same 3-layer config as `harbor` + `port_calc.sh`
-- `3_3_generate_compose_config()` — Dynamically generates `docker-compose.yaml` from env vars:
+- Sources shared libraries from `scripts/libs/` (common/utils.sh, common/ui.sh, config.sh)
+- `_load_config_layers()` — Loads 3-layer config (same as harbor) + port_calc.sh
+- `compose_generate()` — Dynamically generates `docker-compose.yaml` from env vars:
   - Image: `${REGISTRY_URL}/${IMAGE_NAME}:latest` (or local if no registry)
   - Ports: `${CLIENT_SSH_PORT}:22` and `${GDB_PORT}:${GDB_PORT}`
   - Conditional NVIDIA GPU: `deploy.resources.reservations.devices` with `nvidia` driver
   - Samba CIFS volume mount
   - TTY + privileged + USB passthrough
 - `start` → interactive menu: enter running container / restart / recreate
-- `1_2_check_docker_login()` — Harbor login with retry
-- `2_4_retrieve_latest_image()` — Pull from registry
+- `0_check_registry_login()` — Harbor login check
+- `_container_pull_image()` — Pull from registry
 
 ---
 

@@ -129,12 +129,13 @@ HarborPilot/
 │
 ├── scripts/
 │   ├── create_platform.sh            ← Platform wizard (interactive + non-interactive)
-│   └── port_calc.sh                  ← PORT_SLOT → SSH/GDB port calculation
-│
-├── project_handover/
-│   └── clientside/ubuntu/
-│       ├── ubuntu_only_entrance.sh   ← Container lifecycle manager
-│       └── harbor.crt                ← Harbor CA cert (install once per host)
+│   ├── port_calc.sh                  ← PORT_SLOT → SSH/GDB port calculation
+│   └── libs/
+│       ├── common/                   ← Shared utilities (utils.sh, ui.sh)
+│       ├── handover/                 ← Client-side scripts (packaged into tarball)
+│       ├── config.sh                 ← 3-layer config loader
+│       ├── build.sh                  ← Docker build/tag/push
+│       └── package.sh                ← Handover packaging
 │
 └── docs/                             ← Bilingual documentation (EN + ZH)
     ├── en/
@@ -177,7 +178,7 @@ docker login <registry-ip>:<registry-port>
 ./harbor
 
 # 4. Start your development container
-./project_handover/clientside/ubuntu/ubuntu_only_entrance.sh start
+./ubuntu_only_entrance.sh start
 ```
 
 **Non-interactive (CI / scripted):**

@@ -239,8 +239,6 @@ _show_config_menu() {
 # Print next steps after a successful build
 ################################################################################
 _print_next_steps() {
-    local clientside_script="${BUILD_SCRIPT_DIR}/project_handover/clientside/ubuntu/ubuntu_only_entrance.sh"
-
     echo ""
     echo "  ╔══════════════════════════════════════════════════════════════════╗"
     echo "  ║                  BUILD COMPLETE — NEXT STEPS                     ║"
@@ -249,9 +247,10 @@ _print_next_steps() {
     echo "  ║  Image  : ${IMAGE_NAME}:${PROJECT_VERSION}"
     echo "  ║  Platform: ${PRODUCT_NAME}"
     echo "  ║                                                                  ║"
-    echo "  ║  To start your development container (Ubuntu host):              ║"
-    echo "  ║                                                                  ║"
-    echo "  ║    ${clientside_script}"
+    echo "  ║  To deploy on a client Ubuntu host:                              ║"
+    echo "  ║    1. Run: ./harbor → Package Handover                          ║"
+    echo "  ║    2. Transfer the tarball to the client                         ║"
+    echo "  ║    3. Extract and run: ./ubuntu_only_entrance.sh start           ║"
     echo "  ║                                                                  ║"
     echo "  ║  Supported commands:                                             ║"
     echo "  ║    start     — create and start the container                    ║"
@@ -261,7 +260,7 @@ _print_next_steps() {
     echo "  ║    remove    — stop and remove the container                     ║"
     echo "  ║                                                                  ║"
     echo "  ║  Example:                                                        ║"
-    echo "  ║    ./project_handover/clientside/ubuntu/ubuntu_only_entrance.sh start"
+    echo "  ║    ./ubuntu_only_entrance.sh start"
     echo "  ║                                                                  ║"
     echo "  ╠══════════════════════════════════════════════════════════════════╣"
     echo "  ║  ⚠  DEPRECATED (no longer maintained):                           ║"

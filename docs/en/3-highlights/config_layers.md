@@ -282,7 +282,7 @@ Scripts that implement this pattern:
 |---|---|
 | `harbor` | Build orchestrator |
 | `docker/dev-env-clientside/build.sh` | Docker image builder |
-| `project_handover/clientside/ubuntu/scripts/01_env_loader.sh` | Container env loader |
+| `scripts/libs/config.sh` | Container env loader |
 
 ---
 
