@@ -286,6 +286,6 @@ Container lifecycle manager. Commands: `start`/`stop`/`restart`/`recreate`/`remo
 
 4. **Config as the Single Source of Truth** — No script contains hardcoded platform-specific values. Everything flows from the 3-layer config. Changing a default propagates to all platforms automatically.
 
-5. **Dynamic docker-compose Generation** — `ubuntu_only_entrance.sh` writes `docker-compose.yaml` from shell variables at runtime, enabling NVIDIA GPU support and platform-specific port mappings without manual compose editing.
+5. **Dynamic docker-compose Generation** — `entrance.sh` writes `docker-compose.yaml` from shell variables at runtime, enabling NVIDIA GPU support and platform-specific port mappings without manual compose editing.
 
 6. **Conditional Feature Installation** — CUDA, OpenCV, Python 2.7, npm China mirrors, proxy — all gated by boolean env vars. The Dockerfile checks these and skips irrelevant stages, keeping images small for platforms that don't need them.

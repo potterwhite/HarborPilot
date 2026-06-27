@@ -65,7 +65,7 @@ status: "Draft — pending approval"
 │  • configs/*.env 文件                            │
 │  • ./harbor 脚本                                 │
 │  • create_platform.sh                           │
-│  • ubuntu_only_entrance.sh                      │
+│  • entrance.sh                                  │
 └─────────────────────────────────────────────────┘
 ```
 

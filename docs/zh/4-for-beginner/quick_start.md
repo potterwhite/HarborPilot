@@ -124,7 +124,7 @@ cd HarborPilot
 构建完成后，脚本会打印 **Next Steps** 操作提示，按提示操作：
 
 ```bash
-./ubuntu_only_entrance.sh start
+./entrance.sh start
 ```
 
 支持的命令：

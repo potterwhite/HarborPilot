@@ -201,7 +201,7 @@ HarborPilot 刻意**不**试图成为：
 
 ## 6. 易记亮点（适用于 README 或演示）
 
-1. **一命令构建，一命令运行** — `./harbor` 构建并推送；`ubuntu_only_entrance.sh start` 部署
+1. **一命令构建，一命令运行** — `./harbor` 构建并推送；`entrance.sh start` 部署
 2. **15 行配置新增平台** — 三层配置意味着无复制粘贴膨胀
 3. **永远无端口冲突** — PORT_SLOT 公式，非手动端口管理
 4. **Registry 优先** — 推送 + 验证 manifest digest，而不只是"希望上传成功了"

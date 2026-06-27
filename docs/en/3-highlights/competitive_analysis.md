@@ -203,7 +203,7 @@ HarborPilot is the right tool if you:
 
 ## 6. Memorable Highlights (for README/presentations)
 
-1. **One command to build, one command to run** — `./harbor` builds and pushes; `ubuntu_only_entrance.sh start` deploys
+1. **One command to build, one command to run** — `./harbor` builds and pushes; `entrance.sh start` deploys
 2. **New platform in 15 lines** — Three-layer config means no copy-paste bloat
 3. **Zero port conflicts, ever** — PORT_SLOT formula, not manual port management
 4. **Registry first** — Push + verify manifest digest, not just "hope it uploaded"

@@ -111,7 +111,7 @@
 
 5. **`harbor` 是顶层编排器**：加载全部 3 层配置，运行 `port_calc.sh`，然后调用 `build.sh` → 打 tag → 推送 → 清理。它是构建的唯一入口。
 
-6. **`ubuntu_only_entrance.sh` 是客户端入口**：加载同样的 3 层配置，从环境变量动态生成 `docker-compose.yaml`（含条件 NVIDIA GPU），管理容器生命周期（`start`/`stop`/`restart`/`recreate`/`remove`）。
+6. **`entrance.sh` 是客户端入口**：加载同样的 3 层配置，从环境变量动态生成 `docker-compose.yaml`（含条件 NVIDIA GPU），管理容器生命周期（`start`/`stop`/`restart`/`recreate`/`remove`）。支持通过 CLI 参数非交互式创建 host 配置。
 
 7. **平台配置使用 `${VAR}` 自引用**：如 `IMAGE_NAME="${PRODUCT_NAME}-dev-env"`。这是 bash 变量展开，在 `source` 时求值，不是模板占位符。
 
@@ -130,10 +130,10 @@
 ./harbor
 
 # 在客户端 Ubuntu 宿主机上启动开发容器
-./ubuntu_only_entrance.sh start
+./entrance.sh start
 
 # 容器生命周期：stop / restart / recreate / remove
-./ubuntu_only_entrance.sh <command>
+./entrance.sh <command>
 
 # 创建新平台（交互式向导）
 ./scripts/create_platform.sh
