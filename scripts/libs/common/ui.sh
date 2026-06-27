@@ -780,6 +780,8 @@ _create_host_config() {
         return 1
     fi
     cp "${TEMPLATE}" "${HOST_CONFIG}"
+    # Update "Created" date to today
+    sed -i "s|^# Created: .*|# Created: $(date +%Y-%m-%d)|" "${HOST_CONFIG}"
     echo "  → Copied template to ${HOST_CONFIG}"
 
     # Now configure host-specific overrides with guided prompts
