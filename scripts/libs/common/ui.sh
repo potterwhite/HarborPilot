@@ -159,12 +159,13 @@ prompt_simple() {
     echo "  ║  [1]  Configurations        — create platform or host config     ║"
     echo "  ║  [2]  Build & Push          — build image and push to registry   ║"
     echo "  ║  [3]  Package Handover      — create client delivery tarball     ║"
+    echo "  ║  [4]  Manage Containers     — start / stop / status / remove     ║"
     echo "  ║                                                                  ║"
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
     echo ""
 
     while true; do
-        read -p "  Please select [1-3]: " _menu_choice
+        read -p "  Please select [1-4]: " _menu_choice
         case "${_menu_choice}" in
             1)
                 _HARBOR_MODE="config"
@@ -184,8 +185,14 @@ prompt_simple() {
                 echo ""
                 break
                 ;;
+            4)
+                _HARBOR_MODE="container"
+                echo "  → Manage Containers selected."
+                echo ""
+                break
+                ;;
             *)
-                echo "  ✗ Invalid choice. Please enter 1, 2, or 3."
+                echo "  ✗ Invalid choice. Please enter 1, 2, 3, or 4."
                 ;;
         esac
     done
@@ -230,6 +237,62 @@ _show_config_menu() {
                 ;;
             *)
                 echo "  ✗ Invalid choice. Please enter 0, 1, or 2."
+                ;;
+        esac
+    done
+}
+
+################################################################################
+# Container management submenu: start, stop, status, remove, or go back
+################################################################################
+_show_container_menu() {
+    while true; do
+        echo ""
+        echo "  ╔══════════════════════════════════════════════════════════════════╗"
+        echo "  ║                     Manage Containers                           ║"
+        echo "  ╠══════════════════════════════════════════════════════════════════╣"
+        echo "  ║                                                                  ║"
+        echo "  ║  [1]  Start container                                            ║"
+        echo "  ║  [2]  Stop container                                             ║"
+        echo "  ║  [3]  Container status                                           ║"
+        echo "  ║  [4]  Remove container                                           ║"
+        echo "  ║                                                                  ║"
+        echo "  ║  [0]  Back to main menu                                          ║"
+        echo "  ║                                                                  ║"
+        echo "  ╚══════════════════════════════════════════════════════════════════╝"
+        echo ""
+
+        read -p "  Please select [0-4]: " _container_choice
+        case "${_container_choice}" in
+            1)
+                echo "  → Start container selected."
+                echo ""
+                _run_container start
+                break
+                ;;
+            2)
+                echo "  → Stop container selected."
+                echo ""
+                _run_container stop
+                break
+                ;;
+            3)
+                echo "  → Container status selected."
+                echo ""
+                _run_container status
+                break
+                ;;
+            4)
+                echo "  → Remove container selected."
+                echo ""
+                _run_container remove
+                break
+                ;;
+            0)
+                return 1  # Signal: go back to main menu
+                ;;
+            *)
+                echo "  ✗ Invalid choice. Please enter 0, 1, 2, 3, or 4."
                 ;;
         esac
     done
@@ -286,6 +349,90 @@ _run_build_push() {
 
     local duration=$(( SECONDS - start_time ))
     echo "  Total execution time: $((duration / 3600))h $((duration % 3600 / 60))m $((duration % 60))s"
+}
+
+################################################################################
+# Run container management command (start/stop/status/remove)
+################################################################################
+_run_container() {
+    local action="$1"
+
+    # Validate host is specified
+    if [ -z "${CLI_HOST}" ]; then
+        _error "Container commands require --host=<name>" 1
+        return 1
+    fi
+
+    # Validate host config exists
+    local host_file="${TOP_CONFIGS_DIR}/3_hosts/${CLI_HOST}.env"
+    if [ ! -f "${host_file}" ]; then
+        _error "Host config not found: ${host_file}" 1
+        return 1
+    fi
+
+    # Load config
+    _load_host_config "${CLI_HOST}"
+    _load_config_layers
+    export HOST_CONFIG
+    export BUILD_SCRIPT_DIR="${TOP_CONFIGS_DIR}/3_hosts/.runtime/${CLI_HOST}"
+    mkdir -p "${BUILD_SCRIPT_DIR}"
+
+    # Source handover modules
+    source "${SCRIPT_DIR}/scripts/libs/handover/compose.sh"
+    source "${SCRIPT_DIR}/scripts/libs/handover/container.sh"
+
+    case "${action}" in
+        start)
+            _log "INFO" "Starting container for host: ${CLI_HOST}"
+            _container_start
+            ;;
+        stop)
+            _log "INFO" "Stopping container for host: ${CLI_HOST}"
+            _container_stop
+            ;;
+        status)
+            _show_container_status
+            ;;
+        remove)
+            _log "INFO" "Removing container for host: ${CLI_HOST}"
+            _container_remove_container
+            ;;
+    esac
+}
+
+################################################################################
+# Show container status (running / stopped / not found)
+################################################################################
+_show_container_status() {
+    echo ""
+    echo "  Container: ${CONTAINER_NAME}"
+    echo "  Image:     ${FINAL_IMAGE_NAME}"
+
+    if _container_is_running; then
+        echo "  Status:    RUNNING"
+        echo ""
+        docker ps --filter "name=^${CONTAINER_NAME}$" --format "  ID: {{.ID}}\n  Created: {{.CreatedAt}}\n  Ports: {{.Ports}}"
+    elif _container_exists; then
+        echo "  Status:    STOPPED"
+        echo ""
+        docker ps -a --filter "name=^${CONTAINER_NAME}$" --format "  ID: {{.ID}}\n  Created: {{.CreatedAt}}"
+    else
+        echo "  Status:    NOT FOUND"
+    fi
+    echo ""
+}
+
+################################################################################
+# List images built by this project
+################################################################################
+_run_image_list() {
+    echo ""
+    echo "  HarborPilot images:"
+    echo "  ─────────────────────────────────────────"
+    docker images --format "  {{.Repository}}:{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}" \
+        | grep -i "harborpilot\|${PROJECT_NAME:-harborpilot}" \
+        || echo "  (none found)"
+    echo ""
 }
 
 ################################################################################

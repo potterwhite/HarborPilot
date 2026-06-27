@@ -1,26 +1,32 @@
 USAGE:
   ./harbor [COMMAND] [OPTIONS]
 
-COMMANDS:
-  (none)              Launch interactive menu
-  build               Build & push Docker image for a host
+COMMANDS — Image:
+  image-build             Build & push Docker image to registry
+  image-list              List images built by this project
+
+COMMANDS — Container:
+  container-start         Start container on this machine
+  container-stop          Stop running container
+  container-status        Show container status
+  container-remove        Remove container
 
 OPTIONS:
-  --host <name>       Select host config by name (e.g. office-server-01)
-                      Looks for configs/3_hosts/<name>.env
-                      If omitted, an interactive host selector is shown.
-  -h, --help          Show this help message
+  --host=<name>           Select host config by name (e.g. office-server-01)
+                          Looks for configs/3_hosts/<name>.env
+  -h, --help              Show this help message
 
 ENVIRONMENT:
-  V=1                 Enable debug mode (verbose output)
+  V=1                     Enable debug mode (verbose output)
 
 EXAMPLES:
-  ./harbor                                  Launch interactive menu
-  ./harbor build                            Build with interactive host selection
-  ./harbor build --host office-server-01    Build for a specific host
-  V=1 ./harbor build --host office-server-01    Debug mode
+  ./harbor                                    Launch interactive menu
+  ./harbor image-build --host=jetson-orin-01  Build & push image for a host
+  ./harbor container-start --host=jetson-orin-01  Start container locally
+  ./harbor container-status --host=jetson-orin-01 Check container status
+  ./harbor image-list                         List project images
 
 CONFIG LAYERS (last wins):
-  Layer 1 — configs/1_defaults/*.env        Global defaults
-  Layer 2 — configs/2_platforms/<name>.env   Per-platform (Jetson board)
-  Layer 3 — configs/3_hosts/<name>.env      Per-host (office, home, etc.)
+  Layer 1 — configs/1_defaults/*.env          Global defaults
+  Layer 2 — configs/2_platforms/<name>.env    Per-platform (Jetson board)
+  Layer 3 — configs/3_hosts/<name>.env        Per-host (office, home, etc.)

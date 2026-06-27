@@ -2,7 +2,7 @@
 ################################################################################
 # Script Name: harbor
 # Description: Build multi-stage Docker image and push to registry
-# Usage: ./harbor
+# Usage: ./harbor [COMMAND] [--host=<name>] [--help]
 #
 # Author: @PotterWhite
 # created date: 2024-11-28
@@ -23,8 +23,12 @@ CLI_HOST=""
 CLI_COMMAND=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        build)
-            CLI_COMMAND="build"
+        image-build|container-start|container-stop|container-status|container-remove|image-list)
+            CLI_COMMAND="$1"
+            shift
+            ;;
+        --host=*)
+            CLI_HOST="${1#*=}"
             shift
             ;;
         --host)
@@ -37,7 +41,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         *)
             echo "Unknown argument: $1"
-            echo "Usage: ./harbor [build] [--host <host-config-name>] [--help]"
+            echo "Usage: ./harbor [COMMAND] [--host=<name>] [--help]"
             exit 1
             ;;
     esac
@@ -85,12 +89,35 @@ main() {
     fi
 
     ##################################################################
-    # CLI mode: ./harbor build [--host <name>]
-    # Skip interactive menu entirely
+    # CLI mode: skip interactive menu entirely
     ##################################################################
-    if [ "${CLI_COMMAND}" = "build" ]; then
-        _run_build_push
-        exit $?
+    if [ -n "${CLI_COMMAND}" ]; then
+        case "${CLI_COMMAND}" in
+            image-build)
+                _run_build_push
+                exit $?
+                ;;
+            container-start)
+                _run_container start
+                exit $?
+                ;;
+            container-stop)
+                _run_container stop
+                exit $?
+                ;;
+            container-status)
+                _run_container status
+                exit $?
+                ;;
+            container-remove)
+                _run_container remove
+                exit $?
+                ;;
+            image-list)
+                _run_image_list
+                exit $?
+                ;;
+        esac
     fi
 
     ##################################################################
@@ -106,6 +133,11 @@ main() {
             if [ "${_HARBOR_MODE}" = "build" ]; then
                 break
             fi
+            continue
+        fi
+
+        if [ "${_HARBOR_MODE}" = "container" ]; then
+            _show_container_menu
             continue
         fi
 

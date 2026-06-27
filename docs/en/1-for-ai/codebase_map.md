@@ -107,12 +107,16 @@ mcp/
 
 ### `harbor` (repo root)
 The **master orchestrator**. Two entry paths:
-- **CLI**: `./harbor build [--host <name>]` — skips menu, goes straight to build
-- **Menu**: `./harbor` — interactive menu → Build & Push / Package Handover / Configurations
+- **CLI**: `./harbor <command> --host=<name>` — skips menu, executes command directly
+- **Menu**: `./harbor` — interactive menu → Build & Push / Package Handover / Configurations / Manage Containers
 
-**CLI arguments:** `build` (subcommand), `--host <name>`, `-h`/`--help`
+**CLI commands (compound names, one level):**
+- Image: `image-build`, `image-list`
+- Container: `container-start`, `container-stop`, `container-status`, `container-remove`
 
-**Execution flow (build mode):**
+**CLI options:** `--host=<name>` (also `--host <name>`), `-h`/`--help`
+
+**Execution flow (image-build):**
 1. `_run_build_push()` (in `ui.sh`) — single entry point for both CLI and menu paths
 2. Host selection: CLI `--host` → validate file exists → `_load_host_config()`; menu → `_select_host_config()`
 3. `_load_config_layers()` — Loads all 3 layers:
@@ -127,10 +131,17 @@ The **master orchestrator**. Two entry paths:
 9. `5_push_images()` — Pushes + verifies manifest digest
 10. `6_cleanup_images()` — Removes intermediate images (keeps final)
 
+**Execution flow (container-start/stop/status/remove):**
+1. `_run_container(action)` (in `ui.sh`) — validates host, loads config, sources handover modules
+2. Sources `compose.sh` + `container.sh` from `scripts/libs/handover/`
+3. Calls `_container_start/stop/remove_container` or `_show_container_status`
+4. `BUILD_SCRIPT_DIR` set to `configs/3_hosts/.runtime/<host>` for compose generation
+
 **Key behaviors:**
 - Each step (build/tag/push/cleanup) has a `prompt_with_timeout` — user can skip with 'n', auto-proceeds after 10s
 - `V=1` enables `set -x` for debug
 - Registry push includes manifest inspection + SHA256 digest verification
+- Container commands only control local containers (no remote SSH)
 
 ### `scripts/port_calc.sh`
 Sourced after Layer 3 in every config loader. Two mutually exclusive modes:
