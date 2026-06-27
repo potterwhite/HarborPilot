@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0](https://github.com/potterwhite/HarborPilot/compare/v1.13.0...v2.0.0) (2026-06-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* Old project_handover/clientside/ directory removed. Container lifecycle now lives in scripts/libs/handover/ as a modular system. Entry point changed from ubuntu_only_entrance.sh to scripts/libs/handover/entrance.sh. Harbor script now handles both build and package workflows through a single entry point.
+
+### ✨ Added
+
+* **host:** add --host CLI flag for multi-host config support ([0df06de](https://github.com/potterwhite/HarborPilot/commit/0df06de1fb7bc2c84ea4e3522e5a0b518b1d818c))
+* **platform:** add Jetson Orin NX platform support ([667c2da](https://github.com/potterwhite/HarborPilot/commit/667c2dabe938b4103131aa34cd14ff36f22ddb77))
+* restructure handover as dynamic module ([c4d754e](https://github.com/potterwhite/HarborPilot/commit/c4d754e1e020a07933b628b56fe32d680763fbaf))
+
+
+### 🐛 Fixed
+
+* **config:** add Layer 1 fallbacks for all missing variables ([4bfdfad](https://github.com/potterwhite/HarborPilot/commit/4bfdfad61cf98bfe6bc090e683a64f81244a6ded))
+* disable OpenCode by default due to slow curl-pipe-bash installer ([8c89ffa](https://github.com/potterwhite/HarborPilot/commit/8c89ffa8cda7b634ab6308155f5ec3186a080e0e))
+* **entrance:** respect HOST_CONFIG in env_loader ([e1941b2](https://github.com/potterwhite/HarborPilot/commit/e1941b24195cfef203774e68f9ca58337117a7f5))
+* **handover:** correct source paths in entrance.sh ([8eb6525](https://github.com/potterwhite/HarborPilot/commit/8eb65256c7081ed5ca05f430f5ba0b0465c0aa93))
+* **handover:** resolve symlinks in SCRIPT_DIR to fix path resolution ([bb34177](https://github.com/potterwhite/HarborPilot/commit/bb3417752a2df4736a37cb969c940d8acbfe15a4))
+* **handover:** restore default volume dir with symlink mechanism ([a08913d](https://github.com/potterwhite/HarborPilot/commit/a08913d0d8cee1342d3d4a6c6ba5ef4408a7f5c2))
+* **harbor:** load host config for package mode too ([2767aa3](https://github.com/potterwhite/HarborPilot/commit/2767aa3c505e23d873d913a0453ade37703fd25b))
+* **package:** load defaults before platform config in package mode ([97f3f5b](https://github.com/potterwhite/HarborPilot/commit/97f3f5b8b3ac6456671c4ad3f8653b6e459adf16))
+* **port_calc:** PORT_SLOT always takes priority over Layer 1 fallbacks ([7a92bbc](https://github.com/potterwhite/HarborPilot/commit/7a92bbcdf890940cccccea13c7f0855f29312b25))
+* **port_calc:** treat PORT_SLOT=0 as placeholder, not active mode ([9b16f95](https://github.com/potterwhite/HarborPilot/commit/9b16f9590f43b6666fd441abe1471064909b7a0b))
+* remove debug `find /tmp/` commands from Dockerfile ([22a8acd](https://github.com/potterwhite/HarborPilot/commit/22a8acd0d06350e3f2e829e561c1451f78ef1e11))
+* skip SDK env validation when INSTALL_SDK=false ([0715eab](https://github.com/potterwhite/HarborPilot/commit/0715eaba74a18579ca146e7611e725b022a42710))
+* **ui:** auto-derive REGISTRY_URL, fix volume path bug, handle directory removal ([2e9458e](https://github.com/potterwhite/HarborPilot/commit/2e9458e2690033f7433bfbb5a78f8fe5da0f155c))
+* **ui:** use dynamic padding for box menus to fix alignment ([a15e442](https://github.com/potterwhite/HarborPilot/commit/a15e442661c6042e2903ba45e9dc48326b90e525))
+* **utils:** detect TLS error on docker login and show fix instructions ([89baad8](https://github.com/potterwhite/HarborPilot/commit/89baad8fd1077f6be44b6c276d0919d4cef7c281))
+* **utils:** run docker login interactively, capture stderr separately ([4c92ee8](https://github.com/potterwhite/HarborPilot/commit/4c92ee85881ff21f5c556c19e5f1c751ac17c122))
+* **volumes:** fix circular symlink, use directory directly when target equals default ([55f503f](https://github.com/potterwhite/HarborPilot/commit/55f503fc2e2c6ff5f6a1633debb01d0a29b717ab))
+
 ## [1.13.0](https://github.com/potterwhite/HarborPilot/compare/v1.12.0...v1.13.0) (2026-06-25)
 
 
