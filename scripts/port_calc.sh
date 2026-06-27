@@ -31,8 +31,8 @@ _PORT_BASE_GDB=2345
 _PORT_STEP=10
 
 # ─── MODE A: Calculate from PORT_SLOT (higher priority) ─────────────────────
-# PORT_SLOT=0 is a Layer 1 placeholder — treat as "not set".
-if [[ -n "${PORT_SLOT+set}" && "${PORT_SLOT}" != "0" ]]; then
+# Only skip when PORT_SLOT is truly unset or empty — PORT_SLOT=0 is valid.
+if [[ -n "${PORT_SLOT+set}" && -n "${PORT_SLOT}" ]]; then
     # Validate PORT_SLOT is a non-negative integer
     if ! [[ "${PORT_SLOT}" =~ ^[0-9]+$ ]]; then
         echo "FATAL: PORT_SLOT must be a non-negative integer, got: '${PORT_SLOT}'"
