@@ -728,7 +728,7 @@ _create_host_config() {
 
     LOCAL_HOSTNAME=$(hostname)
     local TEMPLATE="${TOP_CONFIGS_DIR}/3_hosts/TEMPLATE.env.example"
-    local total_questions=12  # Questions after platform selection
+    local total_questions=15  # Questions after platform selection
 
     # Step 1: Select a base platform FIRST (determines filename)
     echo ""
@@ -955,6 +955,63 @@ _create_host_config() {
         npm_china_mirror="false"
     fi
 
+    # Question 13: Extra volume mounts (default: none)
+    local extra_volumes=()
+    if prompt_simple "Do you need extra volume mounts?" "13" "${total_questions}" "n"; then
+        echo "      Enter host:container paths (empty line to finish)"
+        local vol_idx=0
+        while true; do
+            read -p "  EXTRA_VOLUME_${vol_idx} [done]: " _vol_input
+            [[ -z "${_vol_input}" ]] && break
+            extra_volumes+=("${_vol_input}")
+            echo "  → Added: ${_vol_input}"
+            ((vol_idx++))
+        done
+    else
+        echo "  → No extra volumes"
+    fi
+
+    # Question 14: Install SDK (default from Layer 1: INSTALL_SDK)
+    local _sdk_default="n"
+    [[ "${INSTALL_SDK:-false}" == "true" ]] && _sdk_default="y"
+    local install_sdk="${INSTALL_SDK:-false}"
+    local sdk_repo=""
+    local sdk_key=""
+    local sdk_branch=""
+    if prompt_simple "Install SDK during image build?" "14" "${total_questions}" "${_sdk_default}"; then
+        install_sdk="true"
+
+        # Question 15a: SDK_GIT_REPO (auto-derived from GitLab + platform)
+        sdk_repo="git@${GITLAB_SERVER_IP:-192.168.3.67}:team_${CHIP_FAMILY}/${PRODUCT_NAME}_sdk.git"
+        echo ""
+        echo "  (15a/${total_questions}) SDK git repository"
+        echo "      Auto-derived from GitLab IP and platform identity."
+        echo ""
+        read -p "  SDK_GIT_REPO [${sdk_repo}]: " _input
+        sdk_repo="${_input:-${sdk_repo}}"
+
+        # Question 15b: SDK_GIT_KEY_FILE (default from platform)
+        sdk_key="${SDK_GIT_KEY_FILE:-SDK_${CHIP_FAMILY}_ED25519}"
+        echo ""
+        echo "  (15b/${total_questions}) SSH key file for SDK repo"
+        echo "      Default: ${sdk_key} (from platform config)"
+        echo ""
+        read -p "  SDK_GIT_KEY_FILE [${sdk_key}]: " _input
+        sdk_key="${_input:-${sdk_key}}"
+
+        # Question 15c: SDK_GIT_DEFAULT_BRANCH (default from platform)
+        sdk_branch="${SDK_GIT_DEFAULT_BRANCH:-main}"
+        echo ""
+        echo "  (15c/${total_questions}) SDK git branch"
+        echo "      Default: ${sdk_branch} (from platform config)"
+        echo ""
+        read -p "  SDK_GIT_DEFAULT_BRANCH [${sdk_branch}]: " _input
+        sdk_branch="${_input:-${sdk_branch}}"
+    else
+        install_sdk="false"
+        echo "  → SDK installation disabled"
+    fi
+
     # Apply user choices to the copied template
     # Use '|' as sed delimiter to avoid conflicts with '/' in file paths
     sed -i "s|^# BASE_PLATFORM=.*|BASE_PLATFORM=\"${selected_platform}\"|" "${HOST_CONFIG}"
@@ -978,6 +1035,23 @@ _create_host_config() {
     sed -i "s|^# INSTALL_CUDA=.*|INSTALL_CUDA=\"${install_cuda}\"|" "${HOST_CONFIG}"
     sed -i "s|^# INSTALL_OPENCV=.*|INSTALL_OPENCV=\"${install_opencv}\"|" "${HOST_CONFIG}"
     sed -i "s|^# NPM_USE_CHINA_MIRROR=.*|NPM_USE_CHINA_MIRROR=\"${npm_china_mirror}\"|" "${HOST_CONFIG}"
+
+    # SDK configuration
+    if [[ "${install_sdk}" == "true" ]]; then
+        sed -i "s|^# SDK_GIT_REPO=.*|SDK_GIT_REPO=\"${sdk_repo}\"|" "${HOST_CONFIG}"
+        sed -i "s|^# SDK_GIT_KEY_FILE=.*|SDK_GIT_KEY_FILE=\"${sdk_key}\"|" "${HOST_CONFIG}"
+        sed -i "s|^# SDK_GIT_DEFAULT_BRANCH=.*|SDK_GIT_DEFAULT_BRANCH=\"${sdk_branch}\"|" "${HOST_CONFIG}"
+    fi
+
+    # Extra volume mounts
+    if [[ ${#extra_volumes[@]} -gt 0 ]]; then
+        # First one: uncomment template line
+        sed -i "s|^# EXTRA_VOLUME_0=.*|EXTRA_VOLUME_0=\"${extra_volumes[0]}\"|" "${HOST_CONFIG}"
+        # Additional: append after EXTRA_VOLUME_0
+        for ((i=1; i<${#extra_volumes[@]}; i++)); do
+            sed -i "/^EXTRA_VOLUME_0=/a EXTRA_VOLUME_${i}=\"${extra_volumes[$i]}\"" "${HOST_CONFIG}"
+        done
+    fi
 
     # Auto-derive REGISTRY_URL from Harbor IP + port + CHIP_FAMILY
     if [ -n "${harbor_ip}" ] && [ -n "${harbor_port}" ] && [ -n "${CHIP_FAMILY:-}" ]; then
