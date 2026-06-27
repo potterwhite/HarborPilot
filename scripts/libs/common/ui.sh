@@ -783,12 +783,14 @@ _create_host_config() {
     # Update "Created" date to today
     sed -i "s|^# Created: .*|# Created: $(date +%Y-%m-%d)|" "${HOST_CONFIG}"
     # Sync Additional Toggles with current Layer 1 defaults (non-wizard toggles only;
-    # INSTALL_CUDA and INSTALL_OPENCV are handled by Q10/Q11 below)
+    # INSTALL_CUDA and INSTALL_OPENCV are handled by Q10/Q11 below).
+    # Keep lines commented — the layer system reads Layer 1 defaults at runtime;
+    # these are written here so the file shows current values for reference.
     for _var in INSTALL_CODEX INSTALL_CLAUDE_CODE INSTALL_OPENCODE \
                 INSTALL_DEV_TOOLS INSTALL_MINICOM_CONFIG INSTALL_DOC_TOOLS \
                 INSTALL_VCS_TOOLS INSTALL_KERNEL_TOOLS INSTALL_PYTHON_PACKAGES; do
         eval "_val=\"\${${_var}:-}\""
-        [ -n "${_val}" ] && sed -i "s|^# ${_var}=\"[^\"]*|${_var}=\"${_val}\"|" "${HOST_CONFIG}"
+        [ -n "${_val}" ] && sed -i 's|^# '"${_var}"'="[^"]*"\(.*\)|# '"${_var}"'="'"${_val}"'"\1|' "${HOST_CONFIG}"
     done
     echo "  → Copied template to ${HOST_CONFIG}"
 
