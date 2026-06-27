@@ -29,7 +29,9 @@ first_install_core_tools() {
         meson \
         pkg-config \
         ccache \
-        tree
+        tree \
+        libmpc-dev \
+        libgmp-dev
 
     if [ "${INSTALL_HOST_CMAKE}" = "true" ]; then
         apt-get install -y \
@@ -51,13 +53,6 @@ second_install_dev_tools() {
         lldb \
         cppcheck \
         minicom
-
-    if [[ "${PRODUCT_NAME}" == "rv1126bp" ]]; then
-        # required by rv1126bp platform-kernel 6.1
-        apt-get install -y \
-            libmpc-dev \
-            libgmp-dev
-    fi
 
     echo "OS_VERSION = ${OS_VERSION}"
     if [ "${OS_VERSION}" != "20.04" ]; then
@@ -510,6 +505,21 @@ nintyninth_cleanup() {
 
 
 ###############################################################################
+# Platform-specific: Jetson cross-compilation tools
+# Description: Installs aarch64 cross-compiler and QEMU for Jetson development
+#              These tools enable cross-compiling for Jetson Orin NX on x86 hosts
+###############################################################################
+install_platform_jetson_tools() {
+    echo "--- Installing Jetson cross-compilation tools ---"
+    apt-get install -y \
+        gcc-aarch64-linux-gnu \
+        g++-aarch64-linux-gnu \
+        gdb-multiarch \
+        qemu-user-static
+    echo "Jetson cross-compilation tools installed."
+}
+
+###############################################################################
 # Main function
 # Description: Execute all installation steps in order
 ###############################################################################
@@ -565,6 +575,16 @@ main() {
 
     # AI coding tools: Codex, Claude Code, OpenCode (each has its own flag)
     ninth_install_ai_tools
+
+    # Platform-specific tools based on CHIP_FAMILY
+    case "${CHIP_FAMILY}" in
+        jetson)
+            install_platform_jetson_tools
+            ;;
+        *)
+            # No platform-specific tools for other chip families
+            ;;
+    esac
 
     #------------------------------
     nintyninth_cleanup

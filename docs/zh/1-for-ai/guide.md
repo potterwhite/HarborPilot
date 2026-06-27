@@ -130,10 +130,10 @@
 ./harbor
 
 # 在客户端 Ubuntu 宿主机上启动开发容器
-./project_handover/clientside/ubuntu/ubuntu_only_entrance.sh start
+./ubuntu_only_entrance.sh start
 
 # 容器生命周期：stop / restart / recreate / remove
-./project_handover/clientside/ubuntu/ubuntu_only_entrance.sh <command>
+./ubuntu_only_entrance.sh <command>
 
 # 创建新平台（交互式向导）
 ./scripts/create_platform.sh

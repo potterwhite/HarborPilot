@@ -7,7 +7,7 @@
 > **Maintenance rule:** Any AI agent that modifies a file listed here MUST update
 > the relevant section in this document in the same commit/session.
 >
-> Last updated: 2026-06-18 (defaults files renamed to stage-aligned names; merges applied)
+> Last updated: 2026-06-25 (Jetson Orin NX platform added; rv1126bp libs generalized)
 > **Related:** [中文版 →](../../zh/1-for-ai/codebase_map.md)
 
 ---
@@ -37,7 +37,9 @@ HarborPilot.git/
 │   │   ├── rk3568-rk3568_ubuntu-20.04.env        ←     PORT_SLOT=2, Ubuntu 20.04
 │   │   ├── rv1126-rv1126_ubuntu-22.04.env        ←     PORT_SLOT=3, Ubuntu 22.04
 │   │   ├── rk3568-rk3568_ubuntu-22.04.env        ←     PORT_SLOT=4, Ubuntu 22.04
-│   │   └── rk3588-rk3588s_ubuntu-24.04.env      ←     PORT_SLOT=5, Ubuntu 24.04, no NVIDIA
+│   │   ├── rk3588-rk3588s_ubuntu-24.04.env      ←     PORT_SLOT=5, Ubuntu 24.04, no NVIDIA
+│   │   ├── rk3588-rk3588s_ubuntu-20.04.env      ←     PORT_SLOT=6, Ubuntu 20.04
+│   │   └── jetson-orin-nx-16g-super_ubuntu-22.04.env ← PORT_SLOT=7, Ubuntu 22.04, Jetson cross-compile
 │   ├── hosts/                                  ←   Layer 3: host-level overrides (optional, gitignored)
 │   │   ├── .gitkeep                            ←     Keeps directory in git
 │   │   └── README.md                           ←     Usage documentation
@@ -57,11 +59,12 @@ HarborPilot.git/
 │   │   ├── stage_4_config/             ←   Stage 4: env config, proxy (templates)
 │   │   └── stage_5_final/              ←   Stage 5: workspace, entrypoint, tests (templates)
 │
-├── project_handover/                   ← ★ Client-side deployment package
-│   └── clientside/ubuntu/
-│       ├── ubuntu_only_entrance.sh     ←   Container lifecycle: start/stop/restart/recreate/remove
-│       ├── harbor.crt                  ←   Harbor CA cert (install once per host)
-│       └── scripts/                    ←   6 modular helper scripts
+├── scripts/libs/handover/              ← ★ Client-side handover scripts (packaged into tarball)
+│   ├── entrance.sh                     ←   Entry script: start/stop/restart/recreate/remove
+│   ├── volumes.sh                      ←   Volume directory initialization
+│   ├── compose.sh                      ←   Docker compose generator
+│   ├── container.sh                    ←   Container lifecycle operations
+│   └── README_handover.md              ←   Client setup guide (packaged at root)
 │
 ├── docs/                               ← ★ Documentation (bilingual)
 │   ├── en/                             ←   English documentation tree
@@ -220,6 +223,8 @@ Only override what differs. Required fields: `PRODUCT_NAME`, `OS_VERSION`, `OS_V
 | `rv1126-rv1126_ubuntu-22.04` | 3 | rv1126 | rv1126 | rv1126-rv1126_ubuntu-22-04 | 2139 | 2375 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
 | `rk3568-rk3568_ubuntu-22.04` | 4 | rk3568 | rk3568 | rk3568-rk3568_ubuntu-22-04 | 2149 | 2385 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
 | `rk3588-rk3588s_ubuntu-24.04` | 5 | rk3588 | rk3588s | rk3588-rk3588s_ubuntu-24-04 | 2159 | 2395 | 24.04 | — | ✅ | ✅ 192.168.3.67 |
+| `rk3588-rk3588s_ubuntu-20.04` | 6 | rk3588 | rk3588s | rk3588-rk3588s_ubuntu-20-04 | 2169 | 2405 | 20.04 | — | — | — |
+| `jetson-orin-nx-16g-super_ubuntu-22.04` | 7 | jetson | orin-nx-16g-super | jetson-orin-nx-16g-super_ubuntu-22-04 | 2179 | 2415 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
 
 ### `configs/platform_schema.json`
 JSON Schema for platform `.env` validation. Required: `PRODUCT_NAME`, `OS_VERSION`, `OS_VERSION_ID`, `PORT_SLOT`. Defines enums (OS_VERSION: 20.04/22.04/24.04/11/12), ranges (PORT_SLOT: 0–99), patterns (PRODUCT_NAME: `[a-zA-Z0-9_-]+`). Conditional: if `HAVE_GITLAB_SERVER=TRUE` → requires `GITLAB_SERVER_IP` + `GITLAB_SERVER_PORT`. `additionalProperties: true`.
@@ -228,20 +233,21 @@ JSON Schema for platform `.env` validation. Required: `PRODUCT_NAME`, `OS_VERSIO
 
 ## 5. Client-Side Deployment
 
-### `project_handover/clientside/ubuntu/ubuntu_only_entrance.sh`
+### `scripts/libs/handover/entrance.sh`
 Container lifecycle manager. Commands: `start`/`stop`/`restart`/`recreate`/`remove`/`-h`.
 
 **Key behavior:**
-- `1_0_gen_environment_variables()` — Loads same 3-layer config as `harbor` + `port_calc.sh`
-- `3_3_generate_compose_config()` — Dynamically generates `docker-compose.yaml` from env vars:
+- Sources shared libraries from `scripts/libs/` (common/utils.sh, common/ui.sh, config.sh)
+- `_load_config_layers()` — Loads 3-layer config (same as harbor) + port_calc.sh
+- `compose_generate()` — Dynamically generates `docker-compose.yaml` from env vars:
   - Image: `${REGISTRY_URL}/${IMAGE_NAME}:latest` (or local if no registry)
   - Ports: `${CLIENT_SSH_PORT}:22` and `${GDB_PORT}:${GDB_PORT}`
   - Conditional NVIDIA GPU: `deploy.resources.reservations.devices` with `nvidia` driver
   - Samba CIFS volume mount
   - TTY + privileged + USB passthrough
 - `start` → interactive menu: enter running container / restart / recreate
-- `1_2_check_docker_login()` — Harbor login with retry
-- `2_4_retrieve_latest_image()` — Pull from registry
+- `0_check_registry_login()` — Harbor login check
+- `_container_pull_image()` — Pull from registry
 
 ---
 

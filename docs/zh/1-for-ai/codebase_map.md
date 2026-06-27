@@ -6,7 +6,7 @@
 >
 > **维护规则：** 任何修改本文中所列文件的 AI Agent，必须在同一次提交/会话中更新本文档的相关章节。
 >
-> 最后更新：2026-06-18（默认文件重命名为阶段对齐名称；已应用合并）
+> 最后更新：2026-06-25（新增 Jetson Orin NX 平台；rv1126bp 库已通用化）
 > **Related:** [English Version →](../../en/1-for-ai/codebase_map.md)
 
 ---
@@ -36,7 +36,9 @@ HarborPilot.git/
 │   │   ├── rk3568-rk3568_ubuntu-20.04.env        ←     PORT_SLOT=2，Ubuntu 20.04
 │   │   ├── rv1126-rv1126_ubuntu-22.04.env        ←     PORT_SLOT=3，Ubuntu 22.04
 │   │   ├── rk3568-rk3568_ubuntu-22.04.env        ←     PORT_SLOT=4，Ubuntu 22.04
-│   │   └── rk3588-rk3588s_ubuntu-24.04.env      ←     PORT_SLOT=5，Ubuntu 24.04，无 NVIDIA
+│   │   ├── rk3588-rk3588s_ubuntu-24.04.env      ←     PORT_SLOT=5，Ubuntu 24.04，无 NVIDIA
+│   │   ├── rk3588-rk3588s_ubuntu-20.04.env      ←     PORT_SLOT=6，Ubuntu 20.04
+│   │   └── jetson-orin-nx-16g-super_ubuntu-22.04.env ← PORT_SLOT=7，Ubuntu 22.04，Jetson 交叉编译
 │   ├── hosts/                                  ←   Layer 3：主机级覆盖（可选，gitignore）
 │   │   ├── .gitkeep                            ←     保留目录
 │   │   └── README.md                           ←     使用说明
@@ -56,11 +58,12 @@ HarborPilot.git/
 │   │   ├── stage_4_config/             ←   Stage 4：环境变量配置、代理（模板）
 │   │   └── stage_5_final/              ←   Stage 5：工作区、入口点、测试（模板）
 │
-├── project_handover/                   ← ★ 客户端部署包
-│   └── clientside/ubuntu/
-│       ├── ubuntu_only_entrance.sh     ←   容器生命周期：start/stop/restart/recreate/remove
-│       ├── harbor.crt                  ←   Harbor CA 证书（每台宿主机安装一次）
-│       └── scripts/                    ←   6 个模块化辅助脚本
+├── scripts/libs/handover/              ← ★ 客户端 handover 脚本（打包进 tarball）
+│   ├── entrance.sh                     ←   入口脚本：start/stop/restart/recreate/remove
+│   ├── volumes.sh                      ←   Volume 目录初始化
+│   ├── compose.sh                      ←   Docker compose 生成器
+│   ├── container.sh                    ←   容器生命周期操作
+│   └── README_handover.md              ←   客户端安装指南（打包在根目录）
 │
 ├── docs/                               ← ★ 文档（双语分离）
 │   ├── en/                             ←   英文文档树
@@ -220,6 +223,8 @@ mcp/
 | `rv1126-rv1126_ubuntu-22.04` | 3 | rv1126 | rv1126 | rv1126-rv1126_ubuntu-22.04 | 2139 | 2375 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
 | `rk3568-rk3568_ubuntu-22.04` | 4 | rk3568 | rk3568 | rk3568-rk3568_ubuntu-22.04 | 2149 | 2385 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
 | `rk3588-rk3588s_ubuntu-24.04` | 5 | rk3588 | rk3588s | rk3588-rk3588s_ubuntu-24.04 | 2159 | 2395 | 24.04 | — | ✅ | ✅ 192.168.3.67 |
+| `rk3588-rk3588s_ubuntu-20.04` | 6 | rk3588 | rk3588s | rk3588-rk3588s_ubuntu-20.04 | 2169 | 2405 | 20.04 | — | — | — |
+| `jetson-orin-nx-16g-super_ubuntu-22.04` | 7 | jetson | orin-nx-16g-super | jetson-orin-nx-16g-super_ubuntu-22.04 | 2179 | 2415 | 22.04 | — | ✅ | ✅ 192.168.3.67 |
 
 ### `configs/platform_schema.json`
 平台 `.env` 验证 JSON Schema。必填：`PRODUCT_NAME`、`OS_VERSION`、`PORT_SLOT`。定义枚举（OS_VERSION：20.04/22.04/24.04/11/12）、范围（PORT_SLOT：0–99）、模式（PRODUCT_NAME：`[a-zA-Z0-9_-]+`）。条件约束：若 `HAVE_GITLAB_SERVER=TRUE` → 需要 `GITLAB_SERVER_IP` + `GITLAB_SERVER_PORT`。`additionalProperties: true`。
@@ -228,20 +233,21 @@ mcp/
 
 ## 5. 客户端部署
 
-### `project_handover/clientside/ubuntu/ubuntu_only_entrance.sh`
+### `scripts/libs/handover/entrance.sh`
 容器生命周期管理器。命令：`start`/`stop`/`restart`/`recreate`/`remove`/`-h`。
 
 **关键行为：**
-- `1_0_gen_environment_variables()` — 加载与 `harbor` 相同的 3 层配置 + `port_calc.sh`
-- `3_3_generate_compose_config()` — 从环境变量动态生成 `docker-compose.yaml`：
+- 加载 `scripts/libs/` 共享库（common/utils.sh, common/ui.sh, config.sh）
+- `_load_config_layers()` — 加载 3 层配置（与 harbor 相同）+ port_calc.sh
+- `compose_generate()` — 从环境变量动态生成 `docker-compose.yaml`：
   - 镜像：`${REGISTRY_URL}/${IMAGE_NAME}:latest`（无 registry 时使用本地镜像）
   - 端口：`${CLIENT_SSH_PORT}:22` 和 `${GDB_PORT}:${GDB_PORT}`
   - 条件 NVIDIA GPU：带 `nvidia` 驱动的 `deploy.resources.reservations.devices`
   - Samba CIFS volume 挂载
   - TTY + 特权模式 + USB 直通
 - `start` → 交互式菜单：进入运行中的容器 / 重启 / 重建
-- `1_2_check_docker_login()` — 带重试的 Harbor 登录
-- `2_4_retrieve_latest_image()` — 从 registry 拉取
+- `0_check_registry_login()` — Harbor 登录检查
+- `_container_pull_image()` — 从 registry 拉取
 
 ---
 

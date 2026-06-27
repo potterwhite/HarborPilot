@@ -83,10 +83,12 @@ HarborPilot/
 │   │   └── build.sh
 │   └── libs/                         可复用 Dockerfile 片段和脚本
 │
-├── project_handover/
-│   ├── clientside/ubuntu/
-│   │   ├── ubuntu_only_entrance.sh   容器生命周期管理脚本
-│   │   └── harbor.crt                Harbor CA 证书（每台宿主机安装一次）
+├── scripts/libs/
+│   ├── common/                       共享工具（utils.sh, ui.sh）
+│   ├── handover/                     客户端脚本（打包进 tarball）
+│   ├── config.sh                     三层配置加载器
+│   ├── build.sh                      Docker build/tag/push
+│   └── package.sh                    Handover 打包
 │
 └── docs/
     ├── en/                           ← 英文文档树
@@ -128,7 +130,7 @@ docker login <registry-ip>:<registry-port>
 ./harbor
 
 # 4. 启动开发容器
-./project_handover/clientside/ubuntu/ubuntu_only_entrance.sh start
+./ubuntu_only_entrance.sh start
 ```
 
 ---

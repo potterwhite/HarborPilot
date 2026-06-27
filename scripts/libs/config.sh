@@ -52,8 +52,12 @@ _load_config_layers() {
     # Layer 2 + 3: Host-driven platform resolution
     # If host config declares BASE_PLATFORM, use that to determine the platform.
     # Otherwise fall back to the .env symlink (backward compatibility).
-    LOCAL_HOSTNAME=$(hostname)
-    HOST_CONFIG="${TOP_CONFIGS_DIR}/3_hosts/${LOCAL_HOSTNAME}.env"
+    # If HOST_CONFIG is already set (e.g. by _load_host_config or --host CLI),
+    # use it directly instead of re-deriving from hostname.
+    if [ -z "${HOST_CONFIG}" ]; then
+        LOCAL_HOSTNAME=$(hostname)
+        HOST_CONFIG="${TOP_CONFIGS_DIR}/3_hosts/${LOCAL_HOSTNAME}.env"
+    fi
 
     if [ -f "${HOST_CONFIG}" ]; then
         # Read BASE_PLATFORM without sourcing the whole file
@@ -135,8 +139,10 @@ _load_layer2_platform() {
 # If host config declares BASE_PLATFORM, platform is auto-resolved.
 ################################################################################
 _load_layer3_host() {
-    LOCAL_HOSTNAME=$(hostname)
-    HOST_CONFIG="${TOP_CONFIGS_DIR}/3_hosts/${LOCAL_HOSTNAME}.env"
+    if [ -z "${HOST_CONFIG}" ]; then
+        LOCAL_HOSTNAME=$(hostname)
+        HOST_CONFIG="${TOP_CONFIGS_DIR}/3_hosts/${LOCAL_HOSTNAME}.env"
+    fi
 
     if [ -f "${HOST_CONFIG}" ]; then
         # Read BASE_PLATFORM without sourcing the whole file

@@ -5,17 +5,17 @@
 # Description: Port auto-calculation and validation.
 #              Sourced AFTER Layer 3 (platform overrides) in every config loader.
 #
-#   Two mutually exclusive modes:
-#     MODE A — Declarative (recommended for new platforms):
+#   Two modes with clear priority:
+#
+#     MODE A — Declarative (recommended, higher priority):
 #              Set PORT_SLOT in the platform .env file.
 #              All ports are derived automatically from base values.
+#              Any explicit CLIENT_SSH_PORT/GDB_PORT from Layer 1 defaults
+#              are overridden.
 #
-#     MODE B — Explicit (legacy or special cases):
-#              Set CLIENT_SSH_PORT and GDB_PORT directly.
-#              No PORT_SLOT is defined.
-#
-#   Mixing the two modes is an error — the script will print which
-#   variables conflict and exit 1.
+#     MODE B — Explicit (fallback when PORT_SLOT=0 or unset):
+#              Use CLIENT_SSH_PORT and GDB_PORT directly.
+#              Relies on Layer 1 defaults or explicit platform values.
 #
 # Author: PotterWhite
 # Created: 2026-03-24
@@ -30,57 +30,17 @@ _PORT_BASE_CLIENT_SSH=2109
 _PORT_BASE_GDB=2345
 _PORT_STEP=10
 
-# ─── Detect which mode the platform file is using ───────────────────────────
-_has_slot=""
-_has_explicit=""
-_explicit_list=""
-
-if [[ -n "${PORT_SLOT+set}" ]]; then
-    _has_slot=1
-fi
-
-# Check for explicitly defined port variables
-for _var in CLIENT_SSH_PORT GDB_PORT; do
-    if [[ -n "${!_var+set}" ]]; then
-        _has_explicit=1
-        _explicit_list="${_explicit_list}  ${_var}=${!_var}\n"
-    fi
-done
-
-# ─── Validate: reject mixed mode ────────────────────────────────────────────
-if [[ -n "${_has_slot}" && -n "${_has_explicit}" ]]; then
-    echo ""
-    echo "  =================================================================="
-    echo "  FATAL: PORT_SLOT and explicit port variables cannot coexist."
-    echo "  =================================================================="
-    echo ""
-    echo "  PORT_SLOT=${PORT_SLOT} is defined, but these explicit ports"
-    echo "  were also found in the platform config:"
-    echo ""
-    echo -e "${_explicit_list}"
-    echo ""
-    echo "  Choose ONE mode:"
-    echo ""
-    echo "  MODE A (recommended) — Keep PORT_SLOT, remove all explicit ports:"
-    echo "    PORT_SLOT=\"${PORT_SLOT}\""
-    echo "    # Calculated ports:"
-    echo "    #   CLIENT_SSH_PORT = $(( _PORT_BASE_CLIENT_SSH + PORT_SLOT * _PORT_STEP ))"
-    echo "    #   GDB_PORT        = $(( _PORT_BASE_GDB + PORT_SLOT * _PORT_STEP ))"
-    echo ""
-    echo "  MODE B (explicit)   — Remove PORT_SLOT, keep these explicit ports:"
-    echo -e "${_explicit_list}"
-    echo ""
-    echo "  =================================================================="
-    exit 1
-fi
-
-# ─── MODE A: Calculate from PORT_SLOT ────────────────────────────────────────
-if [[ -n "${_has_slot}" ]]; then
+# ─── MODE A: Calculate from PORT_SLOT (higher priority) ─────────────────────
+# PORT_SLOT=0 is a Layer 1 placeholder — treat as "not set".
+if [[ -n "${PORT_SLOT+set}" && "${PORT_SLOT}" != "0" ]]; then
     # Validate PORT_SLOT is a non-negative integer
     if ! [[ "${PORT_SLOT}" =~ ^[0-9]+$ ]]; then
         echo "FATAL: PORT_SLOT must be a non-negative integer, got: '${PORT_SLOT}'"
         exit 1
     fi
+
+    # Clear any Layer 1 fallback ports before calculating
+    unset CLIENT_SSH_PORT GDB_PORT
 
     _offset=$(( PORT_SLOT * _PORT_STEP ))
 
@@ -92,10 +52,8 @@ if [[ -n "${_has_slot}" ]]; then
     echo "[port_calc] PORT_SLOT=${PORT_SLOT} (offset=${_offset})"
     echo "[port_calc]   CLIENT_SSH_PORT = ${CLIENT_SSH_PORT}"
     echo "[port_calc]   GDB_PORT        = ${GDB_PORT}"
-fi
-
-# ─── MODE B: Explicit ports — validate completeness ─────────────────────────
-if [[ -z "${_has_slot}" ]]; then
+else
+    # ─── MODE B: Explicit ports (fallback) ────────────────────────────────────
     _missing=""
     for _var in CLIENT_SSH_PORT GDB_PORT; do
         if [[ -z "${!_var+set}" ]]; then
@@ -119,10 +77,10 @@ if [[ -z "${_has_slot}" ]]; then
         exit 1
     fi
 
-    echo "[port_calc] Explicit mode — ports from platform .env"
+    echo "[port_calc] Explicit mode — ports from config"
     echo "[port_calc]   CLIENT_SSH_PORT = ${CLIENT_SSH_PORT}"
     echo "[port_calc]   GDB_PORT        = ${GDB_PORT}"
 fi
 
 # ─── Cleanup internal variables ──────────────────────────────────────────────
-unset _has_slot _has_explicit _explicit_list _offset _missing _var
+unset _offset _missing _var

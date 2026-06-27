@@ -375,8 +375,6 @@ RUN for template in $(find /tmp/configs /tmp/scripts -name "*_template" 2>/dev/n
 
 FROM stage_3rd_template-processor AS stage_3rd_sdk
 
-RUN find /tmp/
-
 # Configuration and installation scripts
 # COPY configs/sdk_config.conf /tmp/
 # COPY scripts/install_sdk.sh /tmp/
@@ -417,12 +415,8 @@ FROM stage_3rd_sdk AS stage_4th_template-processor
 
 RUN echo -e "\n========= Stage 4th =========\n\n"
 
-RUN find /tmp/
-
 COPY ./stage_4_config/configs/ /tmp/configs/
 COPY ./stage_4_config/scripts/ /tmp/scripts/
-
-RUN find /tmp/
 
 WORKDIR /tmp
 # Render all *_template files using envsubst
@@ -434,8 +428,6 @@ RUN for template in $(find /tmp/configs /tmp/scripts -name "*_template" 2>/dev/n
     done
 
 FROM stage_4th_template-processor AS stage_4th_config
-
-RUN find /tmp/
 
 # Copy configuration scripts and templates
 COPY --from=stage_4th_template-processor /tmp/scripts/configure_env.sh /tmp/

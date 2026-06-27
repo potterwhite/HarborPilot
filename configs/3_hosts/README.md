@@ -12,12 +12,45 @@ This directory contains host-specific configuration overrides. Each file is name
 # 1. Get your hostname
 hostname
 
-# 2. Copy the template
-cp TEMPLATE.env.example $(hostname).env
+# 2. Copy the template (include platform name in filename)
+cp TEMPLATE.env.example $(hostname)_<PLATFORM_NAME>.env
 
 # 3. Edit with your settings
-nano $(hostname).env
+nano $(hostname)_<PLATFORM_NAME>.env
 ```
+
+### Naming Convention
+
+Host config files follow this pattern:
+
+```
+{hostname}_{PLATFORM_NAME}.env
+```
+
+- `{hostname}` — your machine's hostname (`hostname` command)
+- `{PLATFORM_NAME}` — full platform name from `configs/2_platforms/` (without `.env`)
+
+Examples:
+```
+Anastasia_jetson-orin-nx-16g-super_ubuntu-22.04.env
+Anastasia_rk3588-rk3588s_ubuntu-22.04.env
+Anastasia_rv1126bp_ubuntu-22.04.env
+```
+
+### Multiple Host Configs Per Machine
+
+One machine can have multiple host configs — one per platform. Use `--host` to select:
+
+```bash
+# Interactive menu (lists all host configs)
+./harbor
+
+# Direct selection (skip menu)
+./harbor --host Anastasia_jetson-orin-nx-16g-super_ubuntu-22.04
+./harbor --host Anastasia_rk3588-rk3588s_ubuntu-22.04
+```
+
+The `--host` value must match a filename (without `.env`) in this directory.
 
 ---
 
@@ -52,7 +85,9 @@ Only add values that **differ** from your platform config:
 ## Example: Minimal Host Config
 
 ```bash
-# configs/3_hosts/my-desktop.env
+# configs/3_hosts/my-desktop_jetson-orin-nx-16g-super_ubuntu-22.04.env
+
+BASE_PLATFORM="jetson-orin-nx-16g-super_ubuntu-22.04"
 
 # This host has NVIDIA GPU
 USE_NVIDIA_GPU="true"
@@ -67,7 +102,9 @@ HOST_VOLUME_DIR="/mnt/ssd/docker-volumes/${PRODUCT_NAME}"
 ## Example: Full Host Config
 
 ```bash
-# configs/3_hosts/office-workstation.env
+# configs/3_hosts/office-workstation_rk3588-rk3588s_ubuntu-22.04.env
+
+BASE_PLATFORM="rk3588-rk3588s_ubuntu-22.04"
 
 # Network
 HAS_PROXY="true"
@@ -111,7 +148,12 @@ This protects:
 
 Check if the file exists:
 ```bash
-ls -la configs/3_hosts/$(hostname).env
+ls -la configs/3_hosts/$(hostname)_*.env
+```
+
+Or with a specific platform:
+```bash
+ls -la configs/3_hosts/$(hostname)_jetson-orin-nx-16g-super_ubuntu-22.04.env
 ```
 
 ### "What values are active?"

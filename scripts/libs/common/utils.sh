@@ -72,11 +72,51 @@
     echo ""
     read -p "  Press ENTER to run 'docker login ${registry_host}' now, or Ctrl+C to abort: "
 
-    if docker login "${registry_host}"; then
+    # Run docker login interactively (stdin from terminal)
+    # Capture stderr to a temp file for error detection
+    # Temporarily disable set -e so we can handle the error ourselves
+    local stderr_file
+    stderr_file=$(mktemp)
+    set +e
+    docker login "${registry_host}" 2>"${stderr_file}"
+    local login_exit=$?
+    set -e
+    local login_errors
+    login_errors=$(cat "${stderr_file}")
+    rm -f "${stderr_file}"
+
+    if [ ${login_exit} -eq 0 ]; then
         echo "[Registry] Login successful."
         return 0
     else
-        echo "[Registry] Login failed. Aborting build."
+        echo "[Registry] Login failed."
+        echo ""
+
+        # Detect TLS/certificate error and provide specific guidance
+        if echo "${login_errors}" | grep -qi "tls\|certificate\|x509\|unknown authority"; then
+            echo "  ╔══════════════════════════════════════════════════════════════════╗"
+            echo "  ║  TLS CERTIFICATE ERROR                                          ║"
+            echo "  ╠══════════════════════════════════════════════════════════════════╣"
+            echo "  ║                                                                  ║"
+            echo "  ║  Docker does not trust the Harbor registry certificate.          ║"
+            echo "  ║                                                                  ║"
+            echo "  ║  Fix (choose one):                                               ║"
+            echo "  ║                                                                  ║"
+            echo "  ║  Option A — Install CA certificate (recommended):                ║"
+            echo "  ║    sudo mkdir -p /etc/docker/certs.d/${registry_host}/"
+            echo "  ║    sudo cp <harbor.crt> /etc/docker/certs.d/${registry_host}/ca.crt"
+            echo "  ║    sudo systemctl restart docker                                 ║"
+            echo "  ║                                                                  ║"
+            echo "  ║  Option B — Trust insecure registry (internal network only):     ║"
+            echo "  ║    Add to /etc/docker/daemon.json:                               ║"
+            echo "  ║    {\"insecure-registries\":[\"${registry_host}\"]}"
+            echo "  ║    sudo systemctl restart docker                                 ║"
+            echo "  ║                                                                  ║"
+            echo "  ╚══════════════════════════════════════════════════════════════════╝"
+        else
+            echo "  Error output: ${login_errors}"
+        fi
+
         return 1
     fi
 }

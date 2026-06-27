@@ -31,8 +31,8 @@ Do **not** scan `docker/`, `scripts/`, or `configs/` before reading the above.
 # Build a platform image (interactive platform selection)
 ./harbor
 
-# Start dev container (on client Ubuntu host)
-./project_handover/clientside/ubuntu/ubuntu_only_entrance.sh start
+# Start dev container (on client Ubuntu host, via packaged tarball)
+./ubuntu_only_entrance.sh start
 
 # Create a new platform config (interactive wizard)
 ./scripts/create_platform.sh

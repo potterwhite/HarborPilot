@@ -218,7 +218,7 @@ _show_config_menu() {
                 _create_host_config
                 read -p "  Build this host now? (y/N): " _build_choice
                 if [[ "${_build_choice}" =~ ^[yY]$ ]]; then
-                    _load_host_config "${LOCAL_HOSTNAME}"
+                    _load_host_config "$(basename "${HOST_CONFIG}" .env)"
                     _HARBOR_MODE="build"
                     break
                 fi
@@ -239,8 +239,6 @@ _show_config_menu() {
 # Print next steps after a successful build
 ################################################################################
 _print_next_steps() {
-    local clientside_script="${BUILD_SCRIPT_DIR}/project_handover/clientside/ubuntu/ubuntu_only_entrance.sh"
-
     echo ""
     echo "  ╔══════════════════════════════════════════════════════════════════╗"
     echo "  ║                  BUILD COMPLETE — NEXT STEPS                     ║"
@@ -249,9 +247,10 @@ _print_next_steps() {
     echo "  ║  Image  : ${IMAGE_NAME}:${PROJECT_VERSION}"
     echo "  ║  Platform: ${PRODUCT_NAME}"
     echo "  ║                                                                  ║"
-    echo "  ║  To start your development container (Ubuntu host):              ║"
-    echo "  ║                                                                  ║"
-    echo "  ║    ${clientside_script}"
+    echo "  ║  To deploy on a client Ubuntu host:                              ║"
+    echo "  ║    1. Run: ./harbor → Package Handover                          ║"
+    echo "  ║    2. Transfer the tarball to the client                         ║"
+    echo "  ║    3. Extract and run: ./ubuntu_only_entrance.sh start           ║"
     echo "  ║                                                                  ║"
     echo "  ║  Supported commands:                                             ║"
     echo "  ║    start     — create and start the container                    ║"
@@ -261,7 +260,7 @@ _print_next_steps() {
     echo "  ║    remove    — stop and remove the container                     ║"
     echo "  ║                                                                  ║"
     echo "  ║  Example:                                                        ║"
-    echo "  ║    ./project_handover/clientside/ubuntu/ubuntu_only_entrance.sh start"
+    echo "  ║    ./ubuntu_only_entrance.sh start"
     echo "  ║                                                                  ║"
     echo "  ╠══════════════════════════════════════════════════════════════════╣"
     echo "  ║  ⚠  DEPRECATED (no longer maintained):                           ║"
@@ -326,8 +325,10 @@ _pick_platform() {
     fi
 
     echo "" >/dev/tty
-    echo "Now we have below platforms:" >/dev/tty
-    echo "" >/dev/tty
+    echo "  ╔══════════════════════════════════════════════════════════════════╗" >/dev/tty
+    echo "  ║                      Select Platform                             ║" >/dev/tty
+    echo "  ╠══════════════════════════════════════════════════════════════════╣" >/dev/tty
+    echo "  ║                                                                  ║" >/dev/tty
 
     local i=0
     local prev_family=""
@@ -342,20 +343,30 @@ _pick_platform() {
 
         # Print family header when family changes
         if [[ "${fam}" != "${prev_family}" ]]; then
-            [[ -n "${prev_family}" ]] && echo "" >/dev/tty
-            echo -e "  ── ${fam} ──" >/dev/tty
+            [[ -n "${prev_family}" ]] && echo "  ║                                                                  ║" >/dev/tty
+            printf "  ║  ── %-60s ║\n" "${fam}" >/dev/tty
             prev_family="${fam}"
         fi
 
-        printf "    [%d] %-14s  os=%-5s  %s\n" "${i}" "${extract}" "${os_ver}" "${slot_label}" >/dev/tty
+        # Dynamic padding: compute remaining space to fill 66-char inner width
+        local _content="  [${i}]  ${extract}  os=${os_ver}  ${slot_label}"
+        local _pad=$(( 66 - ${#_content} ))
+        [[ ${_pad} -lt 0 ]] && _pad=0
+        printf "  ║%s%*s║\n" "${_content}" "${_pad}" "" >/dev/tty
     done
 
-    echo "" >/dev/tty
+    echo "  ║                                                                  ║" >/dev/tty
     local create_idx=$(( i + 1 ))
-    echo -e "  [${create_idx}].${_CREATE_PLATFORM_LABEL:-+ Create new platform}" >/dev/tty
+    local _create="  [${create_idx}]  Create new platform"
+    local _pad_create=$(( 66 - ${#_create} ))
+    [[ ${_pad_create} -lt 0 ]] && _pad_create=0
+    printf "  ║%s%*s║\n" "${_create}" "${_pad_create}" "" >/dev/tty
+    echo "  ║                                                                  ║" >/dev/tty
+    echo "  ╚══════════════════════════════════════════════════════════════════╝" >/dev/tty
+    echo "" >/dev/tty
 
     #-------------------------------------------------------
-    read -p "Please type the index your choice: " user_type </dev/tty
+    read -p "  Please select [1-${create_idx}]: " user_type </dev/tty
 
     platform_number="$((${#platforms_array[@]}))"
 
@@ -382,34 +393,6 @@ _pick_platform() {
 
     TARGET_PLATFORM="${platforms_array[((${user_type} - 1))]}"
     return 0
-}
-
-################################################################################
-# 1_specify_platform — full interactive platform setup (legacy entry point)
-#
-# Calls _pick_platform() for selection, then creates the .env symlink.
-# Used by harbor's main menu for standalone platform selection.
-################################################################################
-1_specify_platform() {
-    if ! _pick_platform; then
-        return 1
-    fi
-
-    local target_platform="${TARGET_PLATFORM}"
-    echo ${target_platform}
-    cd ${TOP_ROOT_DIR}
-
-    # create configs/2_platforms/.env symlink
-    if [ -e ${PLATFORM_ENV_DEST_PATH} ]; then
-        rm -f ${PLATFORM_ENV_DEST_PATH}
-    fi
-    ln -sf "${PLATFORM_ENV_SRC_DIR}/${target_platform}.env" "${PLATFORM_ENV_DEST_PATH}"
-
-    ls -lha ${PLATFORM_ENV_DEST_PATH}
-
-    echo
-    echo "--- Setup env files (${target_platform}) Successfully ---"
-    echo
 }
 
 ################################################################################
@@ -450,7 +433,7 @@ _select_host_config() {
         _create_host_config
         read -p "  Build this host now? (y/N): " _build_choice
         if [[ "${_build_choice}" =~ ^[yY]$ ]]; then
-            _load_host_config "${LOCAL_HOSTNAME}"
+            _load_host_config "$(basename "${HOST_CONFIG}" .env)"
         else
             echo "  → Build cancelled. You can build anytime by running './harbor'."
             _HARBOR_SKIP_BUILD=1
@@ -474,13 +457,27 @@ _select_host_config() {
         [[ -z "${base_platform}" ]] && base_platform="(legacy — no BASE_PLATFORM)"
 
         local marker=""
-        [[ "${host_name}" == "${LOCAL_HOSTNAME}" ]] && marker=" ← this machine"
-        printf "  ║  [%d]  %-20s platform: %-24s%s║\n" "${idx}" "${host_name}" "${base_platform}" "${marker}"
+        [[ "${host_name}" == "${LOCAL_HOSTNAME}" || "${host_name}" == ${LOCAL_HOSTNAME}_* ]] && marker="  ← this machine"
+
+        # Line 1: host name + marker (dynamic padding to 66-char inner width)
+        local _line1="  [${idx}]  ${host_name}${marker}"
+        local _pad1=$(( 66 - ${#_line1} ))
+        [[ ${_pad1} -lt 0 ]] && _pad1=0
+        printf "  ║%s%*s║\n" "${_line1}" "${_pad1}" ""
+
+        # Line 2: platform info (indented to align with host name)
+        local _line2="       platform: ${base_platform}"
+        local _pad2=$(( 66 - ${#_line2} ))
+        [[ ${_pad2} -lt 0 ]] && _pad2=0
+        printf "  ║%s%*s║\n" "${_line2}" "${_pad2}" ""
         ((idx++))
     done
 
     echo "  ║                                                                  ║"
-    echo "  ║  [${idx}]  Create new host    — configure for a new machine      ║"
+    local _create="  [${idx}]  Create new host  — configure for a new machine"
+    local _pad_create=$(( 66 - ${#_create} ))
+    [[ ${_pad_create} -lt 0 ]] && _pad_create=0
+    printf "  ║%s%*s║\n" "${_create}" "${_pad_create}" ""
     echo "  ║                                                                  ║"
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
     echo ""
@@ -494,7 +491,7 @@ _select_host_config() {
         _create_host_config
         read -p "  Build this host now? (y/N): " _build_choice
         if [[ "${_build_choice}" =~ ^[yY]$ ]]; then
-            _load_host_config "${LOCAL_HOSTNAME}"
+            _load_host_config "$(basename "${HOST_CONFIG}" .env)"
         else
             echo "  → Build cancelled. You can build anytime by running './harbor'."
             _select_host_config
@@ -514,23 +511,48 @@ _select_host_config() {
 # Create a new host configuration file
 ################################################################################
 _create_host_config() {
+    # DEBUG: trace what was passed in
+    echo "[DEBUG] _create_host_config called with \$1='${1:-<empty>}'"
+    echo "[DEBUG] \$1 hex: $(echo -n "${1:-}" | xxd -p)"
+    echo "[DEBUG] BUILD_SCRIPT_DIR='${BUILD_SCRIPT_DIR:-<unset>}'"
+    echo "[DEBUG] TOP_CONFIGS_DIR='${TOP_CONFIGS_DIR:-<unset>}'"
+
     LOCAL_HOSTNAME=$(hostname)
-    HOST_CONFIG="${TOP_CONFIGS_DIR}/3_hosts/${LOCAL_HOSTNAME}.env"
     local TEMPLATE="${TOP_CONFIGS_DIR}/3_hosts/TEMPLATE.env.example"
     local total_questions=5  # Questions after platform selection
 
+    # Step 1: Select a base platform FIRST (determines filename)
     echo ""
     echo "  ╔══════════════════════════════════════════════════════════════════╗"
     echo "  ║                    Create Host Configuration                     ║"
     echo "  ╠══════════════════════════════════════════════════════════════════╣"
     echo "  ║                                                                  ║"
     printf "  ║  Hostname: %-52s║\n" "${LOCAL_HOSTNAME}"
-    printf "  ║  File:     %-52s║\n" "${HOST_CONFIG}"
     echo "  ║                                                                  ║"
-    echo "  ║  This will create a host-specific config file.                   ║"
-    echo "  ║You'll be guided through 1 platform + ${total_questions} settings.║"
+    echo "  ║  Step 1: Select a base platform for this host                    ║"
     echo "  ║                                                                  ║"
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
+    echo ""
+    local selected_platform=""
+    while true; do
+        if _pick_platform; then
+            selected_platform="${TARGET_PLATFORM}"
+            break
+        fi
+    done
+    echo "  → Selected platform: ${selected_platform}"
+
+    # Source platform config so HARBOR_SERVER_IP, CHIP_FAMILY etc. are available
+    local platform_env="${TOP_CONFIGS_DIR}/2_platforms/${selected_platform}.env"
+    if [ -f "${platform_env}" ]; then
+        source "${platform_env}"
+    fi
+
+    # Derive filename from hostname + platform
+    HOST_CONFIG="${TOP_CONFIGS_DIR}/3_hosts/${LOCAL_HOSTNAME}_${selected_platform}.env"
+
+    echo ""
+    printf "  ║  File:     %-52s║\n" "${HOST_CONFIG}"
     echo ""
 
     if [ -f "${HOST_CONFIG}" ]; then
@@ -550,23 +572,6 @@ _create_host_config() {
     cp "${TEMPLATE}" "${HOST_CONFIG}"
     echo "  → Copied template to ${HOST_CONFIG}"
 
-    # Step 1: Select a base platform
-    echo ""
-    echo "  ╔══════════════════════════════════════════════════════════════════╗"
-    echo "  ║                                                                  ║"
-    echo "  ║  Step 1: Select a base platform for this host                    ║"
-    echo "  ║                                                                  ║"
-    echo "  ╚══════════════════════════════════════════════════════════════════╝"
-    echo ""
-    local selected_platform=""
-    while true; do
-        if _pick_platform; then
-            selected_platform="${TARGET_PLATFORM}"
-            break
-        fi
-    done
-    echo "  → Selected platform: ${selected_platform}"
-
     # Now configure host-specific overrides with guided prompts
     echo ""
     echo "  ╔══════════════════════════════════════════════════════════════════╗"
@@ -576,15 +581,17 @@ _create_host_config() {
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
 
     # Question 1: HOST_VOLUME_DIR (required — no universal default)
+    local _fallback_vol="/mnt/ssd/docker-volumes/\${PRODUCT_NAME}"
+    local default_volume_dir="${1:-${_fallback_vol}}"
     local host_volume_dir=""
     echo ""
     echo "  (1/${total_questions}) Docker volumes directory on this host"
     echo "      This is where container volumes are stored."
-    echo "      Recommended: /mnt/ssd/docker-volumes/\${PRODUCT_NAME}"
+    echo "      Default: ${default_volume_dir}"
     echo ""
-    read -p "  Enter HOST_VOLUME_DIR path: " host_volume_dir
+    read -p "  Enter HOST_VOLUME_DIR path [${default_volume_dir}]: " host_volume_dir
     if [ -z "${host_volume_dir}" ]; then
-        host_volume_dir="/mnt/ssd/docker-volumes/\${PRODUCT_NAME}"
+        host_volume_dir="${default_volume_dir}"
         echo "  → Using default: ${host_volume_dir}"
     else
         echo "  → Volume dir set to: ${host_volume_dir}"
@@ -642,12 +649,19 @@ _create_host_config() {
     sed -i "s|^# NETWORK_MODE=.*|NETWORK_MODE=\"${network_mode}\"|" "${HOST_CONFIG}"
     sed -i "s|^# CONTAINER_RESTART_POLICY=.*|CONTAINER_RESTART_POLICY=\"${auto_restart}\"|" "${HOST_CONFIG}"
 
+    # Auto-derive REGISTRY_URL from platform values (HARBOR_SERVER_IP + PORT + CHIP_FAMILY)
+    if [ -n "${HARBOR_SERVER_IP:-}" ] && [ -n "${HARBOR_SERVER_PORT:-}" ] && [ -n "${CHIP_FAMILY:-}" ]; then
+        local derived_registry_url="${HARBOR_SERVER_IP}:${HARBOR_SERVER_PORT}/team_${CHIP_FAMILY}"
+        sed -i "s|^# REGISTRY_URL=.*|REGISTRY_URL=\"${derived_registry_url}\"|" "${HOST_CONFIG}"
+        echo "  → REGISTRY_URL auto-derived: ${derived_registry_url}"
+    fi
+
     echo ""
     echo "  -----"
     echo ""
-    echo "  ✅ Host config created: ${LOCAL_HOSTNAME}.env"
+    echo "  ✅ Host config created: $(basename "${HOST_CONFIG}")"
     echo "  → File: ${HOST_CONFIG}"
-    echo "  → Auto-loaded when you run './harbor' on ${LOCAL_HOSTNAME}"
+    echo "  → Use: ./harbor --host $(basename "${HOST_CONFIG}" .env)"
     echo ""
 
     return 0
