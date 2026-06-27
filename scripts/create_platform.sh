@@ -30,24 +30,12 @@
 #
 #   Non-interactive mode (AI-friendly / CI-friendly):
 #     ./scripts/create_platform.sh --non-interactive \
-#         --chip-family <chip_family> \  # e.g. rk3568, rk3588, rv1126
-#         --chip-extract-name <name> \   # e.g. rk3568, rk3588s, rv1126bp
+#         --chip-family <chip_family> \  # e.g. rk3568, rk3588, rv1126, jetson
+#         --chip-extract-name <name> \   # e.g. rk3568, rk3588s, rv1126bp, orin-nx-16g-super
 #         --os <ubuntu|debian> \
 #         --os-version <22.04|24.04|...> \
-#         --harbor-ip <ip> \
-#         [--harbor-port <port>]         # default: 9000
-#         [--host-volume-dir <path>]     # default: auto
-#         [--gitlab-ip <ip>]             # enables GitLab (optional)
-#         [--gitlab-port <port>]         # default: 80
-#         [--sdk-branch <branch>]        # default: main
-#         [--nvidia]                     # enable NVIDIA GPU
 #         [--port-slot <n>]              # default: auto-assigned
-#         [--proxy-http <url>]           # enables proxy (optional)
-#         [--proxy-https <url>]          # default: same as --proxy-http
-#         [--install-cuda]               # enable CUDA
-#         [--install-opencv]             # enable OpenCV
-#         [--npm-china-mirror]           # use npmmirror.com
-#         [--extra-volume <host:container>] # extra volume mount (repeatable, e.g. /mnt/a:/vol-a)
+#         [--sdk-branch <branch>]        # default: main
 #
 #   Example (for AI agent or CI):
 #     ./scripts/create_platform.sh --non-interactive \
@@ -55,8 +43,11 @@
 #         --chip-extract-name rk3568 \
 #         --os debian \
 #         --os-version 12 \
-#         --harbor-ip 192.168.3.68 \
 #         --port-slot 3
+#
+#   NOTE: Host-specific settings (Harbor, GitLab, proxy, volumes, GPU,
+#         INSTALL_CUDA, INSTALL_OPENCV, NPM_USE_CHINA_MIRROR) are configured
+#         per-host via the harbor menu → "Create new host".
 #
 #              Scans existing platforms for used PORT_SLOTs, auto-assigns the
 #              next available slot, and generates a complete .env file.
@@ -201,11 +192,13 @@ create_platform() {
     echo ""
     echo -e "  ${_GREEN}Next available PORT_SLOT: ${next_slot}${_NC}"
     echo ""
-    echo -e "  ${_YELLOW}--- Platform Details ---${_NC}"
+    echo -e "  ${_YELLOW}--- Platform Details (platform-level only) ---${_NC}"
+    echo -e "  ${_CYAN}Host-specific settings (Harbor, GitLab, proxy, volumes, GPU)${_NC}"
+    echo -e "  ${_CYAN}will be configured when creating a host config.${_NC}"
     echo ""
 
-    # 1. CHIP_FAMILY — silicon family used for Harbor team / SDK repo grouping
-    _prompt "CHIP_FAMILY (e.g. rk3588, rk3568, rv1126)"
+    # 1. CHIP_FAMILY — silicon family used for SDK repo grouping
+    _prompt "CHIP_FAMILY (e.g. rk3588, rk3568, rv1126, jetson)"
     local chip_family="${REPLY,,}"
 
     if [[ ! "${chip_family}" =~ ^[a-zA-Z0-9_-]+$ ]]; then
@@ -253,93 +246,12 @@ create_platform() {
         return 1
     fi
 
-    # Host volume directory
-    _prompt "Host volume directory" "/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/volumes/${chip_family}"
-    local host_volume_dir="${REPLY}"
-
-    # 4. GitLab server (optional)
-    local have_gitlab="FALSE"
-    local gitlab_ip="" gitlab_port=""
-    if _prompt_yn "GitLab server available?" "n"; then
-        have_gitlab="TRUE"
-        _prompt "GitLab server IP" "192.168.3.67"
-        gitlab_ip="${REPLY}"
-        _prompt "GitLab server port" "80"
-        gitlab_port="${REPLY}"
-    fi
-
-    # 5. Harbor registry server
-    local harbor_ip harbor_port
-    if [[ "${have_gitlab}" == "TRUE" ]]; then
-        _prompt "Harbor registry IP" "${gitlab_ip}"
-    else
-        _prompt "Harbor registry IP" "192.168.3.68"
-    fi
-    harbor_ip="${REPLY}"
-    _prompt "Harbor registry port" "9000"
-    harbor_port="${REPLY}"
-
-    # 6. SDK branch
+    # 5. SDK branch
     _prompt "SDK git branch" "main"
     local sdk_branch="${REPLY}"
 
-    # 7. NVIDIA GPU
-    local use_nvidia="false"
-    if _prompt_yn "Enable NVIDIA GPU support?" "n"; then
-        use_nvidia="true"
-    fi
-
-    # 8. PORT_SLOT
-    _prompt "PORT_SLOT (auto-assigned)" "${next_slot}"
-    local port_slot="${REPLY}"
-
-    # Validate PORT_SLOT is numeric
-    if ! [[ "${port_slot}" =~ ^[0-9]+$ ]]; then
-        echo -e "  ${_RED}Error: PORT_SLOT must be a non-negative integer.${_NC}"
-        return 1
-    fi
-
-    # Check for slot collision
-    if _get_used_slots | grep -qx "${port_slot}"; then
-        echo -e "  ${_RED}Warning: PORT_SLOT ${port_slot} is already used by another platform!${_NC}"
-        if ! _prompt_yn "Continue anyway?" "n"; then
-            return 1
-        fi
-    fi
-
-    # 9. Extra volume mounts (0..N)
-    local extra_volumes=()
-    echo ""
-    echo -e "  ${_YELLOW}--- Extra Volume Mounts (optional) ---${_NC}"
-    echo -e "  ${_CYAN}Format: <host_absolute_path>:<container_absolute_path>${_NC}"
-    echo -e "  ${_CYAN}Example: /mnt/host-a:/volumes_container-a${_NC}"
-    echo ""
-    local ev_idx=0
-    while _prompt_yn "Add extra volume mount #${ev_idx}?" "n"; do
-        _prompt "  EXTRA_VOLUME_${ev_idx} (host:container)"
-        local ev_pair="${REPLY}"
-        # Basic format validation
-        local ev_host="${ev_pair%%:*}"
-        local ev_container="${ev_pair#*:}"
-        if [[ -z "${ev_host}" || -z "${ev_container}" || "${ev_host}" == "${ev_pair}" ]]; then
-            echo -e "  ${_RED}Error: invalid format — must be <host>:<container>${_NC}"
-            continue
-        fi
-        extra_volumes+=("${ev_pair}")
-        ev_idx=$(( ev_idx + 1 ))
-    done
-
-    # 10. Proxy
-    local has_proxy="false"
-    local http_proxy_url=""
-    local https_proxy_url=""
-    if _prompt_yn "Has proxy?" "n"; then
-        has_proxy="true"
-        _prompt "HTTP proxy URL" "http://${harbor_ip}:7890"
-        http_proxy_url="${REPLY}"
-        _prompt "HTTPS proxy URL" "${http_proxy_url}"
-        https_proxy_url="${REPLY}"
-    fi
+    # 6. PORT_SLOT — auto-calculated, not user-editable
+    local port_slot="${next_slot}"
 
     # ─── Calculate and display ports ─────────────────────────────────────
     local offset=$(( port_slot * _PORT_STEP ))
@@ -354,32 +266,15 @@ create_platform() {
     echo -e "  CHIP_EXTRACT_NAME: ${chip_extract_name}"
     echo -e "  OS:              ${os_distro} ${os_version}"
     echo -e "  PORT_SLOT:       ${port_slot} (offset = ${offset})"
-    echo -e "  Volume:          ${host_volume_dir}"
-    if [[ "${have_gitlab}" == "TRUE" ]]; then
-        echo -e "  GitLab:          ${gitlab_ip}:${gitlab_port}"
-    else
-        echo -e "  GitLab:          (none)"
-    fi
-    echo -e "  Harbor registry: ${harbor_ip}:${harbor_port}"
-    echo -e "  NVIDIA GPU:      ${use_nvidia}"
-    if [[ "${#extra_volumes[@]}" -gt 0 ]]; then
-        echo -e "  Extra volumes:"
-        local _ev_i=0
-        for _ev in "${extra_volumes[@]}"; do
-            echo -e "    [${_ev_i}] ${_ev}"
-            _ev_i=$(( _ev_i + 1 ))
-        done
-    else
-        echo -e "  Extra volumes:   (none)"
-    fi
-    if [[ "${has_proxy}" == "true" ]]; then
-        echo -e "  HTTP  proxy:     ${http_proxy_url}"
-        echo -e "  HTTPS proxy:     ${https_proxy_url}"
-    fi
+    echo -e "  SDK branch:      ${sdk_branch}"
     echo ""
     echo -e "  ${_CYAN}Calculated Ports:${_NC}"
     echo -e "    CLIENT_SSH_PORT = ${calc_ssh}"
     echo -e "    GDB_PORT        = ${calc_gdb}"
+    echo ""
+    echo -e "  ${_CYAN}Host-specific settings (Harbor, GitLab, proxy, volumes, GPU,${_NC}"
+    echo -e "  ${_CYAN}INSTALL_CUDA, INSTALL_OPENCV, NPM_USE_CHINA_MIRROR) are${_NC}"
+    echo -e "  ${_CYAN}configured per-host via 'Create new host' in the harbor menu.${_NC}"
     echo ""
 
     if ! _prompt_yn "Generate ${platform_name}.env?" "y"; then
@@ -389,37 +284,6 @@ create_platform() {
 
     # ─── Generate the .env file ──────────────────────────────────────────
     local output_file="${PLATFORMS_DIR}/${platform_name}.env"
-
-    # Build GitLab block conditionally
-    local gitlab_block
-    if [[ "${have_gitlab}" == "TRUE" ]]; then
-        gitlab_block="HAVE_GITLAB_SERVER=\"TRUE\"
-GITLAB_SERVER_IP=\"${gitlab_ip}\"
-GITLAB_SERVER_PORT=\"${gitlab_port}\""
-    else
-        gitlab_block="HAVE_GITLAB_SERVER=\"FALSE\""
-    fi
-
-    # Build proxy block conditionally
-    local proxy_block
-    if [[ "${has_proxy}" == "true" ]]; then
-        proxy_block="HAS_PROXY=\"true\"
-HTTP_PROXY_IP=\"${http_proxy_url}\"
-HTTPS_PROXY_IP=\"${https_proxy_url}\""
-    else
-        proxy_block="HAS_PROXY=\"false\""
-    fi
-
-    # Build extra volumes block conditionally
-    local extra_volumes_block=""
-    if [[ "${#extra_volumes[@]}" -gt 0 ]]; then
-        extra_volumes_block=$'\n# =============================================================================\n# Extra Volume Mounts  [optional — 0..N indexed; contiguous from 0]\n# ============================================================================='
-        local _bev_i=0
-        for _bev_pair in "${extra_volumes[@]}"; do
-            extra_volumes_block+=$'\n'"EXTRA_VOLUME_${_bev_i}=\"${_bev_pair}\""
-            _bev_i=$(( _bev_i + 1 ))
-        done
-    fi
 
     cat > "${output_file}" << ENVEOF
 ################################################################################
@@ -460,18 +324,6 @@ LATEST_IMAGE_TAG=\${PROJECT_VERSION}
 CONTAINER_NAME=\${PRODUCT_NAME}
 
 # =============================================================================
-# GitLab Server  [optional — set HAVE_GITLAB_SERVER=FALSE to skip]
-# =============================================================================
-${gitlab_block}
-
-# =============================================================================
-# Harbor Registry  [required for push/pull]
-# =============================================================================
-HARBOR_SERVER_IP="${harbor_ip}"
-HARBOR_SERVER_PORT="${harbor_port}"
-# REGISTRY_URL is computed in host config (Layer 3) — depends on host-specific IP.
-
-# =============================================================================
 # SDK  [auto-generated — only used when INSTALL_SDK=true]
 # =============================================================================
 SDK_GIT_KEY_FILE="SDK_\${CHIP_FAMILY}_ED25519"
@@ -479,21 +331,20 @@ SDK_GIT_DEFAULT_BRANCH="${sdk_branch}"
 # SDK_GIT_REPO is computed in host config (Layer 3) — depends on GITLAB_SERVER_IP.
 
 # =============================================================================
-# Docker Volumes  [REQUIRED — no universal default]
-# =============================================================================
-HOST_VOLUME_DIR="${host_volume_dir}"
-${extra_volumes_block}
-
-# =============================================================================
 # Container Runtime  [ports auto-calculated from PORT_SLOT]
 # =============================================================================
 PORT_SLOT="${port_slot}"
-USE_NVIDIA_GPU="${use_nvidia}"
 
-# =============================================================================
-# Proxy Overrides
-# =============================================================================
-${proxy_block}
+################################################################################
+# Host-specific settings are configured in configs/3_hosts/<hostname>.env:
+#   - HARBOR_SERVER_IP / HARBOR_SERVER_PORT  (registry address)
+#   - HAVE_GITLAB_SERVER / GITLAB_SERVER_IP  (GitLab server)
+#   - HAS_PROXY / HTTP_PROXY_IP             (network proxy)
+#   - HOST_VOLUME_DIR / EXTRA_VOLUME_*      (volume paths)
+#   - USE_NVIDIA_GPU / CONTAINER_SHM_SIZE   (hardware)
+#   - INSTALL_CUDA / INSTALL_OPENCV         (build options)
+#   - NPM_USE_CHINA_MIRROR                  (npm mirror)
+################################################################################
 ENVEOF
 
     echo ""
@@ -510,16 +361,8 @@ ENVEOF
 create_platform_noninteractive() {
     # ── Parse arguments ──────────────────────────────────────────────────────
     local chip_family="" chip_extract_name="" os_distro="ubuntu" os_version=""
-    local harbor_ip="" harbor_port="9000"
-    local host_volume_dir=""
-    local have_gitlab="FALSE" gitlab_ip="" gitlab_port="80"
     local sdk_branch="main"
-    local use_nvidia="false"
     local port_slot=""
-    local has_proxy="false" http_proxy_url="" https_proxy_url=""
-    local install_cuda="false" install_opencv="false"
-    local npm_china_mirror="false"
-    local extra_volumes=()
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -528,20 +371,8 @@ create_platform_noninteractive() {
             --name)            chip_family="$2"; chip_extract_name="$2"; shift 2 ;;  # legacy compat
             --os)              os_distro="${2,,}";    shift 2 ;;
             --os-version)      os_version="$2";       shift 2 ;;
-            --harbor-ip)       harbor_ip="$2";        shift 2 ;;
-            --harbor-port)     harbor_port="$2";      shift 2 ;;
-            --host-volume-dir) host_volume_dir="$2";  shift 2 ;;
-            --gitlab-ip)       have_gitlab="TRUE"; gitlab_ip="$2"; shift 2 ;;
-            --gitlab-port)     gitlab_port="$2";      shift 2 ;;
             --sdk-branch)      sdk_branch="$2";       shift 2 ;;
-            --nvidia)          use_nvidia="true";     shift ;;
             --port-slot)       port_slot="$2";        shift 2 ;;
-            --proxy-http)      has_proxy="true"; http_proxy_url="$2"; shift 2 ;;
-            --proxy-https)     https_proxy_url="$2";  shift 2 ;;
-            --install-cuda)    install_cuda="true";   shift ;;
-            --install-opencv)  install_opencv="true"; shift ;;
-            --npm-china-mirror) npm_china_mirror="true"; shift ;;
-            --extra-volume)    extra_volumes+=("$2"); shift 2 ;;
             *) echo "Unknown argument: $1" >&2; exit 1 ;;
         esac
     done
@@ -550,7 +381,6 @@ create_platform_noninteractive() {
     local errors=0
     [[ -z "${chip_family}" ]]    && { echo "ERROR: --chip-family is required" >&2; ((errors++)); }
     [[ -z "${os_version}" ]]     && { echo "ERROR: --os-version is required" >&2; ((errors++)); }
-    [[ -z "${harbor_ip}" ]]      && { echo "ERROR: --harbor-ip is required" >&2; ((errors++)); }
     [[ $errors -gt 0 ]] && exit 1
 
     # chip_extract_name defaults to chip_family if not specified
@@ -582,55 +412,10 @@ create_platform_noninteractive() {
         exit 1
     fi
 
-    # ── Default host volume dir ───────────────────────────────────────────────
-    if [[ -z "${host_volume_dir}" ]]; then
-        host_volume_dir="/mnt/2tb_wd_purpleSurveillance_hdd/system-redirection/Development/docker/volumes/${chip_family}"
-    fi
-
-    # ── Default HTTPS proxy = HTTP proxy if not set ───────────────────────────
-    if [[ "${has_proxy}" == "true" && -z "${https_proxy_url}" ]]; then
-        https_proxy_url="${http_proxy_url}"
-    fi
-
     # ── Calculate ports ───────────────────────────────────────────────────────
     local offset=$(( port_slot * _PORT_STEP ))
     local calc_ssh=$(( _PORT_BASE_CLIENT_SSH + offset ))
     local calc_gdb=$(( _PORT_BASE_GDB + offset ))
-
-    # ── Build conditional blocks ──────────────────────────────────────────────
-    local gitlab_block
-    if [[ "${have_gitlab}" == "TRUE" ]]; then
-        gitlab_block="HAVE_GITLAB_SERVER=\"TRUE\"
-GITLAB_SERVER_IP=\"${gitlab_ip}\"
-GITLAB_SERVER_PORT=\"${gitlab_port}\""
-    else
-        gitlab_block="HAVE_GITLAB_SERVER=\"FALSE\""
-    fi
-
-    local proxy_block
-    if [[ "${has_proxy}" == "true" ]]; then
-        proxy_block="HAS_PROXY=\"true\"
-HTTP_PROXY_IP=\"${http_proxy_url}\"
-HTTPS_PROXY_IP=\"${https_proxy_url}\""
-    else
-        proxy_block="HAS_PROXY=\"false\""
-    fi
-
-    local tools_overrides=""
-    [[ "${install_cuda}" == "true" ]]         && tools_overrides+=$'\nINSTALL_CUDA="true"'
-    [[ "${install_opencv}" == "true" ]]       && tools_overrides+=$'\nINSTALL_OPENCV="true"'
-    [[ "${npm_china_mirror}" == "true" ]]     && tools_overrides+=$'\nNPM_USE_CHINA_MIRROR="true"'
-
-    # Build extra volumes block conditionally
-    local extra_volumes_block=""
-    if [[ "${#extra_volumes[@]}" -gt 0 ]]; then
-        extra_volumes_block=$'\n# =============================================================================\n# Extra Volume Mounts  [optional — 0..N indexed; contiguous from 0]\n# ============================================================================='
-        local _bev_i=0
-        for _bev_pair in "${extra_volumes[@]}"; do
-            extra_volumes_block+=$'\n'"EXTRA_VOLUME_${_bev_i}=\"${_bev_pair}\""
-            _bev_i=$(( _bev_i + 1 ))
-        done
-    fi
 
     # ── Print summary ─────────────────────────────────────────────────────────
     echo ""
@@ -639,16 +424,11 @@ HTTPS_PROXY_IP=\"${https_proxy_url}\""
     echo "  CHIP_EXTRACT_NAME: ${chip_extract_name}"
     echo "  OS:              ${os_distro} ${os_version}"
     echo "  PORT_SLOT:       ${port_slot} → SSH=${calc_ssh}, GDB=${calc_gdb}"
-    echo "  Harbor:          ${harbor_ip}:${harbor_port}"
-    echo "  Volume:          ${host_volume_dir}"
-    [[ "${have_gitlab}" == "TRUE" ]] && echo "  GitLab:          ${gitlab_ip}:${gitlab_port}"
-    if [[ "${#extra_volumes[@]}" -gt 0 ]]; then
-        local _si=0
-        for _sv in "${extra_volumes[@]}"; do
-            echo "  Extra volume [${_si}]: ${_sv}"
-            _si=$(( _si + 1 ))
-        done
-    fi
+    echo "  SDK branch:      ${sdk_branch}"
+    echo ""
+    echo "  NOTE: Host-specific settings (Harbor, GitLab, proxy, volumes, GPU,"
+    echo "        INSTALL_CUDA, INSTALL_OPENCV, NPM_USE_CHINA_MIRROR) are configured"
+    echo "        per-host via 'Create new host' in the harbor menu."
     echo ""
 
     # ── Generate .env file ────────────────────────────────────────────────────
@@ -691,18 +471,6 @@ LATEST_IMAGE_TAG=\${PROJECT_VERSION}
 CONTAINER_NAME=\${PRODUCT_NAME}
 
 # =============================================================================
-# GitLab Server  [optional — set HAVE_GITLAB_SERVER=FALSE to skip]
-# =============================================================================
-${gitlab_block}
-
-# =============================================================================
-# Harbor Registry  [required for push/pull]
-# =============================================================================
-HARBOR_SERVER_IP="${harbor_ip}"
-HARBOR_SERVER_PORT="${harbor_port}"
-# REGISTRY_URL is computed in host config (Layer 3) — depends on host-specific IP.
-
-# =============================================================================
 # SDK  [auto-generated — only used when INSTALL_SDK=true]
 # =============================================================================
 SDK_GIT_KEY_FILE="SDK_\${CHIP_FAMILY}_ED25519"
@@ -710,25 +478,20 @@ SDK_GIT_DEFAULT_BRANCH="${sdk_branch}"
 # SDK_GIT_REPO is computed in host config (Layer 3) — depends on GITLAB_SERVER_IP.
 
 # =============================================================================
-# Docker Volumes  [REQUIRED — no universal default]
-# =============================================================================
-HOST_VOLUME_DIR="${host_volume_dir}"
-${extra_volumes_block}
-
-# =============================================================================
 # Container Runtime  [ports auto-calculated from PORT_SLOT]
 # =============================================================================
 PORT_SLOT="${port_slot}"
-USE_NVIDIA_GPU="${use_nvidia}"
 
-# =============================================================================
-# Tools Overrides (non-default values only)
-# =============================================================================${tools_overrides}
-
-# =============================================================================
-# Proxy Overrides
-# =============================================================================
-${proxy_block}
+################################################################################
+# Host-specific settings are configured in configs/3_hosts/<hostname>.env:
+#   - HARBOR_SERVER_IP / HARBOR_SERVER_PORT  (registry address)
+#   - HAVE_GITLAB_SERVER / GITLAB_SERVER_IP  (GitLab server)
+#   - HAS_PROXY / HTTP_PROXY_IP             (network proxy)
+#   - HOST_VOLUME_DIR / EXTRA_VOLUME_*      (volume paths)
+#   - USE_NVIDIA_GPU / CONTAINER_SHM_SIZE   (hardware)
+#   - INSTALL_CUDA / INSTALL_OPENCV         (build options)
+#   - NPM_USE_CHINA_MIRROR                  (npm mirror)
+################################################################################
 ENVEOF
 
     echo "  Generated: ${output_file}"
