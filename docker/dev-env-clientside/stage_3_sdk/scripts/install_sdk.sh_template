@@ -67,6 +67,11 @@ func_load_env() {
 # Verify environment variables
 ################################################################################
 func_verify_env() {
+    # Skip validation when SDK installation is disabled
+    if [ "${INSTALL_SDK}" != "true" ]; then
+        return 0
+    fi
+
     # Check required variables
     if [ -z "${SDK_INSTALL_PATH}" ] || [ -z "${SDK_GIT_REPO}" ]; then
         echo "Error: Required environment variables are not set"
