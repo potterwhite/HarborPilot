@@ -615,9 +615,11 @@ _create_host_config() {
     read -p "  HARBOR_SERVER_PORT [${harbor_port}]: " _input
     harbor_port="${_input:-${harbor_port}}"
 
-    # Question 4: GitLab server
-    local have_gitlab="FALSE"
-    if prompt_simple "Do you have a GitLab server?" "4" "${total_questions}" "n"; then
+    # Question 4: GitLab server (default from Layer 1: HAVE_GITLAB_SERVER)
+    local _gitlab_default="n"
+    [[ "${HAVE_GITLAB_SERVER:-FALSE}" == "TRUE" ]] && _gitlab_default="y"
+    local have_gitlab="${HAVE_GITLAB_SERVER:-FALSE}"
+    if prompt_simple "Do you have a GitLab server?" "4" "${total_questions}" "${_gitlab_default}"; then
         have_gitlab="TRUE"
         echo "  → GitLab server enabled"
         local gitlab_ip="${GITLAB_SERVER_IP:-${harbor_ip}}"
@@ -639,9 +641,11 @@ _create_host_config() {
         echo "  → No GitLab server"
     fi
 
-    # Question 5: Proxy configuration
-    local has_proxy="false"
-    if prompt_simple "Are you behind a firewall that blocks Docker registry access?" "5" "${total_questions}" "n"; then
+    # Question 5: Proxy configuration (default from Layer 1: HAS_PROXY)
+    local _proxy_default="n"
+    [[ "${HAS_PROXY:-false}" == "true" ]] && _proxy_default="y"
+    local has_proxy="${HAS_PROXY:-false}"
+    if prompt_simple "Are you behind a firewall that blocks Docker registry access?" "5" "${total_questions}" "${_proxy_default}"; then
         has_proxy="true"
         echo "  → Proxy enabled"
         local http_proxy_ip="${HTTP_PROXY_IP:-${harbor_ip}}"
@@ -664,65 +668,82 @@ _create_host_config() {
         echo "  → No proxy"
     fi
 
-    # Question 6: GPU (recommend: no for most machines)
-    local use_gpu="false"
-    if prompt_simple "Does this machine have an NVIDIA GPU?" "6" "${total_questions}" "n"; then
+    # Question 6: GPU (default from Layer 1: USE_NVIDIA_GPU)
+    local _gpu_default="n"
+    [[ "${USE_NVIDIA_GPU:-false}" == "true" ]] && _gpu_default="y"
+    local use_gpu="${USE_NVIDIA_GPU:-false}"
+    if prompt_simple "Does this machine have an NVIDIA GPU?" "6" "${total_questions}" "${_gpu_default}"; then
         use_gpu="true"
     fi
 
-    # Question 7: SHM size
-    local shm_size="256m"
+    # Question 7: SHM size (default from Layer 1: CONTAINER_SHM_SIZE)
+    local shm_size="${CONTAINER_SHM_SIZE:-256m}"
     if [[ "${use_gpu}" == "true" ]]; then
-        shm_size="1g"
-        if prompt_simple "Set SHM size to 1g for GPU?" "7" "${total_questions}" "y"; then
+        local _shm_default="y"
+        [[ "${shm_size}" == "1g" ]] || _shm_default="n"
+        if prompt_simple "Set SHM size to 1g for GPU? (current: ${shm_size})" "7" "${total_questions}" "y"; then
+            shm_size="1g"
             echo "  → SHM size set to ${shm_size}"
         else
             shm_size="2g"
             echo "  → SHM size set to ${shm_size}"
         fi
     else
-        if prompt_simple "Set SHM size to 512m? (default is 256m)" "7" "${total_questions}" "n"; then
-            shm_size="512m"
-            echo "  → SHM size set to ${shm_size}"
-        else
-            echo "  → SHM size set to ${shm_size} (default)"
-        fi
+        echo "  → SHM size: ${shm_size} (from config)"
     fi
 
-    # Question 8: Network mode (recommend: yes for production)
-    local network_mode="bridge"
-    if prompt_simple "Use host network mode?" "8" "${total_questions}" "y"; then
+    # Question 8: Network mode (default from Layer 1: NETWORK_MODE)
+    local _net_default="y"
+    [[ "${NETWORK_MODE:-host}" == "host" ]] || _net_default="n"
+    local network_mode="${NETWORK_MODE:-host}"
+    if prompt_simple "Use host network mode?" "8" "${total_questions}" "${_net_default}"; then
         network_mode="host"
         echo "  → Network mode set to host"
     else
-        echo "  → Network mode set to bridge (default)"
+        network_mode="bridge"
+        echo "  → Network mode set to bridge"
     fi
 
-    # Question 9: Auto-start container (recommend: yes)
-    local auto_restart="no"
-    if prompt_simple "Auto-restart container on boot?" "9" "${total_questions}" "y"; then
+    # Question 9: Auto-start container (default from Layer 1: CONTAINER_RESTART_POLICY)
+    local _restart_default="y"
+    [[ "${CONTAINER_RESTART_POLICY:-unless-stopped}" == "unless-stopped" ]] || _restart_default="n"
+    local auto_restart="${CONTAINER_RESTART_POLICY:-unless-stopped}"
+    if prompt_simple "Auto-restart container on boot? (current: ${auto_restart})" "9" "${total_questions}" "${_restart_default}"; then
         auto_restart="unless-stopped"
         echo "  → Container will auto-restart on boot"
     else
+        auto_restart="no"
         echo "  → Container will not auto-restart"
     fi
 
-    # Question 10: Install CUDA (Jetson platforms only)
-    local install_cuda="false"
-    if prompt_simple "Install CUDA toolkit during image build?" "10" "${total_questions}" "n"; then
+    # Question 10: Install CUDA (default from Layer 1: INSTALL_CUDA)
+    local _cuda_default="n"
+    [[ "${INSTALL_CUDA:-false}" == "true" ]] && _cuda_default="y"
+    local install_cuda="${INSTALL_CUDA:-false}"
+    if prompt_simple "Install CUDA toolkit during image build?" "10" "${total_questions}" "${_cuda_default}"; then
         install_cuda="true"
+    else
+        install_cuda="false"
     fi
 
-    # Question 11: Install OpenCV
-    local install_opencv="false"
-    if prompt_simple "Install OpenCV during image build?" "11" "${total_questions}" "n"; then
+    # Question 11: Install OpenCV (default from Layer 1: INSTALL_OPENCV)
+    local _opencv_default="n"
+    [[ "${INSTALL_OPENCV:-false}" == "true" ]] && _opencv_default="y"
+    local install_opencv="${INSTALL_OPENCV:-false}"
+    if prompt_simple "Install OpenCV during image build?" "11" "${total_questions}" "${_opencv_default}"; then
         install_opencv="true"
+    else
+        install_opencv="false"
     fi
 
-    # Question 12: npm China mirror
-    local npm_china_mirror="false"
-    if prompt_simple "Use npm China mirror (for users in China)?" "12" "${total_questions}" "n"; then
+    # Question 12: npm China mirror (default from Layer 1: NPM_USE_CHINA_MIRROR)
+    local _npm_default="n"
+    [[ "${NPM_USE_CHINA_MIRROR:-false}" == "true" ]] && _npm_default="y"
+    local npm_china_mirror="${NPM_USE_CHINA_MIRROR:-false}"
+    if prompt_simple "Use npm China mirror (for users in China)?" "12" "${total_questions}" "${_npm_default}"; then
         npm_china_mirror="true"
+    else
+        npm_china_mirror="false"
     fi
 
     # Apply user choices to the copied template
