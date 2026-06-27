@@ -70,6 +70,11 @@ _volumes_init() {
     fi
 
     # Custom path — create symlink
+    # DEBUG: trace where the path comes from
+    echo "[DEBUG] HOST_VOLUME_DIR='${HOST_VOLUME_DIR}'"
+    echo "[DEBUG] target='${target}'"
+    echo "[DEBUG] target hex: $(echo -n "${target}" | xxd -p)"
+
     if [ ! -d "${target}" ]; then
         _log "WARN" "Volume directory does not exist: ${target}"
         if prompt_simple "Create it automatically?" "" "" "y"; then
@@ -81,8 +86,12 @@ _volumes_init() {
         fi
     fi
 
-    # Remove existing file/symlink at volume_link
-    rm -f "${volume_link}"
+    # Remove existing file/symlink/directory at volume_link
+    if [ -d "${volume_link}" ] && [ ! -L "${volume_link}" ]; then
+        rm -rf "${volume_link}"
+    else
+        rm -f "${volume_link}"
+    fi
 
     if ln -sf "${target}" "${volume_link}"; then
         export VOLUMES_DIR="$(realpath "${volume_link}")"

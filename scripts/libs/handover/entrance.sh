@@ -110,6 +110,13 @@ main_entry_2nd_load_config() {
     else
         export FINAL_IMAGE_NAME="${IMAGE_NAME}:latest"
     fi
+
+    # DEBUG: trace image name derivation
+    echo "[DEBUG] HAVE_HARBOR_SERVER='${HAVE_HARBOR_SERVER}'"
+    echo "[DEBUG] REGISTRY_URL='${REGISTRY_URL}'"
+    echo "[DEBUG] IMAGE_NAME='${IMAGE_NAME}'"
+    echo "[DEBUG] FINAL_IMAGE_NAME='${FINAL_IMAGE_NAME}'"
+    echo "[DEBUG] FINAL_IMAGE_NAME hex: $(echo -n "${FINAL_IMAGE_NAME}" | xxd -p)"
 }
 
 ################################################################################

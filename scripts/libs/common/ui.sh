@@ -511,6 +511,12 @@ _select_host_config() {
 # Create a new host configuration file
 ################################################################################
 _create_host_config() {
+    # DEBUG: trace what was passed in
+    echo "[DEBUG] _create_host_config called with \$1='${1:-<empty>}'"
+    echo "[DEBUG] \$1 hex: $(echo -n "${1:-}" | xxd -p)"
+    echo "[DEBUG] BUILD_SCRIPT_DIR='${BUILD_SCRIPT_DIR:-<unset>}'"
+    echo "[DEBUG] TOP_CONFIGS_DIR='${TOP_CONFIGS_DIR:-<unset>}'"
+
     LOCAL_HOSTNAME=$(hostname)
     local TEMPLATE="${TOP_CONFIGS_DIR}/3_hosts/TEMPLATE.env.example"
     local total_questions=5  # Questions after platform selection
@@ -535,6 +541,12 @@ _create_host_config() {
         fi
     done
     echo "  → Selected platform: ${selected_platform}"
+
+    # Source platform config so HARBOR_SERVER_IP, CHIP_FAMILY etc. are available
+    local platform_env="${TOP_CONFIGS_DIR}/2_platforms/${selected_platform}.env"
+    if [ -f "${platform_env}" ]; then
+        source "${platform_env}"
+    fi
 
     # Derive filename from hostname + platform
     HOST_CONFIG="${TOP_CONFIGS_DIR}/3_hosts/${LOCAL_HOSTNAME}_${selected_platform}.env"
@@ -569,7 +581,8 @@ _create_host_config() {
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
 
     # Question 1: HOST_VOLUME_DIR (required — no universal default)
-    local default_volume_dir="${1:-/mnt/ssd/docker-volumes/\${PRODUCT_NAME}}"
+    local _fallback_vol="/mnt/ssd/docker-volumes/\${PRODUCT_NAME}"
+    local default_volume_dir="${1:-${_fallback_vol}}"
     local host_volume_dir=""
     echo ""
     echo "  (1/${total_questions}) Docker volumes directory on this host"
@@ -635,6 +648,13 @@ _create_host_config() {
     sed -i "s|^# CONTAINER_SHM_SIZE=.*|CONTAINER_SHM_SIZE=\"${shm_size}\"|" "${HOST_CONFIG}"
     sed -i "s|^# NETWORK_MODE=.*|NETWORK_MODE=\"${network_mode}\"|" "${HOST_CONFIG}"
     sed -i "s|^# CONTAINER_RESTART_POLICY=.*|CONTAINER_RESTART_POLICY=\"${auto_restart}\"|" "${HOST_CONFIG}"
+
+    # Auto-derive REGISTRY_URL from platform values (HARBOR_SERVER_IP + PORT + CHIP_FAMILY)
+    if [ -n "${HARBOR_SERVER_IP:-}" ] && [ -n "${HARBOR_SERVER_PORT:-}" ] && [ -n "${CHIP_FAMILY:-}" ]; then
+        local derived_registry_url="${HARBOR_SERVER_IP}:${HARBOR_SERVER_PORT}/team_${CHIP_FAMILY}"
+        sed -i "s|^# REGISTRY_URL=.*|REGISTRY_URL=\"${derived_registry_url}\"|" "${HOST_CONFIG}"
+        echo "  → REGISTRY_URL auto-derived: ${derived_registry_url}"
+    fi
 
     echo ""
     echo "  -----"
