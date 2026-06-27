@@ -377,7 +377,16 @@ _run_container() {
     export BUILD_SCRIPT_DIR="${TOP_CONFIGS_DIR}/3_hosts/.runtime/${CLI_HOST}"
     mkdir -p "${BUILD_SCRIPT_DIR}"
 
-    # Source handover modules
+    # Derive FINAL_IMAGE_NAME (same logic as entrance.sh)
+    if [ "${HAVE_HARBOR_SERVER}" == "TRUE" ]; then
+        export FINAL_IMAGE_NAME="${REGISTRY_URL}/${IMAGE_NAME}:latest"
+    else
+        export FINAL_IMAGE_NAME="${IMAGE_NAME}:latest"
+    fi
+
+    # Source handover modules (order matters: volumes → compose → container)
+    source "${SCRIPT_DIR}/scripts/libs/handover/volumes.sh"
+    volumes_init_if_needed
     source "${SCRIPT_DIR}/scripts/libs/handover/compose.sh"
     source "${SCRIPT_DIR}/scripts/libs/handover/container.sh"
 
