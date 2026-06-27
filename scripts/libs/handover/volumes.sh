@@ -53,14 +53,13 @@ _volumes_init() {
         return 1
     fi
 
-    # Resolve target to absolute path for comparison
-    local abs_target
-    abs_target="$(cd -P "${BUILD_SCRIPT_DIR}/.." 2>/dev/null && pwd)/volume"
-    local target_resolved
+    # Resolve both paths to absolute for comparison
+    local volume_link_resolved target_resolved
+    volume_link_resolved="$(cd -P "${volume_link}" 2>/dev/null && pwd)" || volume_link_resolved="${volume_link}"
     target_resolved="$(cd -P "${target}" 2>/dev/null && pwd)" || target_resolved="${target}"
 
-    # If target is the local volume/ directory — just create it, no symlink
-    if [ "${target_resolved}" = "${abs_target}" ]; then
+    # Default path (target == volume_link): just create the directory, no symlink
+    if [ "${target_resolved}" = "${volume_link_resolved}" ] || [ "${target}" = "${volume_link}" ]; then
         if [ ! -d "${volume_link}" ]; then
             mkdir -p "${volume_link}"
             _log "SUCCESS" "Created volume directory: ${volume_link}"
@@ -70,11 +69,6 @@ _volumes_init() {
     fi
 
     # Custom path — create symlink
-    # DEBUG: trace where the path comes from
-    echo "[DEBUG] HOST_VOLUME_DIR='${HOST_VOLUME_DIR}'"
-    echo "[DEBUG] target='${target}'"
-    echo "[DEBUG] target hex: $(echo -n "${target}" | xxd -p)"
-
     if [ ! -d "${target}" ]; then
         _log "WARN" "Volume directory does not exist: ${target}"
         if prompt_simple "Create it automatically?" "" "" "y"; then
