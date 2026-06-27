@@ -519,7 +519,7 @@ _create_host_config() {
 
     LOCAL_HOSTNAME=$(hostname)
     local TEMPLATE="${TOP_CONFIGS_DIR}/3_hosts/TEMPLATE.env.example"
-    local total_questions=5  # Questions after platform selection
+    local total_questions=12  # Questions after platform selection
 
     # Step 1: Select a base platform FIRST (determines filename)
     echo ""
@@ -542,7 +542,8 @@ _create_host_config() {
     done
     echo "  → Selected platform: ${selected_platform}"
 
-    # Source platform config so HARBOR_SERVER_IP, CHIP_FAMILY etc. are available
+    # Source Layer 1 defaults + platform config so questions have default values
+    _load_layer1_defaults
     local platform_env="${TOP_CONFIGS_DIR}/2_platforms/${selected_platform}.env"
     if [ -f "${platform_env}" ]; then
         source "${platform_env}"
@@ -597,24 +598,90 @@ _create_host_config() {
         echo "  → Volume dir set to: ${host_volume_dir}"
     fi
 
-    # Question 2: GPU (recommend: no for most machines)
+    # Question 2: Harbor server IP
+    local harbor_ip="${HARBOR_SERVER_IP}"
+    echo ""
+    echo "  (2/${total_questions}) Harbor server IP"
+    echo "      Required for pulling pre-built images. Use the Harbor server's LAN IP."
+    echo ""
+    read -p "  HARBOR_SERVER_IP [${harbor_ip}]: " _input
+    harbor_ip="${_input:-${harbor_ip}}"
+
+    # Question 3: Harbor server port
+    local harbor_port="${HARBOR_SERVER_PORT}"
+    echo ""
+    echo "  (3/${total_questions}) Harbor server port"
+    echo ""
+    read -p "  HARBOR_SERVER_PORT [${harbor_port}]: " _input
+    harbor_port="${_input:-${harbor_port}}"
+
+    # Question 4: GitLab server
+    local have_gitlab="FALSE"
+    if prompt_simple "Do you have a GitLab server?" "4" "${total_questions}" "n"; then
+        have_gitlab="TRUE"
+        echo "  → GitLab server enabled"
+        local gitlab_ip="${GITLAB_SERVER_IP:-${harbor_ip}}"
+        echo ""
+        echo "  (4a/${total_questions}) GitLab server IP"
+        echo "      Press Enter to use same as Harbor IP (${harbor_ip})."
+        echo ""
+        read -p "  GITLAB_SERVER_IP [${gitlab_ip}]: " _input
+        gitlab_ip="${_input:-${gitlab_ip}}"
+        local gitlab_port="${GITLAB_SERVER_PORT}"
+        echo ""
+        echo "  (4b/${total_questions}) GitLab server port"
+        echo ""
+        read -p "  GITLAB_SERVER_PORT [${gitlab_port}]: " _input
+        gitlab_port="${_input:-${gitlab_port}}"
+        GITLAB_SERVER_IP="${gitlab_ip}"
+        GITLAB_SERVER_PORT="${gitlab_port}"
+    else
+        echo "  → No GitLab server"
+    fi
+
+    # Question 5: Proxy configuration
+    local has_proxy="false"
+    if prompt_simple "Are you behind a firewall that blocks Docker registry access?" "5" "${total_questions}" "n"; then
+        has_proxy="true"
+        echo "  → Proxy enabled"
+        local http_proxy_ip="${HTTP_PROXY_IP:-${harbor_ip}}"
+        echo ""
+        echo "  (5a/${total_questions}) HTTP proxy IP"
+        echo "      Press Enter to use same as Harbor IP (${harbor_ip})."
+        echo ""
+        read -p "  HTTP_PROXY_IP [${http_proxy_ip}]: " _input
+        http_proxy_ip="${_input:-${http_proxy_ip}}"
+        local https_proxy_ip="${HTTPS_PROXY_IP:-${http_proxy_ip}}"
+        echo ""
+        echo "  (5b/${total_questions}) HTTPS proxy IP"
+        echo "      Press Enter to use same as HTTP proxy IP (${http_proxy_ip})."
+        echo ""
+        read -p "  HTTPS_PROXY_IP [${https_proxy_ip}]: " _input
+        https_proxy_ip="${_input:-${https_proxy_ip}}"
+        HTTP_PROXY_IP="${http_proxy_ip}"
+        HTTPS_PROXY_IP="${https_proxy_ip}"
+    else
+        echo "  → No proxy"
+    fi
+
+    # Question 6: GPU (recommend: no for most machines)
     local use_gpu="false"
-    if prompt_simple "Does this machine have an NVIDIA GPU?" "2" "${total_questions}" "n"; then
+    if prompt_simple "Does this machine have an NVIDIA GPU?" "6" "${total_questions}" "n"; then
         use_gpu="true"
     fi
 
-    # Question 3: SHM size
+    # Question 7: SHM size
     local shm_size="256m"
     if [[ "${use_gpu}" == "true" ]]; then
         shm_size="1g"
-        if prompt_simple "Set SHM size to 1g for GPU?" "3" "${total_questions}" "y"; then
+        if prompt_simple "Set SHM size to 1g for GPU?" "7" "${total_questions}" "y"; then
             echo "  → SHM size set to ${shm_size}"
         else
             shm_size="2g"
             echo "  → SHM size set to ${shm_size}"
         fi
     else
-        if prompt_simple "Set SHM size to 512m? (default is 256m)" "3" "${total_questions}" "n"; then
+        if prompt_simple "Set SHM size to 512m? (default is 256m)" "7" "${total_questions}" "n"; then
             shm_size="512m"
             echo "  → SHM size set to ${shm_size}"
         else
@@ -622,22 +689,40 @@ _create_host_config() {
         fi
     fi
 
-    # Question 4: Network mode (recommend: yes for production)
+    # Question 8: Network mode (recommend: yes for production)
     local network_mode="bridge"
-    if prompt_simple "Use host network mode?" "4" "${total_questions}" "y"; then
+    if prompt_simple "Use host network mode?" "8" "${total_questions}" "y"; then
         network_mode="host"
         echo "  → Network mode set to host"
     else
         echo "  → Network mode set to bridge (default)"
     fi
 
-    # Question 5: Auto-start container (recommend: yes)
+    # Question 9: Auto-start container (recommend: yes)
     local auto_restart="no"
-    if prompt_simple "Auto-restart container on boot?" "5" "${total_questions}" "y"; then
+    if prompt_simple "Auto-restart container on boot?" "9" "${total_questions}" "y"; then
         auto_restart="unless-stopped"
         echo "  → Container will auto-restart on boot"
     else
         echo "  → Container will not auto-restart"
+    fi
+
+    # Question 10: Install CUDA (Jetson platforms only)
+    local install_cuda="false"
+    if prompt_simple "Install CUDA toolkit during image build?" "10" "${total_questions}" "n"; then
+        install_cuda="true"
+    fi
+
+    # Question 11: Install OpenCV
+    local install_opencv="false"
+    if prompt_simple "Install OpenCV during image build?" "11" "${total_questions}" "n"; then
+        install_opencv="true"
+    fi
+
+    # Question 12: npm China mirror
+    local npm_china_mirror="false"
+    if prompt_simple "Use npm China mirror (for users in China)?" "12" "${total_questions}" "n"; then
+        npm_china_mirror="true"
     fi
 
     # Apply user choices to the copied template
@@ -648,10 +733,25 @@ _create_host_config() {
     sed -i "s|^# CONTAINER_SHM_SIZE=.*|CONTAINER_SHM_SIZE=\"${shm_size}\"|" "${HOST_CONFIG}"
     sed -i "s|^# NETWORK_MODE=.*|NETWORK_MODE=\"${network_mode}\"|" "${HOST_CONFIG}"
     sed -i "s|^# CONTAINER_RESTART_POLICY=.*|CONTAINER_RESTART_POLICY=\"${auto_restart}\"|" "${HOST_CONFIG}"
+    sed -i "s|^# HARBOR_SERVER_IP=.*|HARBOR_SERVER_IP=\"${harbor_ip}\"|" "${HOST_CONFIG}"
+    sed -i "s|^# HARBOR_SERVER_PORT=.*|HARBOR_SERVER_PORT=\"${harbor_port}\"|" "${HOST_CONFIG}"
+    sed -i "s|^# HAVE_GITLAB_SERVER=.*|HAVE_GITLAB_SERVER=\"${have_gitlab}\"|" "${HOST_CONFIG}"
+    if [[ "${have_gitlab}" == "TRUE" ]]; then
+        sed -i "s|^# GITLAB_SERVER_IP=.*|GITLAB_SERVER_IP=\"${GITLAB_SERVER_IP}\"|" "${HOST_CONFIG}"
+        sed -i "s|^# GITLAB_SERVER_PORT=.*|GITLAB_SERVER_PORT=\"${GITLAB_SERVER_PORT}\"|" "${HOST_CONFIG}"
+    fi
+    sed -i "s|^# HAS_PROXY=.*|HAS_PROXY=\"${has_proxy}\"|" "${HOST_CONFIG}"
+    if [[ "${has_proxy}" == "true" ]]; then
+        sed -i "s|^# HTTP_PROXY_IP=.*|HTTP_PROXY_IP=\"${HTTP_PROXY_IP}\"|" "${HOST_CONFIG}"
+        sed -i "s|^# HTTPS_PROXY_IP=.*|HTTPS_PROXY_IP=\"${HTTPS_PROXY_IP}\"|" "${HOST_CONFIG}"
+    fi
+    sed -i "s|^# INSTALL_CUDA=.*|INSTALL_CUDA=\"${install_cuda}\"|" "${HOST_CONFIG}"
+    sed -i "s|^# INSTALL_OPENCV=.*|INSTALL_OPENCV=\"${install_opencv}\"|" "${HOST_CONFIG}"
+    sed -i "s|^# NPM_USE_CHINA_MIRROR=.*|NPM_USE_CHINA_MIRROR=\"${npm_china_mirror}\"|" "${HOST_CONFIG}"
 
-    # Auto-derive REGISTRY_URL from platform values (HARBOR_SERVER_IP + PORT + CHIP_FAMILY)
-    if [ -n "${HARBOR_SERVER_IP:-}" ] && [ -n "${HARBOR_SERVER_PORT:-}" ] && [ -n "${CHIP_FAMILY:-}" ]; then
-        local derived_registry_url="${HARBOR_SERVER_IP}:${HARBOR_SERVER_PORT}/team_${CHIP_FAMILY}"
+    # Auto-derive REGISTRY_URL from Harbor IP + port + CHIP_FAMILY
+    if [ -n "${harbor_ip}" ] && [ -n "${harbor_port}" ] && [ -n "${CHIP_FAMILY:-}" ]; then
+        local derived_registry_url="${harbor_ip}:${harbor_port}/team_${CHIP_FAMILY}"
         sed -i "s|^# REGISTRY_URL=.*|REGISTRY_URL=\"${derived_registry_url}\"|" "${HOST_CONFIG}"
         echo "  → REGISTRY_URL auto-derived: ${derived_registry_url}"
     fi
