@@ -14,30 +14,38 @@ if [[ "${V}" == "1" ]]; then
     set -x
 fi
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 ################################################################################
 # Parse CLI arguments
 ################################################################################
 CLI_HOST=""
+CLI_COMMAND=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        build)
+            CLI_COMMAND="build"
+            shift
+            ;;
         --host)
             CLI_HOST="$2"
             shift 2
             ;;
+        -h|--help)
+            cat "${SCRIPT_DIR}/scripts/help.txt"
+            exit 0
+            ;;
         *)
             echo "Unknown argument: $1"
-            echo "Usage: ./harbor [--host <host-config-name>]"
+            echo "Usage: ./harbor [build] [--host <host-config-name>] [--help]"
             exit 1
             ;;
     esac
 done
 
 ################################################################################
-# Resolve script directory and load modules
+# Load modules
 ################################################################################
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# Load all modules
 source "${SCRIPT_DIR}/scripts/libs/common/utils.sh"
 source "${SCRIPT_DIR}/scripts/libs/common/ui.sh"
 source "${SCRIPT_DIR}/scripts/libs/config.sh"
@@ -77,6 +85,15 @@ main() {
     fi
 
     ##################################################################
+    # CLI mode: ./harbor build [--host <name>]
+    # Skip interactive menu entirely
+    ##################################################################
+    if [ "${CLI_COMMAND}" = "build" ]; then
+        _run_build_push
+        exit $?
+    fi
+
+    ##################################################################
     # Top-level menu: choose action before platform selection
     ##################################################################
     while true; do
@@ -102,16 +119,8 @@ main() {
     ##################################################################
     _HARBOR_SKIP_BUILD=0
     if [ "${_HARBOR_MODE}" = "build" ]; then
-        if [ -n "${CLI_HOST}" ]; then
-            _load_host_config "${CLI_HOST}"
-        else
-            _select_host_config
-        fi
-        if [ "${_HARBOR_SKIP_BUILD}" = "1" ]; then
-            return 0
-        fi
-        _load_config_layers
-        export HOST_CONFIG
+        _run_build_push
+        return $?
     elif [ "${_HARBOR_MODE}" = "package" ]; then
         while true; do
             if _pick_platform; then
@@ -148,24 +157,6 @@ main() {
         echo "Total execution time: $((duration / 3600))h $((duration % 3600 / 60))m $((duration % 60))s"
         return 0
     fi
-
-    0_check_registry_login || exit 1
-
-    2_build_images || exit 1
-
-    3_prepare_version_info || exit 1
-
-    4_tag_images || exit 1
-
-    5_push_images || exit 1
-
-    6_cleanup_images || exit 1
-
-    local duration=$SECONDS
-    echo -e "\n=== Build Process Completed Successfully ==="
-    echo "Total execution time: $((duration / 3600))h $((duration % 3600 / 60))m $((duration % 60))s"
-
-    _print_next_steps
 }
 
 # Execute main function

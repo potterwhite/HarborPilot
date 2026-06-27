@@ -106,23 +106,26 @@ mcp/
 ## 2. Top-Level Scripts — Detailed Reference
 
 ### `harbor` (repo root)
-The **master orchestrator**. Interactive host selection → 3-layer config loading → build → tag → push → cleanup.
+The **master orchestrator**. Two entry paths:
+- **CLI**: `./harbor build [--host <name>]` — skips menu, goes straight to build
+- **Menu**: `./harbor` — interactive menu → Build & Push / Package Handover / Configurations
 
-**Execution flow:**
-1. `0_show_main_menu()` — Top-level menu: [1] Build & Push, [2] Package Handover, [3] Configurations
-2. `_show_config_menu()` (if Configurations selected) — Create platform, create host (based on existing platform), or back
-3. `_select_host_config()` (if Build selected) — Lists host configs with their BASE_PLATFORM, user picks by number. Also offers "Create new host config" wizard.
-4. `_load_config_layers()` — Loads all 3 layers:
+**CLI arguments:** `build` (subcommand), `--host <name>`, `-h`/`--help`
+
+**Execution flow (build mode):**
+1. `_run_build_push()` (in `ui.sh`) — single entry point for both CLI and menu paths
+2. Host selection: CLI `--host` → validate file exists → `_load_host_config()`; menu → `_select_host_config()`
+3. `_load_config_layers()` — Loads all 3 layers:
    - Layer 1: sources all `configs/1_defaults/*.env` in order (00→05)
    - Layer 2: sources platform from `BASE_PLATFORM` in host config (or .env symlink for legacy)
    - Layer 3: sources `configs/3_hosts/$(hostname).env` (overrides platform)
-5. `port_calc.sh` — derives SSH/GDB ports from PORT_SLOT
-6. `0_check_registry_login()` — Verifies Docker is logged into Harbor; prompts interactive login if not
-7. `2_build_images()` → calls `docker/dev-env-clientside/build.sh`
-8. `3_prepare_version_info()` — Gets final image ID
-9. `4_tag_images()` — Tags with version + latest (local or registry)
-10. `5_push_images()` — Pushes + verifies manifest digest
-11. `6_cleanup_images()` — Removes intermediate images (keeps final)
+4. `port_calc.sh` — derives SSH/GDB ports from PORT_SLOT
+5. `0_check_registry_login()` — Verifies Docker is logged into Harbor; prompts interactive login if not
+6. `2_build_images()` → calls `docker/dev-env-clientside/build.sh`
+7. `3_prepare_version_info()` — Gets final image ID
+8. `4_tag_images()` — Tags with version + latest (local or registry)
+9. `5_push_images()` — Pushes + verifies manifest digest
+10. `6_cleanup_images()` — Removes intermediate images (keeps final)
 
 **Key behaviors:**
 - Each step (build/tag/push/cleanup) has a `prompt_with_timeout` — user can skip with 'n', auto-proceeds after 10s

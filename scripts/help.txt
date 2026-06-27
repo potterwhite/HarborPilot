@@ -1,0 +1,26 @@
+USAGE:
+  ./harbor [COMMAND] [OPTIONS]
+
+COMMANDS:
+  (none)              Launch interactive menu
+  build               Build & push Docker image for a host
+
+OPTIONS:
+  --host <name>       Select host config by name (e.g. office-server-01)
+                      Looks for configs/3_hosts/<name>.env
+                      If omitted, an interactive host selector is shown.
+  -h, --help          Show this help message
+
+ENVIRONMENT:
+  V=1                 Enable debug mode (verbose output)
+
+EXAMPLES:
+  ./harbor                                  Launch interactive menu
+  ./harbor build                            Build with interactive host selection
+  ./harbor build --host office-server-01    Build for a specific host
+  V=1 ./harbor build --host office-server-01    Debug mode
+
+CONFIG LAYERS (last wins):
+  Layer 1 — configs/1_defaults/*.env        Global defaults
+  Layer 2 — configs/2_platforms/<name>.env   Per-platform (Jetson board)
+  Layer 3 — configs/3_hosts/<name>.env      Per-host (office, home, etc.)

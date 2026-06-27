@@ -236,6 +236,59 @@ _show_config_menu() {
 }
 
 ################################################################################
+# Run the full Build & Push pipeline
+#
+# Single entry point for both CLI (--host <name>) and interactive menu paths.
+#   CLI path:  CLI_HOST is pre-set → validate file exists, hard error if not
+#   Menu path: CLI_HOST is empty   → interactive host selection
+################################################################################
+_run_build_push() {
+    local start_time=${SECONDS}
+
+    ##################################################################
+    # Host selection
+    ##################################################################
+    if [ -n "${CLI_HOST}" ]; then
+        local host_file="${TOP_CONFIGS_DIR}/3_hosts/${CLI_HOST}.env"
+        if [ ! -f "${host_file}" ]; then
+            _error "Host config not found: ${host_file}" 1
+        fi
+        _load_host_config "${CLI_HOST}"
+    else
+        _select_host_config
+    fi
+
+    if [ "${_HARBOR_SKIP_BUILD}" = "1" ]; then
+        return 0
+    fi
+
+    ##################################################################
+    # Load & validate config
+    ##################################################################
+    _load_config_layers
+    export HOST_CONFIG
+
+    if ! _validate_config; then
+        _error "Configuration validation failed" 1
+    fi
+
+    ##################################################################
+    # Build & Push pipeline
+    ##################################################################
+    0_check_registry_login || exit 1
+    2_build_images         || exit 1
+    3_prepare_version_info || exit 1
+    4_tag_images           || exit 1
+    5_push_images          || exit 1
+    6_cleanup_images       || exit 1
+
+    _print_next_steps
+
+    local duration=$(( SECONDS - start_time ))
+    echo "  Total execution time: $((duration / 3600))h $((duration % 3600 / 60))m $((duration % 60))s"
+}
+
+################################################################################
 # Print next steps after a successful build
 ################################################################################
 _print_next_steps() {
