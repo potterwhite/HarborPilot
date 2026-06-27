@@ -965,7 +965,7 @@ _create_host_config() {
             [[ -z "${_vol_input}" ]] && break
             extra_volumes+=("${_vol_input}")
             echo "  → Added: ${_vol_input}"
-            ((vol_idx++))
+            vol_idx=$((vol_idx + 1))
         done
     else
         echo "  → No extra volumes"
