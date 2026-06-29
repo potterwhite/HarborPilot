@@ -43,36 +43,51 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      - uses: actions/checkout@v4
-        if: ${{ steps.release.outputs.release_created }}
-
-      - name: Create PR for PROJECT_RELEASE_DATE
-        if: ${{ steps.release.outputs.release_created }}
-        env:
-          TAG_NAME: ${{ steps.release.outputs.tag_name }}
-        run: |
-          RELEASE_DATE=$(date -u +"%Y-%m-%d")
-          BRANCH_NAME="release-date-${TAG_NAME}"
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git checkout -b "${BRANCH_NAME}"
-          sed -i "s/^PROJECT_RELEASE_DATE=.*/PROJECT_RELEASE_DATE=${RELEASE_DATE}/" \
-            configs/1_defaults/00_global.env
-          git add configs/1_defaults/00_global.env
-          git commit -m "chore: set PROJECT_RELEASE_DATE to ${RELEASE_DATE} for ${TAG_NAME}"
-          git push --set-upstream origin "${BRANCH_NAME}"
-
       - name: Create PR for PROJECT_RELEASE_DATE
         if: ${{ steps.release.outputs.release_created }}
         uses: actions/github-script@v7
         with:
           script: |
-            const tagName = process.env.TAG_NAME;
-            const branchName = `release-date-${tagName}`;
             const releaseDate = new Date().toISOString().split('T')[0];
+            const tagName = '${{ steps.release.outputs.tag_name }}';
+            const branchName = `release-date-${tagName}`;
+            const filePath = 'configs/1_defaults/00_global.env';
 
+            // Create a new branch from current SHA
+            await github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `refs/heads/${branchName}`,
+              sha: context.sha
+            });
+
+            // Get current file content to obtain its SHA
+            const { data: fileData } = await github.rest.repos.getContent({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              path: filePath,
+              ref: branchName
+            });
+
+            // Update PROJECT_RELEASE_DATE in file content
+            const content = Buffer.from(fileData.content, 'base64').toString();
+            const newContent = content.replace(
+              /^PROJECT_RELEASE_DATE=.*/m,
+              `PROJECT_RELEASE_DATE=${releaseDate}`
+            );
+
+            // Commit the change to the new branch
+            await github.rest.repos.createOrUpdateFileContents({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              path: filePath,
+              message: `chore: set PROJECT_RELEASE_DATE to ${releaseDate} for ${tagName}`,
+              content: Buffer.from(newContent).toString('base64'),
+              sha: fileData.sha,
+              branch: branchName
+            });
+
+            // Create the pull request
             const pr = await github.rest.pulls.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
