@@ -102,7 +102,7 @@
 | ✅ setup_workspace.sh_template：\\${var} 转义破坏 bash 语法（'then' 处语法错误） | `987265c` | 关键：使用 $1/$2/$3 位置参数 |
 | ✅ ARG USE_NVIDIA_GPU 缺失；ARG ENABLE_SYSLOG 重复 | `4cc03db` | Lint 修复 + 正确性 |
 | ✅ Harbor/GitLab URL 分组的 CHIP_FAMILY | `9dd8d36` | REGISTRY_URL 和 SDK_GIT_REPO 使用 ${CHIP_FAMILY} |
-| ✅ ubuntu_only_entrance.sh 模块化（6 个模块） | `fe46132` | volumes 软链接自动初始化；数字前缀命名 |
+| ✅ entrance.sh 模块化（6 个模块） | `fe46132` | volumes 软链接自动初始化；数字前缀命名 |
 | ✅ 所有平台 .env 迁移到 CHIP_FAMILY/CHIP_EXTRACT_NAME 模式 | `16ec81f` `281bd96` | 平台文件重命名为 chip-os 命名规范；REGISTRY_URL 修复 |
 | ✅ harbor 平台列表按芯片系列分组；create_platform.sh + CHIP_EXTRACT_NAME | `aad4e32` | 清晰的视觉分组；向导更新新字段 |
 | ✅ docker compose project name 含 `.` 报错（PRODUCT_NAME 含 `24.04`） | `12deccc` | 新增 OS_VERSION_ID（点→连字符）；所有平台 + create_platform.sh 同步更新 |

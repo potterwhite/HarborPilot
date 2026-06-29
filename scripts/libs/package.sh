@@ -110,7 +110,7 @@
 
     # 3. Copy entrance script
     cp "${TOP_ROOT_DIR}/scripts/libs/handover/entrance.sh" \
-        "${ubuntu_dir}/ubuntu_only_entrance.sh"
+        "${ubuntu_dir}/entrance.sh"
 
     # 4. Copy config layers
     cp "${TOP_CONFIGS_DIR}/1_defaults/"*.env \
@@ -131,8 +131,8 @@
     fi
 
     # 7. Symlink: root-level ubuntu_only_entrance.sh
-    ln -sf clientside/ubuntu/ubuntu_only_entrance.sh \
-        "${stage}/ubuntu_only_entrance.sh"
+    ln -sf clientside/ubuntu/entrance.sh \
+        "${stage}/entrance.sh"
 
     # ── Create the final tarball ─────────────────────────────────────────────
     tar -czf "${archive_name}" -C "${tmp_dir}" "${pkg_dirname}"

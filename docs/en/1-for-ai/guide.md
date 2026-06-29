@@ -112,7 +112,7 @@
 
 5. **`harbor` is the top-level orchestrator**: Loads all 3 config layers, runs `port_calc.sh`, then calls `build.sh` → tag → push → cleanup. It is the only entry point for builds.
 
-6. **`ubuntu_only_entrance.sh` is the client entry point**: Loads the same 3 config layers, dynamically generates `docker-compose.yaml` from env vars (including conditional NVIDIA GPU), manages container lifecycle (`start`/`stop`/`restart`/`recreate`/`remove`).
+6. **`entrance.sh` is the client entry point**: Loads the same 3 config layers, dynamically generates `docker-compose.yaml` from env vars (including conditional NVIDIA GPU), manages container lifecycle (`start`/`stop`/`restart`/`recreate`/`remove`). Supports non-interactive host config creation via CLI args.
 
 7. **Platform configs use `${VAR}` self-references**: e.g. `IMAGE_NAME="${PRODUCT_NAME}-dev-env"`. These are bash variable expansions evaluated at `source` time, not template placeholders.
 
@@ -131,10 +131,10 @@
 ./harbor
 
 # Start dev container on client Ubuntu host
-./ubuntu_only_entrance.sh start
+./entrance.sh start
 
 # Container lifecycle: stop / restart / recreate / remove
-./ubuntu_only_entrance.sh <command>
+./entrance.sh <command>
 
 # Create a new platform (interactive wizard)
 ./scripts/create_platform.sh

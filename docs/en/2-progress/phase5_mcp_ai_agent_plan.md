@@ -68,7 +68,7 @@ With MCP:      AI (natural language) → MCP client → MCP server → your tool
 │  • configs/*.env files                          │
 │  • ./harbor script                              │
 │  • create_platform.sh                          │
-│  • ubuntu_only_entrance.sh                     │
+│  • entrance.sh                                 │
 └─────────────────────────────────────────────────┘
 ```
 

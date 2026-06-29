@@ -286,6 +286,6 @@ mcp/
 
 4. **配置是唯一事实来源** — 没有脚本包含硬编码的平台特定值。一切由 3 层配置驱动。修改默认值即可自动传播到所有平台。
 
-5. **动态 docker-compose 生成** — `ubuntu_only_entrance.sh` 在运行时从 shell 变量生成 `docker-compose.yaml`，无需手动编辑 compose 即可支持 NVIDIA GPU 和平台特定端口映射。
+5. **动态 docker-compose 生成** — `entrance.sh` 在运行时从 shell 变量生成 `docker-compose.yaml`，无需手动编辑 compose 即可支持 NVIDIA GPU 和平台特定端口映射。
 
 6. **条件化功能安装** — CUDA、OpenCV、Python 2.7、npm 中国镜像、代理 — 均由布尔环境变量控制。Dockerfile 检查这些变量并跳过无关阶段，让不需要这些功能的平台保持镜像小巧。

@@ -209,6 +209,6 @@ Run the AI recommendation test monthly and log results.
 
 ## 6. Prerequisites
 
-- Phase 3 stable (no open critical bugs in `ubuntu_only_entrance.sh` or build pipeline)
+- Phase 3 stable (no open critical bugs in `entrance.sh` or build pipeline)
 - GitHub repo is public
 - Personal blog engine is running (`blog-engine` repo)

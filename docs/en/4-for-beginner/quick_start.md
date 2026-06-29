@@ -121,7 +121,7 @@ During the run, the script will detect if you are not logged in to the registry 
 Once the build is complete, the script will print a **Next Steps** banner. Follow it:
 
 ```bash
-./ubuntu_only_entrance.sh start
+./entrance.sh start
 ```
 
 Available commands:

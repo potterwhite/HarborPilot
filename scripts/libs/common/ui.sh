@@ -159,12 +159,13 @@ prompt_simple() {
     echo "  ║  [1]  Configurations        — create platform or host config     ║"
     echo "  ║  [2]  Build & Push          — build image and push to registry   ║"
     echo "  ║  [3]  Package Handover      — create client delivery tarball     ║"
+    echo "  ║  [4]  Manage Containers     — start / stop / status / remove     ║"
     echo "  ║                                                                  ║"
     echo "  ╚══════════════════════════════════════════════════════════════════╝"
     echo ""
 
     while true; do
-        read -p "  Please select [1-3]: " _menu_choice
+        read -p "  Please select [1-4]: " _menu_choice
         case "${_menu_choice}" in
             1)
                 _HARBOR_MODE="config"
@@ -184,8 +185,14 @@ prompt_simple() {
                 echo ""
                 break
                 ;;
+            4)
+                _HARBOR_MODE="container"
+                echo "  → Manage Containers selected."
+                echo ""
+                break
+                ;;
             *)
-                echo "  ✗ Invalid choice. Please enter 1, 2, or 3."
+                echo "  ✗ Invalid choice. Please enter 1, 2, 3, or 4."
                 ;;
         esac
     done
@@ -233,6 +240,208 @@ _show_config_menu() {
                 ;;
         esac
     done
+}
+
+################################################################################
+# Container management submenu: start, stop, status, remove, or go back
+################################################################################
+_show_container_menu() {
+    while true; do
+        echo ""
+        echo "  ╔══════════════════════════════════════════════════════════════════╗"
+        echo "  ║                     Manage Containers                           ║"
+        echo "  ╠══════════════════════════════════════════════════════════════════╣"
+        echo "  ║                                                                  ║"
+        echo "  ║  [1]  Start container                                            ║"
+        echo "  ║  [2]  Stop container                                             ║"
+        echo "  ║  [3]  Container status                                           ║"
+        echo "  ║  [4]  Remove container                                           ║"
+        echo "  ║                                                                  ║"
+        echo "  ║  [0]  Back to main menu                                          ║"
+        echo "  ║                                                                  ║"
+        echo "  ╚══════════════════════════════════════════════════════════════════╝"
+        echo ""
+
+        read -p "  Please select [0-4]: " _container_choice
+        case "${_container_choice}" in
+            1)
+                echo "  → Start container selected."
+                echo ""
+                _run_container start
+                break
+                ;;
+            2)
+                echo "  → Stop container selected."
+                echo ""
+                _run_container stop
+                break
+                ;;
+            3)
+                echo "  → Container status selected."
+                echo ""
+                _run_container status
+                break
+                ;;
+            4)
+                echo "  → Remove container selected."
+                echo ""
+                _run_container remove
+                break
+                ;;
+            0)
+                return 1  # Signal: go back to main menu
+                ;;
+            *)
+                echo "  ✗ Invalid choice. Please enter 0, 1, 2, 3, or 4."
+                ;;
+        esac
+    done
+}
+
+################################################################################
+# Run the full Build & Push pipeline
+#
+# Single entry point for both CLI (--host <name>) and interactive menu paths.
+#   CLI path:  CLI_HOST is pre-set → validate file exists, hard error if not
+#   Menu path: CLI_HOST is empty   → interactive host selection
+################################################################################
+_run_build_push() {
+    local start_time=${SECONDS}
+
+    ##################################################################
+    # Host selection
+    ##################################################################
+    if [ -n "${CLI_HOST}" ]; then
+        local host_file="${TOP_CONFIGS_DIR}/3_hosts/${CLI_HOST}.env"
+        if [ ! -f "${host_file}" ]; then
+            _error "Host config not found: ${host_file}" 1
+        fi
+        _load_host_config "${CLI_HOST}"
+    else
+        _select_host_config
+    fi
+
+    if [ "${_HARBOR_SKIP_BUILD}" = "1" ]; then
+        return 0
+    fi
+
+    ##################################################################
+    # Load & validate config
+    ##################################################################
+    _load_config_layers
+    export HOST_CONFIG
+
+    if ! _validate_config; then
+        _error "Configuration validation failed" 1
+    fi
+
+    ##################################################################
+    # Build & Push pipeline
+    ##################################################################
+    0_check_registry_login || exit 1
+    2_build_images         || exit 1
+    3_prepare_version_info || exit 1
+    4_tag_images           || exit 1
+    5_push_images          || exit 1
+    6_cleanup_images       || exit 1
+
+    _print_next_steps
+
+    local duration=$(( SECONDS - start_time ))
+    echo "  Total execution time: $((duration / 3600))h $((duration % 3600 / 60))m $((duration % 60))s"
+}
+
+################################################################################
+# Run container management command (start/stop/status/remove)
+################################################################################
+_run_container() {
+    local action="$1"
+
+    # Validate host is specified
+    if [ -z "${CLI_HOST}" ]; then
+        _error "Container commands require --host=<name>" 1
+        return 1
+    fi
+
+    # Validate host config exists
+    local host_file="${TOP_CONFIGS_DIR}/3_hosts/${CLI_HOST}.env"
+    if [ ! -f "${host_file}" ]; then
+        _error "Host config not found: ${host_file}" 1
+        return 1
+    fi
+
+    # Load config
+    _load_host_config "${CLI_HOST}"
+    _load_config_layers
+    export HOST_CONFIG
+    export BUILD_SCRIPT_DIR="${TOP_CONFIGS_DIR}/3_hosts/.runtime/${CLI_HOST}"
+    mkdir -p "${BUILD_SCRIPT_DIR}"
+
+    # Derive FINAL_IMAGE_NAME (same logic as entrance.sh)
+    if [ "${HAVE_HARBOR_SERVER}" == "TRUE" ]; then
+        export FINAL_IMAGE_NAME="${REGISTRY_URL}/${IMAGE_NAME}:latest"
+    else
+        export FINAL_IMAGE_NAME="${IMAGE_NAME}:latest"
+    fi
+
+    # Source handover modules (order matters: volumes → compose → container)
+    source "${SCRIPT_DIR}/scripts/libs/handover/volumes.sh"
+    volumes_init_if_needed
+    source "${SCRIPT_DIR}/scripts/libs/handover/compose.sh"
+    source "${SCRIPT_DIR}/scripts/libs/handover/container.sh"
+
+    case "${action}" in
+        start)
+            _log "INFO" "Starting container for host: ${CLI_HOST}"
+            _container_start
+            ;;
+        stop)
+            _log "INFO" "Stopping container for host: ${CLI_HOST}"
+            _container_stop
+            ;;
+        status)
+            _show_container_status
+            ;;
+        remove)
+            _log "INFO" "Removing container for host: ${CLI_HOST}"
+            _container_remove_container
+            ;;
+    esac
+}
+
+################################################################################
+# Show container status (running / stopped / not found)
+################################################################################
+_show_container_status() {
+    echo ""
+    echo "  Container: ${CONTAINER_NAME}"
+    echo "  Image:     ${FINAL_IMAGE_NAME}"
+
+    if _container_is_running; then
+        echo "  Status:    RUNNING"
+        echo ""
+        docker ps --filter "name=^${CONTAINER_NAME}$" --format "  ID: {{.ID}}\n  Created: {{.CreatedAt}}\n  Ports: {{.Ports}}"
+    elif _container_exists; then
+        echo "  Status:    STOPPED"
+        echo ""
+        docker ps -a --filter "name=^${CONTAINER_NAME}$" --format "  ID: {{.ID}}\n  Created: {{.CreatedAt}}"
+    else
+        echo "  Status:    NOT FOUND"
+    fi
+    echo ""
+}
+
+################################################################################
+# List images built by this project
+################################################################################
+_run_image_list() {
+    echo ""
+    echo "  HarborPilot images:"
+    echo "  ─────────────────────────────────────────"
+    docker images --format "  {{.Repository}}:{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}" \
+        | grep -i "harborpilot\|${PROJECT_NAME:-harborpilot}" \
+        || echo "  (none found)"
+    echo ""
 }
 
 ################################################################################
@@ -519,7 +728,7 @@ _create_host_config() {
 
     LOCAL_HOSTNAME=$(hostname)
     local TEMPLATE="${TOP_CONFIGS_DIR}/3_hosts/TEMPLATE.env.example"
-    local total_questions=5  # Questions after platform selection
+    local total_questions=15  # Questions after platform selection
 
     # Step 1: Select a base platform FIRST (determines filename)
     echo ""
@@ -542,7 +751,8 @@ _create_host_config() {
     done
     echo "  → Selected platform: ${selected_platform}"
 
-    # Source platform config so HARBOR_SERVER_IP, CHIP_FAMILY etc. are available
+    # Source Layer 1 defaults + platform config so questions have default values
+    _load_layer1_defaults
     local platform_env="${TOP_CONFIGS_DIR}/2_platforms/${selected_platform}.env"
     if [ -f "${platform_env}" ]; then
         source "${platform_env}"
@@ -570,6 +780,18 @@ _create_host_config() {
         return 1
     fi
     cp "${TEMPLATE}" "${HOST_CONFIG}"
+    # Update "Created" date to today
+    sed -i "s|^# Created: .*|# Created: $(date +%Y-%m-%d)|" "${HOST_CONFIG}"
+    # Sync Additional Toggles with current Layer 1 defaults (non-wizard toggles only;
+    # INSTALL_CUDA and INSTALL_OPENCV are handled by Q10/Q11 below).
+    # Keep lines commented — the layer system reads Layer 1 defaults at runtime;
+    # these are written here so the file shows current values for reference.
+    for _var in INSTALL_CODEX INSTALL_CLAUDE_CODE INSTALL_OPENCODE \
+                INSTALL_DEV_TOOLS INSTALL_MINICOM_CONFIG INSTALL_DOC_TOOLS \
+                INSTALL_VCS_TOOLS INSTALL_KERNEL_TOOLS INSTALL_PYTHON_PACKAGES; do
+        eval "_val=\"\${${_var}:-}\""
+        [ -n "${_val}" ] && sed -i 's|^# '"${_var}"'="[^"]*"\(.*\)|# '"${_var}"'="'"${_val}"'"\1|' "${HOST_CONFIG}"
+    done
     echo "  → Copied template to ${HOST_CONFIG}"
 
     # Now configure host-specific overrides with guided prompts
@@ -597,47 +819,209 @@ _create_host_config() {
         echo "  → Volume dir set to: ${host_volume_dir}"
     fi
 
-    # Question 2: GPU (recommend: no for most machines)
-    local use_gpu="false"
-    if prompt_simple "Does this machine have an NVIDIA GPU?" "2" "${total_questions}" "n"; then
+    # Question 2: Harbor server IP
+    local harbor_ip="${HARBOR_SERVER_IP}"
+    echo ""
+    echo "  (2/${total_questions}) Harbor server IP"
+    echo "      Required for pulling pre-built images. Use the Harbor server's LAN IP."
+    echo ""
+    read -p "  HARBOR_SERVER_IP [${harbor_ip}]: " _input
+    harbor_ip="${_input:-${harbor_ip}}"
+
+    # Question 3: Harbor server port
+    local harbor_port="${HARBOR_SERVER_PORT}"
+    echo ""
+    echo "  (3/${total_questions}) Harbor server port"
+    echo ""
+    read -p "  HARBOR_SERVER_PORT [${harbor_port}]: " _input
+    harbor_port="${_input:-${harbor_port}}"
+
+    # Question 4: GitLab server (default from Layer 1: HAVE_GITLAB_SERVER)
+    local _gitlab_default="n"
+    [[ "${HAVE_GITLAB_SERVER:-FALSE}" == "TRUE" ]] && _gitlab_default="y"
+    local have_gitlab="${HAVE_GITLAB_SERVER:-FALSE}"
+    if prompt_simple "Do you have a GitLab server?" "4" "${total_questions}" "${_gitlab_default}"; then
+        have_gitlab="TRUE"
+        echo "  → GitLab server enabled"
+        local gitlab_ip="${GITLAB_SERVER_IP:-${harbor_ip}}"
+        echo ""
+        echo "  (4a/${total_questions}) GitLab server IP"
+        echo "      Press Enter to use same as Harbor IP (${harbor_ip})."
+        echo ""
+        read -p "  GITLAB_SERVER_IP [${gitlab_ip}]: " _input
+        gitlab_ip="${_input:-${gitlab_ip}}"
+        local gitlab_port="${GITLAB_SERVER_PORT}"
+        echo ""
+        echo "  (4b/${total_questions}) GitLab server port"
+        echo ""
+        read -p "  GITLAB_SERVER_PORT [${gitlab_port}]: " _input
+        gitlab_port="${_input:-${gitlab_port}}"
+        GITLAB_SERVER_IP="${gitlab_ip}"
+        GITLAB_SERVER_PORT="${gitlab_port}"
+    else
+        echo "  → No GitLab server"
+    fi
+
+    # Question 5: Proxy configuration (default from Layer 1: HAS_PROXY)
+    local _proxy_default="n"
+    [[ "${HAS_PROXY:-false}" == "true" ]] && _proxy_default="y"
+    local has_proxy="${HAS_PROXY:-false}"
+    if prompt_simple "Are you behind a firewall that blocks Docker registry access?" "5" "${total_questions}" "${_proxy_default}"; then
+        has_proxy="true"
+        echo "  → Proxy enabled"
+        local http_proxy_ip="${HTTP_PROXY_IP:-${harbor_ip}}"
+        echo ""
+        echo "  (5a/${total_questions}) HTTP proxy IP"
+        echo "      Press Enter to use same as Harbor IP (${harbor_ip})."
+        echo ""
+        read -p "  HTTP_PROXY_IP [${http_proxy_ip}]: " _input
+        http_proxy_ip="${_input:-${http_proxy_ip}}"
+        local https_proxy_ip="${HTTPS_PROXY_IP:-${http_proxy_ip}}"
+        echo ""
+        echo "  (5b/${total_questions}) HTTPS proxy IP"
+        echo "      Press Enter to use same as HTTP proxy IP (${http_proxy_ip})."
+        echo ""
+        read -p "  HTTPS_PROXY_IP [${https_proxy_ip}]: " _input
+        https_proxy_ip="${_input:-${https_proxy_ip}}"
+        HTTP_PROXY_IP="${http_proxy_ip}"
+        HTTPS_PROXY_IP="${https_proxy_ip}"
+    else
+        echo "  → No proxy"
+    fi
+
+    # Question 6: GPU (default from Layer 1: USE_NVIDIA_GPU)
+    local _gpu_default="n"
+    [[ "${USE_NVIDIA_GPU:-false}" == "true" ]] && _gpu_default="y"
+    local use_gpu="${USE_NVIDIA_GPU:-false}"
+    if prompt_simple "Does this machine have an NVIDIA GPU?" "6" "${total_questions}" "${_gpu_default}"; then
         use_gpu="true"
     fi
 
-    # Question 3: SHM size
-    local shm_size="256m"
+    # Question 7: SHM size (default from Layer 1: CONTAINER_SHM_SIZE)
+    local shm_size="${CONTAINER_SHM_SIZE:-256m}"
     if [[ "${use_gpu}" == "true" ]]; then
-        shm_size="1g"
-        if prompt_simple "Set SHM size to 1g for GPU?" "3" "${total_questions}" "y"; then
+        local _shm_default="y"
+        [[ "${shm_size}" == "1g" ]] || _shm_default="n"
+        if prompt_simple "Set SHM size to 1g for GPU? (current: ${shm_size})" "7" "${total_questions}" "y"; then
+            shm_size="1g"
             echo "  → SHM size set to ${shm_size}"
         else
             shm_size="2g"
             echo "  → SHM size set to ${shm_size}"
         fi
     else
-        if prompt_simple "Set SHM size to 512m? (default is 256m)" "3" "${total_questions}" "n"; then
-            shm_size="512m"
-            echo "  → SHM size set to ${shm_size}"
-        else
-            echo "  → SHM size set to ${shm_size} (default)"
-        fi
+        echo "  → SHM size: ${shm_size} (from config)"
     fi
 
-    # Question 4: Network mode (recommend: yes for production)
-    local network_mode="bridge"
-    if prompt_simple "Use host network mode?" "4" "${total_questions}" "y"; then
+    # Question 8: Network mode (default from Layer 1: NETWORK_MODE)
+    local _net_default="y"
+    [[ "${NETWORK_MODE:-host}" == "host" ]] || _net_default="n"
+    local network_mode="${NETWORK_MODE:-host}"
+    if prompt_simple "Use host network mode?" "8" "${total_questions}" "${_net_default}"; then
         network_mode="host"
         echo "  → Network mode set to host"
     else
-        echo "  → Network mode set to bridge (default)"
+        network_mode="bridge"
+        echo "  → Network mode set to bridge"
     fi
 
-    # Question 5: Auto-start container (recommend: yes)
-    local auto_restart="no"
-    if prompt_simple "Auto-restart container on boot?" "5" "${total_questions}" "y"; then
+    # Question 9: Auto-start container (default from Layer 1: CONTAINER_RESTART_POLICY)
+    local _restart_default="y"
+    [[ "${CONTAINER_RESTART_POLICY:-unless-stopped}" == "unless-stopped" ]] || _restart_default="n"
+    local auto_restart="${CONTAINER_RESTART_POLICY:-unless-stopped}"
+    if prompt_simple "Auto-restart container on boot? (current: ${auto_restart})" "9" "${total_questions}" "${_restart_default}"; then
         auto_restart="unless-stopped"
         echo "  → Container will auto-restart on boot"
     else
+        auto_restart="no"
         echo "  → Container will not auto-restart"
+    fi
+
+    # Question 10: Install CUDA (default from Layer 1: INSTALL_CUDA)
+    local _cuda_default="n"
+    [[ "${INSTALL_CUDA:-false}" == "true" ]] && _cuda_default="y"
+    local install_cuda="${INSTALL_CUDA:-false}"
+    if prompt_simple "Install CUDA toolkit during image build?" "10" "${total_questions}" "${_cuda_default}"; then
+        install_cuda="true"
+    else
+        install_cuda="false"
+    fi
+
+    # Question 11: Install OpenCV (default from Layer 1: INSTALL_OPENCV)
+    local _opencv_default="n"
+    [[ "${INSTALL_OPENCV:-false}" == "true" ]] && _opencv_default="y"
+    local install_opencv="${INSTALL_OPENCV:-false}"
+    if prompt_simple "Install OpenCV during image build?" "11" "${total_questions}" "${_opencv_default}"; then
+        install_opencv="true"
+    else
+        install_opencv="false"
+    fi
+
+    # Question 12: npm China mirror (default from Layer 1: NPM_USE_CHINA_MIRROR)
+    local _npm_default="n"
+    [[ "${NPM_USE_CHINA_MIRROR:-false}" == "true" ]] && _npm_default="y"
+    local npm_china_mirror="${NPM_USE_CHINA_MIRROR:-false}"
+    if prompt_simple "Use npm China mirror (for users in China)?" "12" "${total_questions}" "${_npm_default}"; then
+        npm_china_mirror="true"
+    else
+        npm_china_mirror="false"
+    fi
+
+    # Question 13: Extra volume mounts (default: none)
+    local extra_volumes=()
+    if prompt_simple "Do you need extra volume mounts?" "13" "${total_questions}" "n"; then
+        echo "      Enter host:container paths (empty line to finish)"
+        local vol_idx=0
+        while true; do
+            read -p "  EXTRA_VOLUME_${vol_idx} [done]: " _vol_input
+            [[ -z "${_vol_input}" ]] && break
+            extra_volumes+=("${_vol_input}")
+            echo "  → Added: ${_vol_input}"
+            vol_idx=$((vol_idx + 1))
+        done
+    else
+        echo "  → No extra volumes"
+    fi
+
+    # Question 14: Install SDK (default from Layer 1: INSTALL_SDK)
+    local _sdk_default="n"
+    [[ "${INSTALL_SDK:-false}" == "true" ]] && _sdk_default="y"
+    local install_sdk="${INSTALL_SDK:-false}"
+    local sdk_repo=""
+    local sdk_key=""
+    local sdk_branch=""
+    if prompt_simple "Install SDK during image build?" "14" "${total_questions}" "${_sdk_default}"; then
+        install_sdk="true"
+
+        # Question 15a: SDK_GIT_REPO (auto-derived from GitLab + platform)
+        sdk_repo="git@${GITLAB_SERVER_IP:-192.168.3.67}:team_${CHIP_FAMILY}/${PRODUCT_NAME}_sdk.git"
+        echo ""
+        echo "  (15a/${total_questions}) SDK git repository"
+        echo "      Auto-derived from GitLab IP and platform identity."
+        echo ""
+        read -p "  SDK_GIT_REPO [${sdk_repo}]: " _input
+        sdk_repo="${_input:-${sdk_repo}}"
+
+        # Question 15b: SDK_GIT_KEY_FILE (default from platform)
+        sdk_key="${SDK_GIT_KEY_FILE:-SDK_${CHIP_FAMILY}_ED25519}"
+        echo ""
+        echo "  (15b/${total_questions}) SSH key file for SDK repo"
+        echo "      Default: ${sdk_key} (from platform config)"
+        echo ""
+        read -p "  SDK_GIT_KEY_FILE [${sdk_key}]: " _input
+        sdk_key="${_input:-${sdk_key}}"
+
+        # Question 15c: SDK_GIT_DEFAULT_BRANCH (default from platform)
+        sdk_branch="${SDK_GIT_DEFAULT_BRANCH:-main}"
+        echo ""
+        echo "  (15c/${total_questions}) SDK git branch"
+        echo "      Default: ${sdk_branch} (from platform config)"
+        echo ""
+        read -p "  SDK_GIT_DEFAULT_BRANCH [${sdk_branch}]: " _input
+        sdk_branch="${_input:-${sdk_branch}}"
+    else
+        install_sdk="false"
+        echo "  → SDK installation disabled"
     fi
 
     # Apply user choices to the copied template
@@ -648,10 +1032,42 @@ _create_host_config() {
     sed -i "s|^# CONTAINER_SHM_SIZE=.*|CONTAINER_SHM_SIZE=\"${shm_size}\"|" "${HOST_CONFIG}"
     sed -i "s|^# NETWORK_MODE=.*|NETWORK_MODE=\"${network_mode}\"|" "${HOST_CONFIG}"
     sed -i "s|^# CONTAINER_RESTART_POLICY=.*|CONTAINER_RESTART_POLICY=\"${auto_restart}\"|" "${HOST_CONFIG}"
+    sed -i "s|^# HARBOR_SERVER_IP=.*|HARBOR_SERVER_IP=\"${harbor_ip}\"|" "${HOST_CONFIG}"
+    sed -i "s|^# HARBOR_SERVER_PORT=.*|HARBOR_SERVER_PORT=\"${harbor_port}\"|" "${HOST_CONFIG}"
+    sed -i "s|^# HAVE_GITLAB_SERVER=.*|HAVE_GITLAB_SERVER=\"${have_gitlab}\"|" "${HOST_CONFIG}"
+    if [[ "${have_gitlab}" == "TRUE" ]]; then
+        sed -i "s|^# GITLAB_SERVER_IP=.*|GITLAB_SERVER_IP=\"${GITLAB_SERVER_IP}\"|" "${HOST_CONFIG}"
+        sed -i "s|^# GITLAB_SERVER_PORT=.*|GITLAB_SERVER_PORT=\"${GITLAB_SERVER_PORT}\"|" "${HOST_CONFIG}"
+    fi
+    sed -i "s|^# HAS_PROXY=.*|HAS_PROXY=\"${has_proxy}\"|" "${HOST_CONFIG}"
+    if [[ "${has_proxy}" == "true" ]]; then
+        sed -i "s|^# HTTP_PROXY_IP=.*|HTTP_PROXY_IP=\"${HTTP_PROXY_IP}\"|" "${HOST_CONFIG}"
+        sed -i "s|^# HTTPS_PROXY_IP=.*|HTTPS_PROXY_IP=\"${HTTPS_PROXY_IP}\"|" "${HOST_CONFIG}"
+    fi
+    sed -i "s|^# INSTALL_CUDA=.*|INSTALL_CUDA=\"${install_cuda}\"|" "${HOST_CONFIG}"
+    sed -i "s|^# INSTALL_OPENCV=.*|INSTALL_OPENCV=\"${install_opencv}\"|" "${HOST_CONFIG}"
+    sed -i "s|^# NPM_USE_CHINA_MIRROR=.*|NPM_USE_CHINA_MIRROR=\"${npm_china_mirror}\"|" "${HOST_CONFIG}"
 
-    # Auto-derive REGISTRY_URL from platform values (HARBOR_SERVER_IP + PORT + CHIP_FAMILY)
-    if [ -n "${HARBOR_SERVER_IP:-}" ] && [ -n "${HARBOR_SERVER_PORT:-}" ] && [ -n "${CHIP_FAMILY:-}" ]; then
-        local derived_registry_url="${HARBOR_SERVER_IP}:${HARBOR_SERVER_PORT}/team_${CHIP_FAMILY}"
+    # SDK configuration
+    if [[ "${install_sdk}" == "true" ]]; then
+        sed -i "s|^# SDK_GIT_REPO=.*|SDK_GIT_REPO=\"${sdk_repo}\"|" "${HOST_CONFIG}"
+        sed -i "s|^# SDK_GIT_KEY_FILE=.*|SDK_GIT_KEY_FILE=\"${sdk_key}\"|" "${HOST_CONFIG}"
+        sed -i "s|^# SDK_GIT_DEFAULT_BRANCH=.*|SDK_GIT_DEFAULT_BRANCH=\"${sdk_branch}\"|" "${HOST_CONFIG}"
+    fi
+
+    # Extra volume mounts
+    if [[ ${#extra_volumes[@]} -gt 0 ]]; then
+        # First one: uncomment template line
+        sed -i "s|^# EXTRA_VOLUME_0=.*|EXTRA_VOLUME_0=\"${extra_volumes[0]}\"|" "${HOST_CONFIG}"
+        # Additional: append after EXTRA_VOLUME_0
+        for ((i=1; i<${#extra_volumes[@]}; i++)); do
+            sed -i "/^EXTRA_VOLUME_0=/a EXTRA_VOLUME_${i}=\"${extra_volumes[$i]}\"" "${HOST_CONFIG}"
+        done
+    fi
+
+    # Auto-derive REGISTRY_URL from Harbor IP + port + CHIP_FAMILY
+    if [ -n "${harbor_ip}" ] && [ -n "${harbor_port}" ] && [ -n "${CHIP_FAMILY:-}" ]; then
+        local derived_registry_url="${harbor_ip}:${harbor_port}/team_${CHIP_FAMILY}"
         sed -i "s|^# REGISTRY_URL=.*|REGISTRY_URL=\"${derived_registry_url}\"|" "${HOST_CONFIG}"
         echo "  → REGISTRY_URL auto-derived: ${derived_registry_url}"
     fi
