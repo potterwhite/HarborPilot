@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0](https://github.com/potterwhite/HarborPilot/compare/v2.0.0...v2.1.0) (2026-06-29)
+
+
+### ✨ Added
+
+* add build CLI subcommand and extract shared build pipeline ([ea71afc](https://github.com/potterwhite/HarborPilot/commit/ea71afcb693b3a37087b0021b7f52b9af009b4fc))
+* add container management CLI and refactor command structure ([41b0d0f](https://github.com/potterwhite/HarborPilot/commit/41b0d0f84fe1cf8eeb9ade86f5f2523eddeb4731))
+* add SDK and extra volume questions to host config wizard ([2c0164f](https://github.com/potterwhite/HarborPilot/commit/2c0164f4bb2701f8edb54e571194d94366807e28))
+* **entrance:** add CLI args for non-interactive host config creation ([d7ab0f1](https://github.com/potterwhite/HarborPilot/commit/d7ab0f10c536ce82b163b9d53c73031cbfd335c2))
+* **ui:** expand host config wizard with all host-level questions ([62b0fe1](https://github.com/potterwhite/HarborPilot/commit/62b0fe1b5a5fbc11e690b0d0d3b0f87db880b768))
+
+
+### 🐛 Fixed
+
+* ${REGISTRY_URL} could not be parsed correctly with sed regular expression ([5c4f980](https://github.com/potterwhite/HarborPilot/commit/5c4f9801a6ca19ac655069bc2d380b3218daf2a2))
+* add missing BASE_PLATFORM to TEMPLATE.env.example ([9400c00](https://github.com/potterwhite/HarborPilot/commit/9400c004fb7af4140530c403ab274eaa844a18a4))
+* allow PORT_SLOT=0 to trigger auto-calculation ([4b8bc28](https://github.com/potterwhite/HarborPilot/commit/4b8bc28fee0e0fdb317405c883811a6b7f983686))
+* initialize volumes and image name for container-start ([8c5382d](https://github.com/potterwhite/HarborPilot/commit/8c5382d24fabc41e1573fb9ac64b08f8ac371b43))
+* keep Additional Toggles commented but update values from Layer 1 ([586021a](https://github.com/potterwhite/HarborPilot/commit/586021a623f084516d453373f4d3cad80e48c9af))
+* sync Additional Toggles with Layer 1 defaults when generating host config ([fb2c33b](https://github.com/potterwhite/HarborPilot/commit/fb2c33b257f69f450358477794024c61b1d22f2a))
+* **ui:** read all question defaults from Layer 1 config ([34a614e](https://github.com/potterwhite/HarborPilot/commit/34a614e3f4643c32a8e06f9ccc3e30ce197e0f0a))
+* update Created date in generated host config to current date ([74c9733](https://github.com/potterwhite/HarborPilot/commit/74c9733acb756dbf2750ba49f4e6f9d69f3df7ea))
+* use arithmetic assignment to avoid set -e exit in volume loop ([da56d40](https://github.com/potterwhite/HarborPilot/commit/da56d403a2af8f82f4202ef60e1e90c0878bbce3))
+
 ## [2.0.0](https://github.com/potterwhite/HarborPilot/compare/v1.13.0...v2.0.0) (2026-06-27)
 
 
