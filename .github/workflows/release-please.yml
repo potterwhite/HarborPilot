@@ -46,17 +46,50 @@ jobs:
       - uses: actions/checkout@v4
         if: ${{ steps.release.outputs.release_created }}
 
-      - name: Write PROJECT_RELEASE_DATE to 00_global.env
+      - name: Create PR for PROJECT_RELEASE_DATE
         if: ${{ steps.release.outputs.release_created }}
+        env:
+          TAG_NAME: ${{ steps.release.outputs.tag_name }}
         run: |
           RELEASE_DATE=$(date -u +"%Y-%m-%d")
-          sed -i "s/^PROJECT_RELEASE_DATE=.*/PROJECT_RELEASE_DATE=${RELEASE_DATE}/" \
-            configs/1_defaults/00_global.env
+          BRANCH_NAME="release-date-${TAG_NAME}"
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "${BRANCH_NAME}"
+          sed -i "s/^PROJECT_RELEASE_DATE=.*/PROJECT_RELEASE_DATE=${RELEASE_DATE}/" \
+            configs/1_defaults/00_global.env
           git add configs/1_defaults/00_global.env
-          git commit -m "chore: set PROJECT_RELEASE_DATE to ${RELEASE_DATE} for ${{ steps.release.outputs.tag_name }}"
-          git push
+          git commit -m "chore: set PROJECT_RELEASE_DATE to ${RELEASE_DATE} for ${TAG_NAME}"
+          git push --set-upstream origin "${BRANCH_NAME}"
+
+      - name: Create PR for PROJECT_RELEASE_DATE
+        if: ${{ steps.release.outputs.release_created }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tagName = process.env.TAG_NAME;
+            const branchName = `release-date-${tagName}`;
+            const releaseDate = new Date().toISOString().split('T')[0];
+
+            const pr = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `chore: set PROJECT_RELEASE_DATE to ${releaseDate} for ${tagName}`,
+              head: branchName,
+              base: 'main',
+              body: [
+                `Release date update for \`${tagName}\``,
+                '',
+                'Created by GitHub Actions — please review and merge.',
+                '',
+                '🤖 Generated with [Claude Code](https://claude.com/claude-code)'
+              ].join('\n'),
+              draft: false
+            });
+
+            console.log(`Created PR #${pr.data.number}: ${pr.data.title}`);
 
   upload-handover-tarballs:
     needs: release-please
