@@ -10,7 +10,7 @@
 ## 启动
 
 ```bash
-./ubuntu_only_entrance.sh start
+./entrance.sh start
 ```
 
 首次运行会自动引导创建配置，**一路 Enter 用默认值即可**。
@@ -20,11 +20,11 @@
 ## 附录A：常用命令
 
 ```bash
-./ubuntu_only_entrance.sh start      # 启动
-./ubuntu_only_entrance.sh stop       # 停止
-./ubuntu_only_entrance.sh restart    # 重启
-./ubuntu_only_entrance.sh recreate   # 重建（配置改了用这个）
-./ubuntu_only_entrance.sh remove     # 删除容器
+./entrance.sh start      # 启动
+./entrance.sh stop       # 停止
+./entrance.sh restart    # 重启
+./entrance.sh recreate   # 重建（配置改了用这个）
+./entrance.sh remove     # 删除容器
 ```
 
 ## 附录B：修改配置
@@ -42,10 +42,10 @@ nano clientside/ubuntu/configs/3_hosts/$(hostname).env
 ```
 project_handover_*/
 ├── README_handover.md                 # 本文件
-├── ubuntu_only_entrance.sh            # 入口脚本（symlink）
+├── entrance.sh            # 入口脚本（symlink）
 └── clientside/
     └── ubuntu/
-        ├── ubuntu_only_entrance.sh    # 实际入口
+        ├── entrance.sh    # 实际入口
         ├── scripts/                   # 管理脚本
         ├── configs/
         │   ├── 1_defaults/            # 默认配置（勿改）
