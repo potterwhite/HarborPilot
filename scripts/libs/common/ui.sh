@@ -339,9 +339,9 @@ _run_build_push_all_hosts() {
 
         CLI_HOST="${host_name}" _run_build_push
         if [[ $? -eq 0 ]]; then
-            ((success++))
+            success=$((success + 1))
         else
-            ((failed++))
+            failed=$((failed + 1))
         fi
     done
 
@@ -395,12 +395,12 @@ _run_build_push() {
     ##################################################################
     # Build & Push pipeline
     ##################################################################
-    0_check_registry_login || exit 1
-    2_build_images         || exit 1
-    3_prepare_version_info || exit 1
-    4_tag_images           || exit 1
-    5_push_images          || exit 1
-    6_cleanup_images       || exit 1
+    0_check_registry_login || return 1
+    2_build_images         || return 1
+    3_prepare_version_info || return 1
+    4_tag_images           || return 1
+    5_push_images          || return 1
+    6_cleanup_images       || return 1
 
     _print_next_steps
 
