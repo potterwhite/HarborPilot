@@ -5,6 +5,7 @@
       "package-name": "HarborPilot",
       "changelog-path": "CHANGELOG.md",
       "include-component-in-tag": false,
+      "includeCommitOfMergedPullRequests": false,
       "bump-minor-pre-major": true,
       "extra-files": [
         "configs/1_defaults/00_global.env"
