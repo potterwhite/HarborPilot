@@ -27,6 +27,11 @@ while [[ $# -gt 0 ]]; do
             CLI_COMMAND="$1"
             shift
             ;;
+        handover-platform)
+            CLI_COMMAND="$1"
+            CLI_PLATFORM="$2"
+            shift 2
+            ;;
         --host=*)
             CLI_HOST="${1#*=}"
             shift
@@ -115,6 +120,13 @@ main() {
                 ;;
             image-list)
                 _run_image_list
+                exit $?
+                ;;
+            handover-platform)
+                BASE_PLATFORM="${CLI_PLATFORM}"
+                _load_layer1_defaults
+                source "${TOP_CONFIGS_DIR}/2_platforms/${BASE_PLATFORM}.env"
+                7_package_handover
                 exit $?
                 ;;
         esac
