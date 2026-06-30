@@ -118,18 +118,24 @@ The **master orchestrator**. Two entry paths:
 
 **Execution flow (image-build):**
 1. `_run_build_push()` (in `ui.sh`) — single entry point for both CLI and menu paths
-2. Host selection: CLI `--host` → validate file exists → `_load_host_config()`; menu → `_select_host_config()`
-3. `_load_config_layers()` — Loads all 3 layers:
-   - Layer 1: sources all `configs/1_defaults/*.env` in order (00→05)
-   - Layer 2: sources platform from `BASE_PLATFORM` in host config (or .env symlink for legacy)
-   - Layer 3: sources `configs/3_hosts/$(hostname).env` (overrides platform)
-4. `port_calc.sh` — derives SSH/GDB ports from PORT_SLOT
-5. `0_check_registry_login()` — Verifies Docker is logged into Harbor; prompts interactive login if not
-6. `2_build_images()` → calls `docker/dev-env-clientside/build.sh`
-7. `3_prepare_version_info()` — Gets final image ID
-8. `4_tag_images()` — Tags with version + latest (local or registry)
-9. `5_push_images()` — Pushes + verifies manifest digest
-10. `6_cleanup_images()` — Removes intermediate images (keeps final)
+2. Host selection → host-name list (size 1 for single-host, N for "Build All Hosts"):
+   - CLI `--host=<name>` → validate file exists → single-element list
+   - Menu → `_select_host_config _hosts` populates the caller's array via `local -n` out parameter. Empty list means the user cancelled at the host-creation step.
+3. `0_check_registry_login()` — Verifies Docker is logged into Harbor; prompts interactive login if not. **Runs once per batch** (host-independent).
+4. For each host in the list (loop body; per-host failures in bulk mode continue with the next host rather than aborting the batch):
+   a. `_load_host_config "<host>"` then `_load_config_layers()` — Loads all 3 layers:
+      - Layer 1: sources all `configs/1_defaults/*.env` in order (00→05)
+      - Layer 2: sources platform from `BASE_PLATFORM` in host config (or .env symlink for legacy)
+      - Layer 3: sources `configs/3_hosts/<hostname>.env` (overrides platform)
+   b. `port_calc.sh` — derives SSH/GDB ports from PORT_SLOT
+   c. `_validate_config()`
+   d. `2_build_images()` → calls `docker/dev-env-clientside/build.sh`
+   e. `3_prepare_version_info()` — Gets final image ID
+   f. `4_tag_images()` — Tags with version + latest (local or registry)
+   g. `5_push_images()` — Pushes + verifies manifest digest
+   h. `6_cleanup_images()` — Removes intermediate images (keeps final)
+5. In single-host mode: `_print_next_steps` + total execution time.
+   In multi-host mode: a "Build All Hosts — Done" summary banner with success / failed counts.
 
 **Execution flow (container-start/stop/status/remove):**
 1. `_run_container(action)` (in `ui.sh`) — validates host, loads config, sources handover modules

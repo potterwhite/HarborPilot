@@ -23,9 +23,9 @@
 # Module: ui.sh
 # Description: UI interaction functions for HarborPilot
 # Functions: prompt_with_timeout, prompt_simple, 0_show_main_menu,
-#            _show_config_menu, 1_specify_platform, _select_host_config,
-#            _create_host_config, _load_host_config, _check_and_prompt_host_config,
-#            _print_next_steps
+#            _show_config_menu, _select_host_config, _create_host_config,
+#            _load_host_config, _check_and_prompt_host_config, _print_next_steps,
+#            _run_build_push
 ################################################################################
 
 ################################################################################
@@ -299,113 +299,151 @@ _show_container_menu() {
 }
 
 ################################################################################
-# Build & Push — all hosts sequentially (interactive, with per-host approval)
+# _run_build_push now owns all build logic. The previous
+# _run_build_push_all_hosts helper was removed because it caused a duplicate
+# rebuild after the "Build All Hosts — Done" banner (see TaskList / commit
+# history). Multi-host bulking is now expressed as a host-name list returned
+# by _select_host_config, which _run_build_push iterates over — see below.
 ################################################################################
-_run_build_push_all_hosts() {
-    declare -a host_configs=()
-    for host_file in "${TOP_CONFIGS_DIR}/3_hosts/"*.env; do
-        [[ ! -f "${host_file}" ]] && continue
-        host_configs+=("$(basename "${host_file}" .env)")
-    done
-
-    local total=${#host_configs[@]}
-    if [[ ${total} -eq 0 ]]; then
-        echo "  ✗ No host configs found."
-        return 1
-    fi
-
-    echo ""
-    echo "  ╔══════════════════════════════════════════════════════════════════╗"
-    echo "  ║           Build All Hosts — ${total} host(s) found                     ║"
-    echo "  ╚══════════════════════════════════════════════════════════════════╝"
-    echo ""
-
-    local start_time=${SECONDS}
-    local success=0
-    local failed=0
-
-    for i in "${!host_configs[@]}"; do
-        local host_name="${host_configs[$i]}"
-        local seq=$((i + 1))
-
-        echo ""
-        echo "  ═══════════════════════════════════════════════════════════════════"
-        printf "  ║  [%s/%s]  %s\n" "${seq}" "${total}" "${host_name}"
-        echo "  ═══════════════════════════════════════════════════════════════════"
-        if ! prompt_with_timeout "  Build & push host [${seq}/${total}]? (Press 'n' to skip)" 20; then
-            echo "  → Skipped."
-            continue
-        fi
-
-        CLI_HOST="${host_name}" _run_build_push
-        if [[ $? -eq 0 ]]; then
-            success=$((success + 1))
-        else
-            failed=$((failed + 1))
-        fi
-    done
-
-    local duration=$(( SECONDS - start_time ))
-    echo ""
-    echo "  ╔══════════════════════════════════════════════════════════════════╗"
-    echo "  ║                    Build All Hosts — Done                        ║"
-    echo "  ╠══════════════════════════════════════════════════════════════════╣"
-    printf "  ║  Success: %-3s  |  Failed: %-3s  |  Time: %dh %dm %ds             ║\n" \
-        "${success}" "${failed}" "$((duration / 3600))" "$((duration % 3600 / 60))" "$((duration % 60))"
-    echo "  ╚══════════════════════════════════════════════════════════════════╝"
-}
 
 ################################################################################
 # Run the full Build & Push pipeline
 #
 # Single entry point for both CLI (--host <name>) and interactive menu paths.
-#   CLI path:  CLI_HOST is pre-set → validate file exists, hard error if not
-#   Menu path: CLI_HOST is empty   → interactive host selection
+#   CLI path:  CLI_HOST is pre-set → single-element host list
+#   Menu path: _select_host_config populates _hosts via `local -n` out param.
+#              Empty list means "user cancelled"; non-empty means 1 host
+#              (single-host menu) or N hosts (Build All Hosts).
+#
+# Registry login runs once per batch (host-independent). The 5-step build /
+# push pipeline (2_build_images ... 6_cleanup_images) runs once per host.
+# In multi-host mode, a per-host failure increments _host_failed and the loop
+# continues with the next host rather than aborting the whole batch.
 ################################################################################
 _run_build_push() {
     local start_time=${SECONDS}
 
     ##################################################################
-    # Host selection
+    # Host selection → list of host names
     ##################################################################
+    local -a _hosts=()
     if [ -n "${CLI_HOST}" ]; then
         local host_file="${TOP_CONFIGS_DIR}/3_hosts/${CLI_HOST}.env"
         if [ ! -f "${host_file}" ]; then
             _error "Host config not found: ${host_file}" 1
         fi
-        _load_host_config "${CLI_HOST}"
+        _hosts=("${CLI_HOST}")
     else
-        _select_host_config
+        _select_host_config _hosts
     fi
 
     if [ "${_HARBOR_SKIP_BUILD}" = "1" ]; then
         return 0
     fi
 
-    ##################################################################
-    # Load & validate config
-    ##################################################################
-    _load_config_layers
-    export HOST_CONFIG
+    if [ ${#_hosts[@]} -eq 0 ]; then
+        echo "  → No host selected; nothing to build."
+        return 0
+    fi
 
-    if ! _validate_config; then
-        _error "Configuration validation failed" 1
+    local _is_bulk=0
+    [ ${#_hosts[@]} -gt 1 ] && _is_bulk=1
+
+    if [ "${_is_bulk}" -eq 1 ]; then
+        echo "" >&2
+        echo "  ╔══════════════════════════════════════════════════════════════════╗" >&2
+        printf "  ║           Build All Hosts — %d host(s)                          ║\n" "${#_hosts[@]}" >&2
+        echo "  ╚══════════════════════════════════════════════════════════════════╝" >&2
+        echo "" >&2
     fi
 
     ##################################################################
-    # Build & Push pipeline
+    # Registry login — once per batch (host-independent)
     ##################################################################
     0_check_registry_login || return 1
-    2_build_images         || return 1
-    3_prepare_version_info || return 1
-    4_tag_images           || return 1
-    5_push_images          || return 1
-    6_cleanup_images       || return 1
 
-    _print_next_steps
+    ##################################################################
+    # Per-host pipeline:
+    #   _load_host_config / _load_config_layers / _validate_config are
+    #   called every iteration because HOST_CONFIG must point at the
+    #   current host, and the previous host's exports would otherwise
+    #   leak into this one (the bug that this refactor fixes).
+    ##################################################################
+    local _host_success=0
+    local _host_failed=0
+    local _bulk_start=${SECONDS}
 
-    local duration=$(( SECONDS - start_time ))
-    echo "  Total execution time: $((duration / 3600))h $((duration % 3600 / 60))m $((duration % 60))s"
+    for h in "${_hosts[@]}"; do
+        echo "" >&2
+        echo "  ═══════════════════════════════════════════════════════════════════" >&2
+        printf "  ║  Building: %s\n" "${h}" >&2
+        echo "  ═══════════════════════════════════════════════════════════════════" >&2
+
+        # Per-host skip prompt (bulk only — single-host menus have no need).
+        if [ "${_is_bulk}" -eq 1 ]; then
+            if ! prompt_with_timeout "  Build & push ${h}? (Press 'n' to skip)" 20; then
+                echo "  → Skipped ${h}." >&2
+                continue
+            fi
+        fi
+
+        _load_host_config "${h}"
+        _load_config_layers
+        export HOST_CONFIG
+
+        if ! _validate_config; then
+            echo "  ✗ Configuration validation failed for ${h}" >&2
+            _host_failed=$((_host_failed + 1))
+            continue
+        fi
+
+        # 5-step pipeline for this host (continue-on-error in bulk mode).
+        local _host_failed_step=""
+        2_build_images         || _host_failed_step="build"
+        if [ -z "${_host_failed_step}" ]; then
+            3_prepare_version_info || _host_failed_step="prepare_version_info"
+        fi
+        if [ -z "${_host_failed_step}" ]; then
+            4_tag_images           || _host_failed_step="tag_images"
+        fi
+        if [ -z "${_host_failed_step}" ]; then
+            5_push_images          || _host_failed_step="push_images"
+        fi
+        if [ -z "${_host_failed_step}" ]; then
+            6_cleanup_images       || _host_failed_step="cleanup_images"
+        fi
+
+        if [ -n "${_host_failed_step}" ]; then
+            echo "  ✗ ${h} — failed at step ${_host_failed_step}" >&2
+            _host_failed=$((_host_failed + 1))
+            continue
+        fi
+
+        if [ "${_is_bulk}" -eq 1 ]; then
+            echo "  ✓ ${h} — build & push complete" >&2
+        else
+            _print_next_steps
+        fi
+        _host_success=$((_host_success + 1))
+    done
+
+    ##################################################################
+    # Summary banner
+    ##################################################################
+    if [ "${_is_bulk}" -eq 1 ]; then
+        local _bulk_duration=$(( SECONDS - _bulk_start ))
+        echo "" >&2
+        echo "  ╔══════════════════════════════════════════════════════════════════╗" >&2
+        echo "  ║                    Build All Hosts — Done                        ║" >&2
+        echo "  ╠══════════════════════════════════════════════════════════════════╣" >&2
+        printf "  ║  Success: %-3s  |  Failed: %-3s  |  Time: %dh %dm %ds             ║\n" \
+            "${_host_success}" "${_host_failed}" \
+            "$((_bulk_duration / 3600))" "$((_bulk_duration % 3600 / 60))" "$((_bulk_duration % 60))" >&2
+        echo "  ╚══════════════════════════════════════════════════════════════════╝" >&2
+    else
+        local duration=$(( SECONDS - start_time ))
+        echo "  Total execution time: $((duration / 3600))h $((duration % 3600 / 60))m $((duration % 60))s"
+    fi
 }
 
 ################################################################################
@@ -665,8 +703,24 @@ _pick_platform() {
 # 1.5 Select host configuration
 # Host is the primary user object. Platform is resolved automatically
 # via BASE_PLATFORM in the host config.
+#
+# Return-value contract: this function does NOT echo host names to stdout
+# (callers would have to detour through process substitution). Instead, it
+# takes the caller's host-name array via `local -n` and populates it in
+# place. Caller pattern:
+#
+#     local -a _hosts=()
+#     _select_host_config _hosts        # 0..N names appear in _hosts
+#     for h in "${_hosts[@]}"; do ...; done
+#
+# All UI echoes go to >&2 (the screen). _create_host_config's many echo
+# calls are fenced by a temporary stdout → stderr swap so they never leak
+# into callers' code paths. The swap is restored synchronously inside the
+# branch, so nested calls (none of which exist any more, but defensively)
+# cannot trip on a stale fd 7.
 ################################################################################
 _select_host_config() {
+    local -n _out=$1
     LOCAL_HOSTNAME=$(hostname)
     HOST_CONFIG="${TOP_CONFIGS_DIR}/3_hosts/${LOCAL_HOSTNAME}.env"
 
@@ -674,113 +728,142 @@ _select_host_config() {
     declare -a host_configs=()
     for host_file in "${TOP_CONFIGS_DIR}/3_hosts/"*.env; do
         [[ ! -f "${host_file}" ]] && continue
-        local basename
-        basename="$(basename "${host_file}" .env)"
-        host_configs+=("${basename}")
+        host_configs+=("$(basename "${host_file}" .env)")
     done
 
     local host_count=${#host_configs[@]}
 
-    # If no host configs exist, force create one
+    # If no host configs exist, force create one (single forced pass).
     if [[ $host_count -eq 0 ]]; then
-        echo ""
-        echo "  ╔══════════════════════════════════════════════════════════════════╗"
-        echo "  ║              No Host Configurations Found                        ║"
-        echo "  ╠══════════════════════════════════════════════════════════════════╣"
-        echo "  ║                                                                  ║"
-        echo "  ║  A host config is required to build.                             ║"
-        echo "  ║  It defines which platform to use and host-specific settings.    ║"
-        echo "  ║                                                                  ║"
-        printf "  ║  [1]  Create host config for this machine (%-20s)║\n" "${LOCAL_HOSTNAME})"
-        echo "  ║                                                                  ║"
-        echo "  ╚══════════════════════════════════════════════════════════════════╝"
-        echo ""
+        echo "" >&2
+        echo "  ╔══════════════════════════════════════════════════════════════════╗" >&2
+        echo "  ║              No Host Configurations Found                        ║" >&2
+        echo "  ╠══════════════════════════════════════════════════════════════════╣" >&2
+        echo "  ║                                                                  ║" >&2
+        echo "  ║  A host config is required to build.                             ║" >&2
+        echo "  ║  It defines which platform to use and host-specific settings.    ║" >&2
+        echo "  ║                                                                  ║" >&2
+        printf "  ║  [1]  Create host config for this machine (%-20s)║\n" "${LOCAL_HOSTNAME})" >&2
+        echo "  ║                                                                  ║" >&2
+        echo "  ╚══════════════════════════════════════════════════════════════════╝" >&2
+        echo "" >&2
         read -p "  Please select [1]: " _config_choice
+
+        # _create_host_config emits many banners and prompts (all of which are
+        # legitimate UI). Temporarily route its stdout to stderr so those
+        # echoes don't pollute whatever the caller's _hosts is for. Restore
+        # both fds synchronously before continuing.
+        exec 7>&1
+        exec 1>&2
         _create_host_config
+        exec 1>&7
+        exec 7>&-
+
         read -p "  Build this host now? (y/N): " _build_choice
         if [[ "${_build_choice}" =~ ^[yY]$ ]]; then
-            _load_host_config "$(basename "${HOST_CONFIG}" .env)"
+            _out=("$(basename "${HOST_CONFIG}" .env)")
         else
-            echo "  → Build cancelled. You can build anytime by running './harbor'."
+            echo "  → Build cancelled. You can build anytime by running './harbor'." >&2
             _HARBOR_SKIP_BUILD=1
+            _out=()
         fi
-        return
+        return 0
     fi
 
-    # Build menu with host configs
-    echo ""
-    echo "  ╔══════════════════════════════════════════════════════════════════╗"
-    echo "  ║                    Select Host Configuration                     ║"
-    echo "  ╠══════════════════════════════════════════════════════════════════╣"
-    echo "  ║                                                                  ║"
+    # Build menu with host configs (loop until user picks a valid option
+    # OR cancels a newly-created host config and wants to choose again).
+    while true; do
+        echo "" >&2
+        echo "  ╔══════════════════════════════════════════════════════════════════╗" >&2
+        echo "  ║                    Select Host Configuration                     ║" >&2
+        echo "  ╠══════════════════════════════════════════════════════════════════╣" >&2
+        echo "  ║                                                                  ║" >&2
 
-    # Option 1: Build all hosts sequentially
-    local _build_all="  [1]  Build all hosts sequentially"
-    local _pad_all=$(( 66 - ${#_build_all} ))
-    [[ ${_pad_all} -lt 0 ]] && _pad_all=0
-    printf "  ║%s%*s║\n" "${_build_all}" "${_pad_all}" ""
+        # Option 1: Build all hosts sequentially — caller iterates and runs
+        # the build pipeline per host.
+        local _build_all="  [1]  Build all hosts sequentially"
+        local _pad_all=$(( 66 - ${#_build_all} ))
+        [[ ${_pad_all} -lt 0 ]] && _pad_all=0
+        printf "  ║%s%*s║\n" "${_build_all}" "${_pad_all}" "" >&2
 
-    # Blank separator line
-    echo "  ║                                                                  ║"
+        # Blank separator line
+        echo "  ║                                                                  ║" >&2
 
-    # Individual hosts: index starts at 2
-    local idx=2
-    for host_name in "${host_configs[@]}"; do
-        local host_file="${TOP_CONFIGS_DIR}/3_hosts/${host_name}.env"
-        local base_platform
-        base_platform=$(grep -E '^BASE_PLATFORM=' "${host_file}" 2>/dev/null | head -1 | sed 's/^BASE_PLATFORM=//;s/^"//;s/"$//' | tr -d "'")
-        [[ -z "${base_platform}" ]] && base_platform="(legacy — no BASE_PLATFORM)"
+        # Individual hosts: index starts at 2
+        local idx=2
+        for host_name in "${host_configs[@]}"; do
+            local host_file="${TOP_CONFIGS_DIR}/3_hosts/${host_name}.env"
+            local base_platform
+            base_platform=$(grep -E '^BASE_PLATFORM=' "${host_file}" 2>/dev/null | head -1 | sed 's/^BASE_PLATFORM=//;s/^"//;s/"$//' | tr -d "'")
+            [[ -z "${base_platform}" ]] && base_platform="(legacy — no BASE_PLATFORM)"
 
-        local marker=""
-        [[ "${host_name}" == "${LOCAL_HOSTNAME}" || "${host_name}" == ${LOCAL_HOSTNAME}_* ]] && marker="  ← this machine"
+            local marker=""
+            [[ "${host_name}" == "${LOCAL_HOSTNAME}" || "${host_name}" == ${LOCAL_HOSTNAME}_* ]] && marker="  ← this machine"
 
-        local _line1="  [${idx}]  ${host_name}${marker}"
-        local _pad1=$(( 66 - ${#_line1} ))
-        [[ ${_pad1} -lt 0 ]] && _pad1=0
-        printf "  ║%s%*s║\n" "${_line1}" "${_pad1}" ""
+            local _line1="  [${idx}]  ${host_name}${marker}"
+            local _pad1=$(( 66 - ${#_line1} ))
+            [[ ${_pad1} -lt 0 ]] && _pad1=0
+            printf "  ║%s%*s║\n" "${_line1}" "${_pad1}" "" >&2
 
-        local _line2="       platform: ${base_platform}"
-        local _pad2=$(( 66 - ${#_line2} ))
-        [[ ${_pad2} -lt 0 ]] && _pad2=0
-        printf "  ║%s%*s║\n" "${_line2}" "${_pad2}" ""
-        ((idx++))
-    done
+            local _line2="       platform: ${base_platform}"
+            local _pad2=$(( 66 - ${#_line2} ))
+            [[ ${_pad2} -lt 0 ]] && _pad2=0
+            printf "  ║%s%*s║\n" "${_line2}" "${_pad2}" "" >&2
+            ((idx++))
+        done
 
-    echo "  ║                                                                  ║"
-    local _create="  [${idx}]  Create new host  — configure for a new machine"
-    local _pad_create=$(( 66 - ${#_create} ))
-    [[ ${_pad_create} -lt 0 ]] && _pad_create=0
-    printf "  ║%s%*s║\n" "${_create}" "${_pad_create}" ""
-    echo "  ║                                                                  ║"
-    echo "  ╚══════════════════════════════════════════════════════════════════╝"
-    echo ""
+        echo "  ║                                                                  ║" >&2
+        local _create="  [${idx}]  Create new host  — configure for a new machine"
+        local _pad_create=$(( 66 - ${#_create} ))
+        [[ ${_pad_create} -lt 0 ]] && _pad_create=0
+        printf "  ║%s%*s║\n" "${_create}" "${_pad_create}" "" >&2
+        echo "  ║                                                                  ║" >&2
+        echo "  ╚══════════════════════════════════════════════════════════════════╝" >&2
+        echo "" >&2
 
-    local max_option=${idx}
+        local max_option=${idx}
 
-    read -p "  Please select [1-${max_option}]: " _config_choice
+        read -p "  Please select [1-${max_option}]: " _config_choice
 
-    if [[ "${_config_choice}" -eq 1 ]]; then
-        # Build all hosts sequentially
-        _run_build_push_all_hosts
-    elif [[ "${_config_choice}" -eq "${max_option}" ]]; then
-        # Create new host config
-        _create_host_config
-        read -p "  Build this host now? (y/N): " _build_choice
-        if [[ "${_build_choice}" =~ ^[yY]$ ]]; then
-            _load_host_config "$(basename "${HOST_CONFIG}" .env)"
+        if [[ "${_config_choice}" -eq 1 ]]; then
+            # Build all hosts → caller iterates and runs pipeline per host.
+            _out=("${host_configs[@]}")
+            return 0
+        elif [[ "${_config_choice}" -eq "${max_option}" ]]; then
+            # Create new host config (same fd-swap pattern as above).
+            exec 7>&1
+            exec 1>&2
+            _create_host_config
+            exec 1>&7
+            exec 7>&-
+
+            # _create_host_config sets HOST_CONFIG="" when user cancels an
+            # "overwrite existing" prompt — use that as the cancel signal.
+            if [[ -z "${HOST_CONFIG:-}" ]]; then
+                echo "  → Returning to host selection." >&2
+                continue
+            fi
+
+            read -p "  Build this host now? (y/N): " _build_choice
+            if [[ "${_build_choice}" =~ ^[yY]$ ]]; then
+                _out=("$(basename "${HOST_CONFIG}" .env)")
+                return 0
+            else
+                echo "  → Build cancelled. You can build anytime by running './harbor'." >&2
+                _HARBOR_SKIP_BUILD=1
+                _out=()
+                return 0
+            fi
+        elif [[ "${_config_choice}" -ge 2 && "${_config_choice}" -lt "${max_option}" ]]; then
+            local host_idx=$(( _config_choice - 2 ))
+            local selected_host="${host_configs[$host_idx]}"
+            _out=("${selected_host}")
+            return 0
         else
-            echo "  → Build cancelled. You can build anytime by running './harbor'."
-            _select_host_config
+            echo "  ✗ Invalid choice." >&2
+            continue
         fi
-    elif [[ "${_config_choice}" -ge 2 && "${_config_choice}" -lt "${max_option}" ]]; then
-        # Load existing host config
-        local host_idx=$(( _config_choice - 2 ))
-        local selected_host="${host_configs[$host_idx]}"
-        _load_host_config "${selected_host}"
-    else
-        echo "  ✗ Invalid choice."
-        _select_host_config
-    fi
+    done
 }
 
 ################################################################################
@@ -836,8 +919,12 @@ _create_host_config() {
         echo "  ⚠️  Host config already exists: ${HOST_CONFIG}"
         if ! prompt_simple "Overwrite existing config?" "" "" "n"; then
             echo "  → Cancelled."
-            _select_host_config
-            return
+            # Signal "no host created" to the caller (_select_host_config's
+            # while loop) by emptying HOST_CONFIG. Returning instead of
+            # recursing avoids a second nested call that would re-enter the
+            # fd-swap gymnastics in _select_host_config.
+            HOST_CONFIG=""
+            return 0
         fi
     fi
 
@@ -1178,9 +1265,12 @@ _load_host_config() {
     HOST_CONFIG="${TOP_CONFIGS_DIR}/3_hosts/${host_name}.env"
 
     if [ ! -f "${HOST_CONFIG}" ]; then
+        # Real error: caller (e.g. _select_host_config) already validated
+        # the host name. Fall back to a hard error instead of recursing into
+        # _select_host_config (whose interface now requires an `local -n`
+        # out parameter that we no longer have a meaningful way to plumb).
         echo "  ✗ Error: Host config not found: ${HOST_CONFIG}"
-        _select_host_config
-        return
+        return 1
     fi
 
     # Read BASE_PLATFORM for display
