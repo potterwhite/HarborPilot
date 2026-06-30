@@ -35,7 +35,7 @@
 2_build_images() {
     # Build is optional, other steps are mandatory
     if prompt_with_timeout "Build [ClientSide] images?" 10; then
-        _build_images_clientside || exit 1
+        _build_images_clientside || return 1
     else
         echo "Build clientside image stages skipped."
     fi

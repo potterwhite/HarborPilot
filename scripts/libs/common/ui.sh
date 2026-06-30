@@ -339,9 +339,9 @@ _run_build_push_all_hosts() {
 
         CLI_HOST="${host_name}" _run_build_push
         if [[ $? -eq 0 ]]; then
-            ((success++))
+            success=$((success + 1))
         else
-            ((failed++))
+            failed=$((failed + 1))
         fi
     done
 
