@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.2](https://github.com/potterwhite/HarborPilot/compare/v2.3.1...v2.3.2) (2026-06-30)
+
+
+### 🐛 Fixed
+
+* prevent duplicate rebuild after Build All Hosts banner ([969e5e8](https://github.com/potterwhite/HarborPilot/commit/969e5e863395b23469903a529b3161a97360f8eb))
+* prevent duplicate rebuild after Build All Hosts banner ([91ca44c](https://github.com/potterwhite/HarborPilot/commit/91ca44c088e74ea5acad58ae28bd9741c925106c))
+
 ## [2.3.1](https://github.com/potterwhite/HarborPilot/compare/v2.3.0...v2.3.1) (2026-06-30)
 
 
