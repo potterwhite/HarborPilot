@@ -45,11 +45,10 @@ jobs:
           manifest-file: .release-please-manifest.json
 
       - name: Create PR for PROJECT_RELEASE_DATE
-        # ── TEMPORARY FOR MANUAL TEST ──────────────────────────────────────────────
         # Normal: uncomment the line below (release_created must be true).
-        # if: ${{ steps.release.outputs.release_created }}
-        if: true  # TEMPORARY: force-run for manual CI test via workflow_dispatch
-        # ─────────────────────────────────────────────────────────────────────────
+        if: ${{ steps.release.outputs.release_created }}
+        # TEMPORARY for manual CI test: comment above, uncomment below.
+        # if: true
         uses: actions/github-script@v7
         with:
           script: |
@@ -127,40 +126,7 @@ jobs:
           # Build one handover tarball per platform
           for platform_env in configs/2_platforms/*.env; do
             platform_name=$(basename "${platform_env}" .env)
-            dir="project_handover_${platform_name}_v${VERSION}"
-            stage="/tmp/${dir}"
-
-            mkdir -p "${stage}/project_handover/clientside/volumes"
-            mkdir -p "${stage}/configs/1_defaults"
-            mkdir -p "${stage}/configs/2_platforms"
-            mkdir -p "${stage}/configs/3_hosts"
-            mkdir -p "${stage}/scripts/lib"
-
-            # Client scripts
-            cp -r project_handover/clientside/ubuntu \
-                  "${stage}/project_handover/clientside/ubuntu"
-            rm -f "${stage}/project_handover/clientside/ubuntu/volumes"
-            rm -f "${stage}/project_handover/clientside/ubuntu/docker-compose.yaml"
-            touch "${stage}/project_handover/clientside/volumes/.gitkeep"
-
-            # Config layers
-            cp configs/1_defaults/*.env "${stage}/configs/1_defaults/"
-            cp "${platform_env}" "${stage}/configs/2_platforms/"
-            cp configs/3_hosts/TEMPLATE.env.example "${stage}/configs/3_hosts/"
-            cp configs/3_hosts/README.md "${stage}/configs/3_hosts/"
-
-            # Shared scripts
-            cp scripts/port_calc.sh "${stage}/scripts/"
-            cp scripts/lib/config.sh "${stage}/scripts/lib/"
-
-            # Handover README (Chinese)
-            cp project_handover/README_handover.md "${stage}/project_handover/"
-
-            # Create tarball
-            tar -czf "/tmp/${dir}.tar.gz" -C "${stage}" \
-              "project_handover" "configs" "scripts"
-
-            echo "Built: ${dir}.tar.gz"
+            EXTERNAL_DEFINED_HANDOVER_DIR=/tmp ./harbor handover-platform "${platform_name}"
           done
 
       - name: Upload tarballs to release
