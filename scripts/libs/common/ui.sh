@@ -299,6 +299,63 @@ _show_container_menu() {
 }
 
 ################################################################################
+# Build & Push — all hosts sequentially (interactive, with per-host approval)
+################################################################################
+_run_build_push_all_hosts() {
+    declare -a host_configs=()
+    for host_file in "${TOP_CONFIGS_DIR}/3_hosts/"*.env; do
+        [[ ! -f "${host_file}" ]] && continue
+        host_configs+=("$(basename "${host_file}" .env)")
+    done
+
+    local total=${#host_configs[@]}
+    if [[ ${total} -eq 0 ]]; then
+        echo "  ✗ No host configs found."
+        return 1
+    fi
+
+    echo ""
+    echo "  ╔══════════════════════════════════════════════════════════════════╗"
+    echo "  ║           Build All Hosts — ${total} host(s) found                     ║"
+    echo "  ╚══════════════════════════════════════════════════════════════════╝"
+    echo ""
+
+    local start_time=${SECONDS}
+    local success=0
+    local failed=0
+
+    for i in "${!host_configs[@]}"; do
+        local host_name="${host_configs[$i]}"
+        local seq=$((i + 1))
+
+        echo ""
+        echo "  ═══════════════════════════════════════════════════════════════════"
+        printf "  ║  [%s/%s]  %s\n" "${seq}" "${total}" "${host_name}"
+        echo "  ═══════════════════════════════════════════════════════════════════"
+        if ! prompt_with_timeout "  Build & push host [${seq}/${total}]? (Press 'n' to skip)" 20; then
+            echo "  → Skipped."
+            continue
+        fi
+
+        CLI_HOST="${host_name}" _run_build_push
+        if [[ $? -eq 0 ]]; then
+            ((success++))
+        else
+            ((failed++))
+        fi
+    done
+
+    local duration=$(( SECONDS - start_time ))
+    echo ""
+    echo "  ╔══════════════════════════════════════════════════════════════════╗"
+    echo "  ║                    Build All Hosts — Done                        ║"
+    echo "  ╠══════════════════════════════════════════════════════════════════╣"
+    printf "  ║  Success: %-3s  |  Failed: %-3s  |  Time: %dh %dm %ds             ║\n" \
+        "${success}" "${failed}" "$((duration / 3600))" "$((duration % 3600 / 60))" "$((duration % 60))"
+    echo "  ╚══════════════════════════════════════════════════════════════════╝"
+}
+
+################################################################################
 # Run the full Build & Push pipeline
 #
 # Single entry point for both CLI (--host <name>) and interactive menu paths.
@@ -657,9 +714,18 @@ _select_host_config() {
     echo "  ╠══════════════════════════════════════════════════════════════════╣"
     echo "  ║                                                                  ║"
 
-    local idx=1
+    # Option 1: Build all hosts sequentially
+    local _build_all="  [1]  Build all hosts sequentially"
+    local _pad_all=$(( 66 - ${#_build_all} ))
+    [[ ${_pad_all} -lt 0 ]] && _pad_all=0
+    printf "  ║%s%*s║\n" "${_build_all}" "${_pad_all}" ""
+
+    # Blank separator line
+    echo "  ║                                                                  ║"
+
+    # Individual hosts: index starts at 2
+    local idx=2
     for host_name in "${host_configs[@]}"; do
-        # Read BASE_PLATFORM from host config for display
         local host_file="${TOP_CONFIGS_DIR}/3_hosts/${host_name}.env"
         local base_platform
         base_platform=$(grep -E '^BASE_PLATFORM=' "${host_file}" 2>/dev/null | head -1 | sed 's/^BASE_PLATFORM=//;s/^"//;s/"$//' | tr -d "'")
@@ -668,13 +734,11 @@ _select_host_config() {
         local marker=""
         [[ "${host_name}" == "${LOCAL_HOSTNAME}" || "${host_name}" == ${LOCAL_HOSTNAME}_* ]] && marker="  ← this machine"
 
-        # Line 1: host name + marker (dynamic padding to 66-char inner width)
         local _line1="  [${idx}]  ${host_name}${marker}"
         local _pad1=$(( 66 - ${#_line1} ))
         [[ ${_pad1} -lt 0 ]] && _pad1=0
         printf "  ║%s%*s║\n" "${_line1}" "${_pad1}" ""
 
-        # Line 2: platform info (indented to align with host name)
         local _line2="       platform: ${base_platform}"
         local _pad2=$(( 66 - ${#_line2} ))
         [[ ${_pad2} -lt 0 ]] && _pad2=0
@@ -695,7 +759,10 @@ _select_host_config() {
 
     read -p "  Please select [1-${max_option}]: " _config_choice
 
-    if [[ "${_config_choice}" -eq "${max_option}" ]]; then
+    if [[ "${_config_choice}" -eq 1 ]]; then
+        # Build all hosts sequentially
+        _run_build_push_all_hosts
+    elif [[ "${_config_choice}" -eq "${max_option}" ]]; then
         # Create new host config
         _create_host_config
         read -p "  Build this host now? (y/N): " _build_choice
@@ -705,9 +772,9 @@ _select_host_config() {
             echo "  → Build cancelled. You can build anytime by running './harbor'."
             _select_host_config
         fi
-    elif [[ "${_config_choice}" -ge 1 && "${_config_choice}" -lt "${max_option}" ]]; then
+    elif [[ "${_config_choice}" -ge 2 && "${_config_choice}" -lt "${max_option}" ]]; then
         # Load existing host config
-        local host_idx=$(( _config_choice - 1 ))
+        local host_idx=$(( _config_choice - 2 ))
         local selected_host="${host_configs[$host_idx]}"
         _load_host_config "${selected_host}"
     else
