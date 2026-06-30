@@ -22,6 +22,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -44,12 +45,17 @@ jobs:
           manifest-file: .release-please-manifest.json
 
       - name: Create PR for PROJECT_RELEASE_DATE
-        if: ${{ steps.release.outputs.release_created }}
+        # ── TEMPORARY FOR MANUAL TEST ──────────────────────────────────────────────
+        # Normal: uncomment the line below (release_created must be true).
+        # if: ${{ steps.release.outputs.release_created }}
+        if: true  # TEMPORARY: force-run for manual CI test via workflow_dispatch
+        # ─────────────────────────────────────────────────────────────────────────
         uses: actions/github-script@v7
         with:
           script: |
             const releaseDate = new Date().toISOString().split('T')[0];
-            const tagName = '${{ steps.release.outputs.tag_name }}';
+            // During workflow_dispatch (no real release), tag_name is undefined → use 'test-tag'.
+            const tagName = '${{ steps.release.outputs.tag_name }}' || 'test-tag';
             const branchName = `release-date-${tagName}`;
             const filePath = 'configs/1_defaults/00_global.env';
 
