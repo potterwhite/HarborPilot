@@ -73,7 +73,7 @@
     fi
 
     local version="${PROJECT_VERSION:-unknown}"
-    local output_dir="${TOP_ROOT_DIR}/output"
+    local output_dir="${EXTERNAL_DEFINED_HANDOVER_DIR:-${TOP_ROOT_DIR}/output}"
     mkdir -p "${output_dir}"
     local archive_name="${output_dir}/project_handover_${base_platform}_v${version}.tar.gz"
 
