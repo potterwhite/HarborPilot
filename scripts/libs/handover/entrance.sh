@@ -131,9 +131,55 @@ _create_host_config_non_interactive() {
     sed -i "s|^# NPM_USE_CHINA_MIRROR=.*|NPM_USE_CHINA_MIRROR=\"${NI_NPM_MIRROR:-false}\"|" "${HOST_CONFIG}"
 
     # Auto-derive REGISTRY_URL
+    # The REGISTRY_URL line in the template has two forms:
+    #
+    #   Original (before commit 5c4f980):
+    #     # Auto-derived: REGISTRY_URL = ${HARBOR_SERVER_IP}:...
+    #                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    #                matched by: ^#.*REGISTRY_URL= *
+    #
+    #   Current (split into two lines after commit 5c4f980):
+    #     # Auto-derived
+    #     # REGISTRY_URL= ${HARBOR_SERVER_IP}:...
+    #                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+    #                    matched by: ^#.*REGISTRY_URL= *
+    #
+    # Regex breakdown — s|^# REGISTRY_URL= *.*|REGISTRY_URL="..."|:
+    #
+    #   ^          Anchor to the start of the line
+    #   #          Literal hash — the variable is commented out in the template
+    #   REGISTRY_URL   Literal variable name
+    #   =          Literal equals sign
+    #   *          Zero or more spaces AFTER the equals sign
+    #             (the template line is "# REGISTRY_URL= ${HARBOR}" — note the space)
+    #   .*         Any characters after the spaces (the old placeholder value)
+    #
+    # Replacement: REGISTRY_URL="${derived_registry_url}"
+    #   The new value replaces the entire commented line, uncommented.
+    #
+    # Regex breakdown — /^# REGISTRY_URL= */a REGISTRY_URL="...":
+    #
+    #   /^# REGISTRY_URL= */   BRE pattern to find the commented line:
+    #     ^                   Start of line
+    #     #                   Literal hash
+    #     REGISTRY_URL        Literal variable name
+    #     =                   Literal equals sign
+    #      *                  Zero or more spaces after "=" (template has one)
+    #
+    #   a\ REGISTRY_URL="..."   Append a new line AFTER the matched line:
+    #     a\                   sed "append" command — adds text on a new line below
+    #     REGISTRY_URL=...     The uncommented, evaluated value
+    #
+    # Result (two lines in the config file):
+    #   # REGISTRY_URL= ${HARBOR_SERVER_IP}:${HARBOR_SERVER_PORT}/team_${CHIP_FAMILY}  ← kept as formula doc
+    #   REGISTRY_URL="192.168.3.67:9000/team_rk3588"                                   ← new evaluated value
+    #
+    # Without " *" after "=", the pattern fails to match the template's "REGISTRY_URL= "
+    # (equals + space), leaving REGISTRY_URL blank. That causes FINAL_IMAGE_NAME to become
+    # "/<image>:latest" — an invalid reference with a leading slash.
     if [ -n "${harbor_ip}" ] && [ -n "${harbor_port}" ] && [ -n "${CHIP_FAMILY:-}" ]; then
         local derived_registry_url="${harbor_ip}:${harbor_port}/team_${CHIP_FAMILY}"
-        sed -i "s|^# REGISTRY_URL=.*|REGISTRY_URL=\"${derived_registry_url}\"|" "${HOST_CONFIG}"
+        sed -i "/^# REGISTRY_URL= */a REGISTRY_URL=\"${derived_registry_url}\"" "${HOST_CONFIG}"
     fi
 
     echo "  ✅ Host config created (non-interactive): $(basename "${HOST_CONFIG}")"
