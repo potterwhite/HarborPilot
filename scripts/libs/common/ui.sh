@@ -501,6 +501,10 @@ _run_container() {
             _log "INFO" "Removing container for host: ${CLI_HOST}"
             _container_remove_container
             ;;
+        recreate)
+            _log "INFO" "Recreating container for host: ${CLI_HOST}"
+            container_recreate
+            ;;
     esac
 }
 
