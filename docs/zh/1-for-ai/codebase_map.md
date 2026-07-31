@@ -17,7 +17,7 @@
 HarborPilot.git/
 ├── harbor                              ← 顶级入口：构建 → 打 tag → 推送
 ├── CLAUDE.md                           ← Claude Code 会话入口
-├── README.md                           ← 项目 README（英文）
+├── README.md                           ← 项目 README（中文，唯一）
 ├── CHANGELOG.md                        ← 由 release-please 自动维护
 ├── LICENSE                             ← MIT
 ├── release-please-config.json          ← 版本自动化配置
@@ -87,8 +87,8 @@ HarborPilot.git/
 │       │                                        归档时追加到当天已有文件末尾，严禁新建同一天的第二个文件。
 │       │                                        NEED_TO_DO.md 本身永久保留，绝不删除或 git mv。
 │       ├── 3-highlights/              ←     架构分析（中文）
-│       ├── 4-for-beginner/            ←     快速上手指南（中文）
-│       └── readme.md                  ←   中文 README
+│       └── 4-for-beginner/            ←     快速上手指南（中文）
+│       （中文 README 已移至仓库根，参见 README.md）
 │
 └── .devcontainer/
     └── devcontainer.json               ←   VS Code Dev Container 配置（用于开发 HarborPilot 本身）

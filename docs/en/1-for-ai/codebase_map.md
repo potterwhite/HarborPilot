@@ -18,7 +18,7 @@
 HarborPilot.git/
 ├── harbor                              ← Top-level entry point: build → tag → push
 ├── CLAUDE.md                           ← Claude Code session entry point
-├── README.md                           ← Project README (EN)
+├── README.md                           ← Project README (ZH)
 ├── CHANGELOG.md                        ← Auto-maintained by release-please
 ├── LICENSE                             ← MIT
 ├── release-please-config.json          ← Versioning automation config
@@ -87,8 +87,8 @@ HarborPilot.git/
 │       │                                        Do NOT create a second file for the same date.
 │       │                                        NEED_TO_DO.md itself is NEVER deleted or git-mv'd.
 │       ├── 3-highlights/              ←     Architecture analysis (ZH)
-│       ├── 4-for-beginner/            ←     Quick start guide (ZH)
-│       └── readme.md                  ←   Chinese README
+│       └── 4-for-beginner/            ←     Quick start guide (ZH)
+│       (ZH README moved to repo root — see README.md)
 │
 └── .devcontainer/
     └── devcontainer.json               ←   VS Code Dev Container config for HarborPilot dev
