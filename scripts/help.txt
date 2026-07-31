@@ -10,6 +10,7 @@ COMMANDS — Container:
   container-stop          Stop running container
   container-status        Show container status
   container-remove        Remove container
+  container-recreate      Remove + pull + start (fresh container)
 
 COMMANDS — Handover:
   handover-platform       Package client handover tarball for a platform
@@ -28,6 +29,7 @@ EXAMPLES:
   ./harbor image-build --host=jetson-orin-01  Build & push image for a host
   ./harbor container-start --host=jetson-orin-01  Start container locally
   ./harbor container-status --host=jetson-orin-01 Check container status
+  ./harbor container-recreate --host=jetson-orin-01 Fresh container (remove + start)
   ./harbor image-list                         List project images
   ./harbor handover-platform jetson-orin-nx-16g_ubuntu-22.04  Package handover tarball
 

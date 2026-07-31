@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 func_1_0_setup_env(){
@@ -8,12 +7,8 @@ func_1_0_setup_env(){
 func_2_0_verify(){
     echo "Checking Git user configuration..."
 
-    # Check global git config first
-    local git_name=$(git config --global user.name)
-    local git_email=$(git config --global user.email)
-
-    # If still not set, prompt user for input
-    if [ -z "$git_name" ]; then
+    # If git user.name is not set, prompt user for input
+    if [ -z "$(git config --global user.name 2>/dev/null || true)" ]; then
         echo "Git user name is not configured."
         read -p "Please enter your name: " input_name
         if [ -z "$input_name" ]; then
@@ -24,7 +19,8 @@ func_2_0_verify(){
         echo "Git user name set to: $input_name"
     fi
 
-    if [ -z "$git_email" ]; then
+    # If git user.email is not set, prompt user for input
+    if [ -z "$(git config --global user.email 2>/dev/null || true)" ]; then
         echo "Git user email is not configured."
         read -p "Please enter your email: " input_email
         if [ -z "$input_email" ] || ! echo "$input_email" | grep -qE '^[^@]+@[^@]+\.[^@]+$'; then

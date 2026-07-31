@@ -23,7 +23,7 @@ CLI_HOST=""
 CLI_COMMAND=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        image-build|container-start|container-stop|container-status|container-remove|image-list)
+        image-build|container-start|container-stop|container-status|container-remove|container-recreate|image-list)
             CLI_COMMAND="$1"
             shift
             ;;
@@ -116,6 +116,10 @@ main() {
                 ;;
             container-remove)
                 _run_container remove
+                exit $?
+                ;;
+            container-recreate)
+                _run_container recreate
                 exit $?
                 ;;
             image-list)
