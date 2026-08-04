@@ -7,7 +7,7 @@
 #
 # Author: PotterWhite
 # Created: 2024-11-21
-# Last Modified: 2025-07-14
+# Last Modified: 2026-07-31
 #
 # Copyright (c) 2024
 # License: MIT
@@ -15,23 +15,96 @@
 set -e
 
 ###############################################################################
+# Helper: install packages from an os_packages .env file
+# Reads the file, strips comments and blank lines, runs apt-get install -y.
+###############################################################################
+_install_packages_from() {
+    local rel_path="$1"
+    local full_path="/tmp/configs-os_packages/${rel_path}"
+
+    if [ ! -f "$full_path" ]; then
+        echo "ERROR: package file not found: ${full_path}"
+        echo "  Expected path under /tmp/configs-os_packages/"
+        echo "  This means the Dockerfile COPY stage did not include this file."
+        return 1
+    fi
+
+    local packages
+    packages=$(grep -v '^#' "$full_path" | grep -v '^[[:space:]]*$' | tr '\n' ' ')
+
+    if [ -z "$packages" ]; then
+        echo "WARNING: no packages found in ${full_path}"
+        echo "  File exists but all lines are comments or empty."
+        echo "  If this is unexpected, check the file content in the Docker image."
+        return 0
+    fi
+
+    echo "Installing packages from ${rel_path}: ${packages}"
+    apt-get install -y $packages
+}
+
+###############################################################################
+# Helper: load Ubuntu/Debian version overlay packages
+# Reads os_packages/<family>/common.env and os_packages/<family>/<version>.env
+###############################################################################
+_load_os_overlay() {
+    local os_family="${OS_FAMILY:-ubuntu}"
+    local overlay_dir="os_packages/${os_family}"
+    local packages=""
+
+    # Family common
+    local family_file="/tmp/configs-os_packages/${overlay_dir}/common.env"
+    if [ -f "$family_file" ]; then
+        local family_pkgs
+        family_pkgs=$(grep -v '^#' "$family_file" | grep -v '^[[:space:]]*$' | tr '\n' ' ')
+        if [ -n "$family_pkgs" ]; then
+            packages="$packages $family_pkgs"
+            echo "OS overlay: ${os_family}/common.env → ${family_pkgs}"
+        else
+            echo "OS overlay: ${os_family}/common.env exists but has no packages (all comments/empty)"
+        fi
+    else
+        echo "OS overlay: ${os_family}/common.env not found — skipping family overlay"
+    fi
+
+    # Version-specific
+    if [ -n "${OS_VERSION}" ]; then
+        local version_file="/tmp/configs-os_packages/${overlay_dir}/${OS_VERSION}.env"
+        if [ -f "$version_file" ]; then
+            local version_pkgs
+            version_pkgs=$(grep -v '^#' "$version_file" | grep -v '^[[:space:]]*$' | tr '\n' ' ')
+            if [ -n "$version_pkgs" ]; then
+                packages="$packages $version_pkgs"
+                echo "OS overlay: ${os_family}/${OS_VERSION}.env → ${version_pkgs}"
+            else
+                echo "OS overlay: ${os_family}/${OS_VERSION}.env exists but has no packages (all comments/empty)"
+            fi
+        else
+            echo "OS overlay: ${os_family}/${OS_VERSION}.env not found — skipping version overlay"
+        fi
+    else
+        echo "WARNING: OS_VERSION is empty — cannot load version-specific overlay"
+        echo "  Expected a value like 20.04, 22.04, or 24.04"
+        echo "  Check that OS_VERSION is set by config.sh before install_dev_tools.sh runs."
+    fi
+
+    # Deduplicate
+    packages=$(echo "$packages" | tr ' ' '\n' | sed '/^$/d' | sort -u | tr '\n' ' ')
+
+    if [ -n "$packages" ]; then
+        echo "OS overlay: installing ${packages}"
+        apt-get install -y $packages
+    else
+        echo "OS overlay: no packages to install after deduplication"
+    fi
+}
+
+###############################################################################
 # First: Install core build tools and compilers
 # Description: Essential compilation and build system tools installation
 ###############################################################################
 first_install_core_tools() {
-    apt-get update && apt-get install -y \
-        build-essential \
-        ninja-build \
-        make \
-        autoconf \
-        automake \
-        libtool \
-        meson \
-        pkg-config \
-        ccache \
-        tree \
-        libmpc-dev \
-        libgmp-dev
+    _install_packages_from "os_packages/common/01_build_core.env"
 
     if [ "${INSTALL_HOST_CMAKE}" = "true" ]; then
         apt-get install -y \
@@ -44,28 +117,10 @@ first_install_core_tools() {
 # Description: Tools for debugging, code analysis and development
 ###############################################################################
 second_install_dev_tools() {
-    apt-get install -y \
-        gdb \
-        valgrind \
-        clang \
-        clang-format \
-        clang-tidy \
-        lldb \
-        cppcheck \
-        minicom
+    _install_packages_from "os_packages/common/02_debug.env"
+    _install_packages_from "os_packages/common/07_serial.env"
 
     echo "OS_VERSION = ${OS_VERSION}"
-    if [ "${OS_VERSION}" != "20.04" ]; then
-        apt-get install -y repo
-    else
-        # -----------------------------------------
-        # add libicu for rk3568 build process of the sdk
-        # date: nov27.2025
-        # author: James
-        # -----------------------------------------
-        apt-get install -y libicu-dev
-    fi
-    echo "install repo"
 }
 
 ###############################################################################
@@ -162,11 +217,7 @@ EOF
 # Description: Documentation and visualization tools installation
 ###############################################################################
 fourth_install_doc_tools() {
-    echo "Installing documentation tools..."
-    # Install documentation generation tools
-    apt-get install -y \
-        doxygen \
-        graphviz
+    _install_packages_from "os_packages/common/03_doc.env"
 
     if [ "${INSTALL_MAN_DOC}" = "true" ]; then
         echo -e "\tInstalling man documentation system..."
@@ -193,9 +244,6 @@ fourth_install_doc_tools() {
         echo -e "\tMan documentation system installed successfully"
     fi
 
-    # required by rv1126bp - i18n
-    apt-get install -y gettext
-
     echo "Documentation tools installation completed"
 }
 
@@ -204,10 +252,7 @@ fourth_install_doc_tools() {
 # Description: Version control and development utilities installation
 ###############################################################################
 fifth_install_vcs_tools() {
-    # git and git-lfs are always installed (dependencies for SDK, gitlfs_tracker, etc.)
-    apt-get install -y \
-        git \
-        git-lfs
+    _install_packages_from "os_packages/common/04_vcs.env"
 
     # bash-completion is optional
     if [[ "${INSTALL_VCS_TOOLS}" == "true" ]]; then
@@ -235,26 +280,7 @@ EOF
 # Description: Tools required for kernel development
 ###############################################################################
 sixth_install_kernel_tools() {
-    apt-get install -y \
-        device-tree-compiler \
-        liblz4-tool \
-        liblz4-dev \
-        libssl-dev \
-        expect \
-        bison \
-        flex \
-        texinfo \
-        exuberant-ctags \
-        cscope
-
-    # libncurses5-dev was renamed to libncurses-dev in Ubuntu 22.04+
-    local os_major
-    os_major=$(echo "${OS_VERSION}" | cut -d'.' -f1)
-    if [ "${os_major}" -ge 22 ]; then
-        apt-get install -y libncurses-dev
-    else
-        apt-get install -y libncurses5-dev
-    fi
+    _install_packages_from "os_packages/common/05_kernel.env"
 }
 
 ###############################################################################
@@ -356,33 +382,7 @@ EOF
 # Description: Install specific versions of Python packages
 ###############################################################################
 eighth_install_python_packages() {
-    # -------------------------------------------------------------------------
-    # Python 2.7: removed from Ubuntu 22.04+ official repositories.
-    # Only install on Ubuntu 20.04 where it is still available.
-    # -------------------------------------------------------------------------
-    local os_major
-    os_major=$(echo "${OS_VERSION}" | cut -d'.' -f1)
-
-    if [ "${os_major}" -le 20 ]; then
-        echo "Ubuntu <= 20.04: installing python2.7..."
-        apt-get update && apt-get install -y \
-            python2.7 \
-            python2.7-dev \
-            libpython2.7 \
-            libpython2.7-dev
-
-        # Setup Python symlinks
-        ln -sf /usr/bin/python2.7 /usr/bin/python
-        ln -sf /usr/bin/python2.7 /usr/bin/python2
-    else
-        echo "Ubuntu >= 22.04: python2.7 not available, skipping python2 installation"
-    fi
-
-    #----------------------------------------------
-    # Python 3.x Installation
-    python3 --version
-    apt-get update && apt-get install -y python3-pip python3-dev
-    pip3 --version
+    _install_packages_from "os_packages/common/06_python.env"
 
     # Install Python package manager
     local max_retries=3
@@ -524,10 +524,13 @@ install_platform_jetson_tools() {
 # Description: Execute all installation steps in order
 ###############################################################################
 main() {
+    # Load OS-specific overlay packages (Ubuntu/Debian version overlays)
+    _load_os_overlay
+
     # Core build tools — always installed (dependency for OpenCV, SDK, etc.)
     first_install_core_tools
 
-    # Dev/debug tools: gdb, valgrind, clang, cppcheck, minicom, repo
+    # Dev/debug tools: gdb, valgrind, clang, cppcheck, minicom
     if [[ "${INSTALL_DEV_TOOLS}" == "true" ]]; then
         second_install_dev_tools
     else
@@ -549,11 +552,9 @@ main() {
     fi
 
     # VCS tools: git, git-lfs, bash-completion
-    # git/git-lfs are always installed (dependency for SDK, gitlfs_tracker).
-    # bash-completion is controlled by INSTALL_VCS_TOOLS.
     fifth_install_vcs_tools
 
-    # Kernel development tools: dtc, liblz4, bison, flex, texinfo, ctags, cscope, ncurses
+    # Kernel development tools: dtc, liblz4, bison, flex, texinfo, ctags, cscope
     if [[ "${INSTALL_KERNEL_TOOLS}" == "true" ]]; then
         sixth_install_kernel_tools
     else

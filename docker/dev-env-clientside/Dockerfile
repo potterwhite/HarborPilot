@@ -288,6 +288,7 @@ COPY stage_2_tools/scripts/install_cuda.sh /tmp/
 COPY stage_2_tools/scripts/install_opencv.sh /tmp/
 # COPY stage_2_tools/configs/tool_versions.conf /tmp/
 COPY stage_2_tools/scripts/gitlfs_tracker.sh /usr/local/bin/
+COPY ../../configs/1_defaults/os_packages/ /tmp/configs-os_packages/
 
 # Generate tool version configuration file
 RUN echo "# Auto-generated tool version configuration" > /tmp/tool_versions.conf && \
