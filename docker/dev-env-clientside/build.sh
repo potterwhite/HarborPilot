@@ -187,7 +187,7 @@ func_2_1_build_docker_image(){
         "${BUILD_ARGS[@]}" \
         -t "${IMAGE_NAME}:${PROJECT_VERSION}" \
         -f "${BUILD_SCRIPT_DIR}/Dockerfile" \
-        "${BUILD_SCRIPT_DIR}" 2>&1 | tee "${BUILD_SCRIPT_DIR}/build_log.txt"
+        "${TOP_ROOT_DIR}" 2>&1 | tee "${BUILD_SCRIPT_DIR}/build_log.txt"
 
     # Check if docker build failed and halt the script if it did
     exit_status=${PIPESTATUS[0]}

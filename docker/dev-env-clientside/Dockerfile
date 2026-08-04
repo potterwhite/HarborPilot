@@ -241,7 +241,7 @@ ENV WORKSPACE_ROOT=${WORKSPACE_ROOT} \
     HTTPS_PROXY_IP=${HTTPS_PROXY_IP}
 
 # Copy scripts
-COPY stage_1_base/scripts/setup_base.sh /tmp/
+COPY docker/dev-env-clientside/stage_1_base/scripts/setup_base.sh /tmp/
 
 # First install certificates and basic tools
 RUN apt-get update && \
@@ -283,12 +283,11 @@ RUN echo -e "\n========= Stage 2nd =========\n\n"
 ################################################################################
 # Copy scripts and configs
 ################################################################################
-COPY stage_2_tools/scripts/install_dev_tools.sh /tmp/
-COPY stage_2_tools/scripts/install_cuda.sh /tmp/
-COPY stage_2_tools/scripts/install_opencv.sh /tmp/
-# COPY stage_2_tools/configs/tool_versions.conf /tmp/
-COPY stage_2_tools/scripts/gitlfs_tracker.sh /usr/local/bin/
-COPY ../../configs/1_defaults/os_packages/ /tmp/configs-os_packages/
+COPY docker/dev-env-clientside/stage_2_tools/scripts/install_dev_tools.sh /tmp/
+COPY docker/dev-env-clientside/stage_2_tools/scripts/install_cuda.sh /tmp/
+COPY docker/dev-env-clientside/stage_2_tools/scripts/install_opencv.sh /tmp/
+COPY docker/dev-env-clientside/stage_2_tools/scripts/gitlfs_tracker.sh /usr/local/bin/
+COPY configs/1_defaults/os_packages/ /tmp/configs-os_packages/
 
 # Generate tool version configuration file
 RUN echo "# Auto-generated tool version configuration" > /tmp/tool_versions.conf && \
@@ -361,8 +360,8 @@ FROM stage_2nd_tools AS stage_3rd_template-processor
 
 RUN echo -e "\n========= Stage 3rd =========\n\n"
 
-COPY ./stage_3_sdk/configs/ /tmp/configs/
-COPY ./stage_3_sdk/scripts/ /tmp/scripts/
+COPY docker/dev-env-clientside/stage_3_sdk/configs/ /tmp/configs/
+COPY docker/dev-env-clientside/stage_3_sdk/scripts/ /tmp/scripts/
 
 WORKDIR /tmp
 
@@ -416,8 +415,8 @@ FROM stage_3rd_sdk AS stage_4th_template-processor
 
 RUN echo -e "\n========= Stage 4th =========\n\n"
 
-COPY ./stage_4_config/configs/ /tmp/configs/
-COPY ./stage_4_config/scripts/ /tmp/scripts/
+COPY docker/dev-env-clientside/stage_4_config/configs/ /tmp/configs/
+COPY docker/dev-env-clientside/stage_4_config/scripts/ /tmp/scripts/
 
 WORKDIR /tmp
 # Render all *_template files using envsubst
@@ -478,8 +477,8 @@ FROM stage_4th_config AS stage_5th_template-processor
 
 RUN echo -e "\n========= Stage 5th =========\n\n"
 
-COPY ./stage_5_final/configs/ /tmp/configs/
-COPY ./stage_5_final/scripts/ /tmp/scripts/
+COPY docker/dev-env-clientside/stage_5_final/configs/ /tmp/configs/
+COPY docker/dev-env-clientside/stage_5_final/scripts/ /tmp/scripts/
 
 WORKDIR /tmp
 # Render all *_template files using envsubst

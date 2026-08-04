@@ -45,11 +45,11 @@ _install_packages_from() {
 
 ###############################################################################
 # Helper: load Ubuntu/Debian version overlay packages
-# Reads os_packages/<family>/common.env and os_packages/<family>/<version>.env
+# Reads <family>/common.env and <family>/<version>.env under /tmp/configs-os_packages/
 ###############################################################################
 _load_os_overlay() {
     local os_family="${OS_FAMILY:-ubuntu}"
-    local overlay_dir="os_packages/${os_family}"
+    local overlay_dir="${os_family}"
     local packages=""
 
     # Family common
@@ -104,7 +104,7 @@ _load_os_overlay() {
 # Description: Essential compilation and build system tools installation
 ###############################################################################
 first_install_core_tools() {
-    _install_packages_from "os_packages/common/01_build_core.env"
+    _install_packages_from "common/01_build_core.env"
 
     if [ "${INSTALL_HOST_CMAKE}" = "true" ]; then
         apt-get install -y \
@@ -117,8 +117,8 @@ first_install_core_tools() {
 # Description: Tools for debugging, code analysis and development
 ###############################################################################
 second_install_dev_tools() {
-    _install_packages_from "os_packages/common/02_debug.env"
-    _install_packages_from "os_packages/common/07_serial.env"
+    _install_packages_from "common/02_debug.env"
+    _install_packages_from "common/07_serial.env"
 
     echo "OS_VERSION = ${OS_VERSION}"
 }
@@ -217,7 +217,7 @@ EOF
 # Description: Documentation and visualization tools installation
 ###############################################################################
 fourth_install_doc_tools() {
-    _install_packages_from "os_packages/common/03_doc.env"
+    _install_packages_from "common/03_doc.env"
 
     if [ "${INSTALL_MAN_DOC}" = "true" ]; then
         echo -e "\tInstalling man documentation system..."
@@ -252,7 +252,7 @@ fourth_install_doc_tools() {
 # Description: Version control and development utilities installation
 ###############################################################################
 fifth_install_vcs_tools() {
-    _install_packages_from "os_packages/common/04_vcs.env"
+    _install_packages_from "common/04_vcs.env"
 
     # bash-completion is optional
     if [[ "${INSTALL_VCS_TOOLS}" == "true" ]]; then
@@ -280,7 +280,7 @@ EOF
 # Description: Tools required for kernel development
 ###############################################################################
 sixth_install_kernel_tools() {
-    _install_packages_from "os_packages/common/05_kernel.env"
+    _install_packages_from "common/05_kernel.env"
 }
 
 ###############################################################################
@@ -382,7 +382,7 @@ EOF
 # Description: Install specific versions of Python packages
 ###############################################################################
 eighth_install_python_packages() {
-    _install_packages_from "os_packages/common/06_python.env"
+    _install_packages_from "common/06_python.env"
 
     # Install Python package manager
     local max_retries=3
